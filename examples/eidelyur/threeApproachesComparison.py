@@ -147,21 +147,29 @@ stepsImpctParMin_Rlarm=2
 stepImpctParMin_Rlarm=(maxImpctParMin_Rlarm-minImpctParMin_Rlarm)/(stepsImpctParMin_Rlarm-1)    # dimensionless
 
 minVlong=.1*eVrmsLong                                              # cm/sec
-maxVlong=eVrmsLong                                              # cm/sec
+maxVlong=5.*eVrmsLong                                              # cm/sec
 stepsVlong=100
 stepVlong=(maxVlong-minVlong)/(stepsVlong-1)                       # cm/sec
 
+minVtran=.1*eVrmsTran                                              # cm/sec
+maxVtran=5.*eVrmsTran                                              # cm/sec
+stepsVtran=2
+stepVtran=(maxVtran-minVtran)/(stepsVtran-1)                       # cm/sec
+
 z_elecCrrnt=np.zeros(6)                                            # 6-vector for electron
-pointTrack=np.zeros(2)
+begTracks=np.zeros(stepsVtran*stepsImpctParMin_Rlarm+1)
+endTracks=np.zeros(stepsVtran*stepsImpctParMin_Rlarm)
 minLarmR_b=np.zeros(stepsImpctParMin_Rlarm)                        # dimensionless     
 maxLarmR_b=np.zeros(stepsImpctParMin_Rlarm)                        # dimensionless
 minUpot_enrgKin=np.zeros(stepsImpctParMin_Rlarm)                   # dimensionless      
 maxUpot_enrgKin=np.zeros(stepsImpctParMin_Rlarm)                   # dimensionless      
-turns=10                                                           # Number of larmorturns for drawing 
-points=turns*stepsNumberOnGyro                                     # Number of points for drawing
+'''
+#
+# Case: the same transversal (eVrmsTran) and different longidudinal velocities: 
+#
 for i in range(1):    # stepsVlong):
    eVlong=maxVlong-stepVlong*i                                     # cm/sec
-   kinEnergy=m_elec*(eVrmsTran**2+eVrmsLong**2)/2.                 # erg
+   kinEnergy=m_elec*(eVrmsTran**2+eVlong**2)/2.                    # erg
    for j in range(stepsImpctParMin_Rlarm):
       impctParMin_Rlarm=maxImpctParMin_Rlarm-stepImpctParMin_Rlarm*j         # cm
       minImpctPar=impctParMin_Rlarm*ro_larmRMS                     # cm
@@ -197,43 +205,299 @@ for i in range(1):    # stepsVlong):
 	  larmR_b[j,k]=math.log10(ro_larmRMS/b[j,k])               # dimensionless 
 	  upot_enrgKin[j,k]=math.log10((q_elec**2/b[j,k])/kinEnergy)         # dimensionless   
           pointTrack[j] += 1
-#-------------------------------------	  
-# Draw electron's trajectories for checking:
-#       if j == 0:
-#          fig10=plt.figure(10)
-#          ax10=fig10.gca(projection='3d')
-#          ax10.plot(1.e+4*elecCoor[0,0:points],1.e+4*elecCoor[1,0:points],1.e+4*elecCoor[2,0:points],'-r',linewidth=2)
-#          plt.hold(True)
-#       else:
-#          ax10.plot(1.e+4*elecCoor[0,0:points],1.e+4*elecCoor[1,0:points],1.e+4*elecCoor[2,0:points],'-b',linewidth=2)
-#          plt.xlabel('x, $\mu m$',color='m',fontsize=16)
-#          plt.xlabel('x, $\mu m$',color='m',fontsize=16)
-#          plt.title(('First %d Larmor Turns' % turns),color='m',fontsize=16)
-#-------------------------------------	  
       minLarmR_b[j]=min(larmR_b[j,:])      
       maxLarmR_b[j]=max(larmR_b[j,:])
       print 'For j=%d larmR_b: min=%e, max=%e' % (j,minLarmR_b[j],maxLarmR_b[j])      
       minUpot_enrgKin[j]=min(upot_enrgKin[j,:])
       maxUpot_enrgKin[j]=max(upot_enrgKin[j,:])
       print 'For j=%d upot_enrgKin: min=%e, max=%e' % (j,minUpot_enrgKin[j],maxUpot_enrgKin[j])      
+'''
+#
+# Case: the same longidudinal (eVrmsLong) and different transversal velocities: 
+#
+minLarmorTurns=5000
 
+for i in range(stepsVtran):
+   timeStart=os.times()
+#    pointTrack=np.zeros(stepsImpctParMin_Rlarm)             
+   eVtran=maxVtran-stepVtran*i                                     # cm/sec
+   ro_larm=eVtran/omega_L                                          # cm
+   kinEnergy=m_elec*(eVtran**2+eVrmsLong**2)/2.                    # erg
+   for j in range(stepsImpctParMin_Rlarm):
+      impctParMin_Rlarm=maxImpctParMin_Rlarm-stepImpctParMin_Rlarm*j         # cm
+      minImpctPar=impctParMin_Rlarm*ro_larm                        # cm
+      alphaStep=stepAlpha*np.random.uniform(low=0.25,high=1.,size=1)
+      halfIntrcnLength=minImpctPar*math.tan(pi/2-alphaStep)        # cm
+      timePath=halfIntrcnLength/eVrmsLong
+      numbLarmor=int(timePath/T_larm)
+      if numbLarmor < minLarmorTurns:
+         numbLarmor=minLarmorTurns
+      timePoints=numbLarmor*stepsNumberOnGyro
+      pointTrack=np.zeros(timePoints)             
+#      timeStep=timePath/timePoints                                 # sec
+      if numbLarmor == minLarmorTurns:
+         halfIntrcnLength=timePoints*timeStep*eVrmsLong            # cm
+      print 'minImpctPar(mkm)=%e, rhoLarmour (mkm)=%e, halfIntrcnLength=%e, numbLarmor=%d' % \
+            (1.e+4*minImpctPar,1.e+4*ro_larm,1.e+4*halfIntrcnLength,numbLarmor)
+      matr_elec=solenoid_eMatrix(B_mag,timeStep)                   # matrix for electron for timeStep in magnetic field
+# To draw only first trajectory (for checking only):
+      if i == 0 and j == 0:
+         elecCoor=np.zeros((3,timePoints))                         # points of trajectory; cm
+# Current distance from origin of the coordinate system to electron along the trajectory; cm:
+      bCrrnt=np.zeros(timePoints)                                  # cm
+# Current log10 of two important ratios; dimensionless:
+      larmR_bCrrnt=np.zeros(timePoints)                            # ratio R_larmor/b
+      uPot_enrgKinCrrnt=np.zeros(timePoints)                       # ratio potential_energy/kinetic_energy
+      for m in range(6):
+          z_elecCrrnt[m]=0.                                        # Initial zero-vector for electron
+      z_elecCrrnt[Ix]=minImpctPar                                  # x, cm
+      z_elecCrrnt[Iz]=-halfIntrcnLength                            # z, cm
+      z_elecCrrnt[Ipy]=m_elec*eVtran                               # py, g*cm/sec
+      z_elecCrrnt[Ipz]=m_elec*eVrmsLong                            # pz, g*cm/sec
+#-----------------------------------------------
+# Main action - dragging of the current trajectory (for given i and j):
+#
+      for k in range(timePoints):
+ 	  z_elecCrrnt=matr_elec.dot(z_elecCrrnt)
+# To draw only first trajectory (for checking only):
+          if i==0 and j==0:
+             for ic in (Ix,Iy,Iz):
+                elecCoor[ic//2,pointTrack[j]]=z_elecCrrnt[ic] # cm
+# Current distance from origin of the coordinate system to electron along the trajectory; cm:
+ 	  bCrrnt[k]=np.sqrt(z_elecCrrnt[0]**2+z_elecCrrnt[2]**2+z_elecCrrnt[4]**2)
+# Current log10 of two important ratios:  
+	  larmR_bCrrnt[k]=math.log10(ro_larm/bCrrnt[k])            # dimensionless 
+	  uPot_enrgKinCrrnt[k]=math.log10((q_elec**2/bCrrnt[k])/kinEnergy)      # dimensionless   
+          pointTrack[j] += 1
+# End of gragging of the current trajectory	  
+#-----------------------------------------------
+      minLarmR_b[j]=min(larmR_bCrrnt)      
+      maxLarmR_b[j]=max(larmR_bCrrnt)
+#       print 'For j=%d larmR_bCrrnt: min=%e, max=%e' % (j,minLarmR_b[j],maxLarmR_b[j])      
+      minUpot_enrgKin[j]=min(uPot_enrgKinCrrnt)
+      maxUpot_enrgKin[j]=max(uPot_enrgKinCrrnt)
+#       print 'For j=%d upot_enrgKinCrrnt: min=%e, max=%e' % (j,minUpot_enrgKin[j],maxUpot_enrgKin[j])      
+      if i == 0 and j == 0: 
+# First definition of the total distance from origin of the coordinate system to electron along the trajectory; cm:
+ 	 b=bCrrnt
+# First definition of the total log10 of two important ratios; dimensionless:  
+	 larmR_b=larmR_bCrrnt                                     # dimensionless 
+	 uPot_enrgKin=uPot_enrgKinCrrnt                           # dimensionless 
+      else:  
+# Total distance from origin of the coordinate system to electron along the trajectory:
+ 	 b=np.concatenate((b,bCrrnt),axis=0)                      # cm
+# Total log10 of two important ratios; dimensionless :  
+	 larmR_b=np.concatenate((larmR_b,larmR_bCrrnt),axis=0)    # dimensionless               
+	 uPot_enrgKin=np.concatenate((uPot_enrgKin,uPot_enrgKinCrrnt),axis=0)          # cm
+      trackNumb=stepsImpctParMin_Rlarm*i+j 
+      endTracks[trackNumb]=begTracks[trackNumb]+pointTrack[j]     # index of the start of the current track     
+      print 'i=%d, j=%d: beg=%d, end=%d' % (i,j,begTracks[trackNumb],endTracks[trackNumb])# index of the end of current track
+      begTracks[trackNumb+1]=endTracks[trackNumb]+1      
+totalPoints=b.shape
+ySize=totalPoints[0]
+uPot_enrgKinSize=uPot_enrgKin.shape 
+xSize=uPot_enrgKinSize[0]     
+print 'totalPoints=ySize=%d, xSize=%d' % (ySize,xSize)
 
 #
-# Checking of trajectories:
+# Opening the output file: 
 #
-turns=10
-points=turns*stepsNumberOnGyro
+apprch1_file='apprch1_res.dat'
+print 'Open output file "%s"...' % apprch1_file
+apprch1_flag=0
+try:
+   outfile = open(apprch1_file,'w')
+   apprch1_flag=1
+except:
+   print 'Problem to open output file "%s"' % apprch1_file
+
+#
+# Writing the results to output file: 
+#
+nInLine=10
+xEntries=100   # xSize
+outfile.write ('\n        Ratio: eVca/Ekin ( x-Entries %d )\n\n' % xEntries)
+k=0
+for m in range(xEntries):   
+   valCrrnt=uPot_enrgKin[m]
+   strVal='{:f}'.format(valCrrnt)
+   if k == 0:
+      bLine=strVal
+   else:
+      bLine=bLine+', '+strVal
+   k += 1
+   if k == nInLine or m == xEntries-1:
+      outfile.write ('%s\n' % bLine)
+      k=0
+
+yEntries=100   # ySize
+outfile.write ('\n        Ratio: R_larmor/b ( y-Entries %d )\n\n' % yEntries)
+k=0
+for m in range(yEntries):  
+   valCrrnt=larmR_b[m]
+   strVal='{:f}'.format(valCrrnt)
+   if k == 0:
+      bLine=strVal
+   else:
+      bLine=bLine+', '+strVal
+   k += 1
+   if k == nInLine or m == yEntries-1:
+      outfile.write ('%s\n' % bLine)
+      k=0
+
+entries=xEntries*yEntries
+outfile.write ('\n        Approach1 Results:  deltaP ( Entries %d x %d )\n\n' % (xEntries,yEntries))
+k=0
+for m in range(entries):   
+   valCrrnt=larmR_b[m]
+   strVal='{:f}'.format(valCrrnt)
+   if k == 0:
+      bLine=strVal
+   else:
+      bLine=bLine+', '+strVal
+   k += 1
+   if k == nInLine or m == entries-1:
+      outfile.write ('%s\n' % bLine)
+      k=0
+outfile.close()
+
+#
+# Opening the input file: 
+#
+apprch1_file='apprch1_res.dat'
+print 'Open input file "%s"...' % apprch1_file
+apprch1_flag=0
+try:
+   inpfile = open(apprch1_file,'r')
+   apprch1_flag=1
+except:
+   print 'Problem to open input file "%s"' % apprch1_file
+
+#
+# Reading the results from input file: 
+#
+lines=0                                                            # Number of current line from input file   
+xLinesFull=0                                                       # Number of fully filled rows with x-Data
+yLinesFull=0                                                       # Number of fully filled rows with y-Data
+dataLinesFull=0                                                    # Number of fully filled rows with data
+yHeaderLineNumber=0                                                # Number of line with header for y-Data
+dataHeaderLineNumber=0                                             # Number of line with header for data
+xDataFlag=0                                                        # =1 when x-Data already read
+yDataFlag=0                                                        # =1 when y-Data already read 
+dataFlag=0                                                         # =1 when data already read
+xNumber=0                                                          # number of current value of x-Data
+yNumber=0                                                          # number of current value of y-Data
+dataNumber=0                                                       # number of current value of data
+lastDataLineNumber=0                                               # number of last line with data
+xData=[]                                                           # array of x-Data
+yData=[]                                                           # array of y-Data
+data=[]                                                            # array of data
+while True:
+   lineData=inpfile.readline()
+   if not lineData:
+      break
+   lines += 1
+#    print '%d: %s' % (lines,lineData)
+# Header for x-Data:
+   if lines == 2: 
+      words=lineData.split()
+      indx=words.index('x-Entries')
+      xEntries=int(words[indx+1])
+#       print 'x-Header from %d: words =%s, index=%d, xEntries=%d' % (lines,words,indx,xEntries)
+      xData=np.zeros(xEntries)
+      xLinesFull=xEntries//10
+      xEntriesRem=xEntries-10*xLinesFull
+      yHeaderLineNumber=xLinesFull+5
+      if xEntriesRem > 0:
+         yHeaderLineNumber += 1
+   if xDataFlag == 0:
+# x-Data:
+      if lines > 3 and lines <= yHeaderLineNumber-2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'x-Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+         for m in range(nWords):
+            wordCrrnt=words[m].split(",")
+            xData[xNumber]=float(wordCrrnt[0])
+	    xNumber += 1
+      if lines == yHeaderLineNumber-2:
+         xDataFlag=1   
+         print 'x-Data already read'  
+# Header for y-Data:
+   if lines == yHeaderLineNumber:
+      words=lineData.split()
+      indx=words.index('y-Entries')
+      yEntries=int(words[indx+1])
+#      print 'y-Header from  %d: words =%s, index=%d, yEntries=%d' % (lines,words,indx,yEntries)
+      yData=np.zeros(yEntries)
+      yLinesFull=yEntries//10
+      yEntriesRem=yEntries-10*yLinesFull
+      dataHeaderLineNumber=yHeaderLineNumber+yLinesFull+3
+      if yEntriesRem > 0:
+         dataHeaderLineNumber += 1
+   if xDataFlag == 1 and yDataFlag == 0:
+# y-Data:
+      if lines >  yHeaderLineNumber+1 and lines <= dataHeaderLineNumber-2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'y-Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+         for m in range(nWords):
+            wordCrrnt=words[m].split(",")
+            yData[yNumber]=float(wordCrrnt[0])
+	    yNumber += 1
+      if lines == dataHeaderLineNumber-2:
+         yDataFlag=1   
+         print 'y-Data already read'  
+# Header for data:
+   if lines == dataHeaderLineNumber:
+      words=lineData.split()
+      indx=words.index('Entries')
+      xEntries=int(words[indx+1])
+      yEntries=int(words[indx+3])
+      entries=xEntries*yEntries
+#       print 'data-Header from %d: words =%s, index=%d, xEntries=%d, yEntries=%d' % (lines,words,indx,xEntries,yEntries)
+      data=np.zeros(entries)
+      dataLinesFull=entries//10
+      dataEntriesRem=entries-10*dataLinesFull
+      lastDataLineNumber=dataHeaderLineNumber+1+dataLinesFull
+      if dataEntriesRem > 0:
+         lastDataLineNumber += 1
+# Data:
+   if yDataFlag == 1 and dataFlag == 0:    
+      if lines >  dataHeaderLineNumber+1 and lines <= lastDataLineNumber:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+         for m in range(nWords):
+            wordCrrnt=words[m].split(",")
+            data[dataNumber]=float(wordCrrnt[0])
+	    dataNumber += 1
+      if lines == lastDataLineNumber:
+         dataFlag=1   
+         print 'Data already read'  
+inpfile.close()
+# print 'x-Data, total=', (xData,xEntries)     
+# print 'y-Data, total=', (yData,yEntries)      
+# print 'data, total=', (data,entries)      
+print 'Length of x-Data =%d' % xEntries     
+print 'Length of y-Data =%d' % yEntries      
+	 
+         
+
+
+
+timeEnd=os.times()
+cpuTime=1.e+6*float(timeEnd[0])-1.e+6*float(timeStart[0])   # CPU time , mks
+print 'cpuTime = %e' % cpuTime
+#
+# Checking of the first trajectory:
+#
+turns=10                                                           # Number of larmorturns for drawing 
+points=turns*stepsNumberOnGyro                                     # Number of points for drawing
 
 fig10=plt.figure(10)
 ax10=fig10.gca(projection='3d')
-ax10.plot(1.e+4*elecCoor[0,0:points,0],1.e+4*elecCoor[1,0:points,0],1.e+4*elecCoor[2,0:points,0],'-r',linewidth=2)
-plt.xlabel('x, $\mu m$',color='m',fontsize=16)
-plt.xlabel('x, $\mu m$',color='m',fontsize=16)
-plt.title(('First %d Larmor Turns' % turns),color='m',fontsize=16)
-
-fig20=plt.figure(20)
-ax20=fig20.gca(projection='3d')
-ax20.plot(1.e+4*elecCoor[0,0:points,1],1.e+4*elecCoor[1,0:points,1],1.e+4*elecCoor[2,0:points,1],'-b',linewidth=2)
+ax10.plot(1.e+4*elecCoor[0,0:points],1.e+4*elecCoor[1,0:points],1.e+4*elecCoor[2,0:points],'-r',linewidth=2)
 plt.xlabel('x, $\mu m$',color='m',fontsize=16)
 plt.xlabel('x, $\mu m$',color='m',fontsize=16)
 plt.title(('First %d Larmor Turns' % turns),color='m',fontsize=16)
@@ -241,24 +505,25 @@ plt.title(('First %d Larmor Turns' % turns),color='m',fontsize=16)
 # 
 #
 #
-fig30=plt.figure(30)
-plt.plot(upot_enrgKin[0,0:pointTrack[0]],larmR_b[0,0:pointTrack[0]],'.r', \
-         upot_enrgKin[1,0:pointTrack[1]],larmR_b[1,0:pointTrack[1]],'.b',linewidth=2)
+'''
+for i in range(stepsVtran):
+   for j in range(stepsImpctParMin_Rlarm):
+      trackNumb=stepsImpctParMin_Rlarm*i+j 
+      if trackNumb < 10:
+         plt.figure(trackNumb)
+         plt.plot(uPot_enrgKin[begTracks[trackNumb]:endTracks[trackNumb]], \
+                       larmR_b[begTracks[trackNumb]:endTracks[trackNumb]],'.r')
+'''
+lastTrack=stepsImpctParMin_Rlarm*stepsVtran-1
+plt.figure(100)
+plt.plot(uPot_enrgKin[0:endTracks[lastTrack]],larmR_b[0:endTracks[lastTrack]],'.r')
 
-fig40=plt.figure(40)
-plt.plot(range(int(pointTrack[0])),upot_enrgKin[0,0:pointTrack[0]],'.r')
-
-
-fig50=plt.figure(50)
-plt.plot(range(int(pointTrack[1])),upot_enrgKin[0,0:pointTrack[1]],'.b')
-
-
-
-
+#
+# Checking of data from the output/input file:
+#
+plt.figure(110)
+plt.plot(xData,yData,'.r')
 
 plt.show()   
-
-
-
 
 sys.exit()
