@@ -32,7 +32,7 @@ from scipy.constants import proton_mass as mp
 from scipy.constants import Boltzmann as kB
 
 
-eVtoErg=1.602e-12                                                  # energy from eV to erg (from CI to CGS)
+eVtoErg=1.602e-12                # energy from eV to erg (from CI to CGS)
 # Indices:
 (Ix, Ipx, Iy, Ipy, Iz, Ipz) = range(6)
 
@@ -41,7 +41,7 @@ eVtoErg=1.602e-12                                                  # energy from
 #
 Z_ion = qe*2.997e+9                                                # charge of ion (proton), CGSE units of the charge
 M_ion = mp*1.e+3                                                   # mass of ion (proton), g
-q_elec = qe*2.997e+9                                               # charge of electron, CGSE units of the charge (without sign!)
+q_elec = qe*2.997e+9                                     # charge of electron, CGSE units of the charge (without sign!)
 m_elec = me*1.e+3                                                  # mass of electron, g
 
 B_mag=1.e+3                                                        # Gs
@@ -130,32 +130,152 @@ def solenoid_eMatrix(B_mag,deltaT):
     slndMtrx[Ipy,Ipx]=-sinPhi                                      # dimensionless
     return slndMtrx
 
-z_elecCrrnt=np.zeros(6)                                            # 6-vector for electron
+#
+# Calculation of the ranges for the ratio larmR_b=R_larmor/b and for the 
+# ratio eUpot_enrgKin=potential_energy/kinetic_energy of the electron
+# as functions on ratio impctParMin_Rlarm=min_impact_parameter/R_larmor and 
+#
+minAlpha=-pi/2
+maxAlpha=pi/2
 
+stepsAlpha=100
+stepAlpha=(maxAlpha-minAlpha)/stepsAlpha
+
+minImpctParMin_Rlarm=1.1                                           # dimensionless
+maxImpctParMin_Rlarm=5                                             # dimensionless
+stepsImpctParMin_Rlarm=2
+stepImpctParMin_Rlarm=(maxImpctParMin_Rlarm-minImpctParMin_Rlarm)/(stepsImpctParMin_Rlarm-1)    # dimensionless
+
+minVlong=.1*eVrmsLong                                              # cm/sec
+maxVlong=5.*eVrmsLong                                              # cm/sec
+stepsVlong=100
+stepVlong=(maxVlong-minVlong)/(stepsVlong-1)                       # cm/sec
+
+minVtran=.1*eVrmsTran                                              # cm/sec
+maxVtran=5.*eVrmsTran                                              # cm/sec
+stepsVtran=2
+stepVtran=(maxVtran-minVtran)/(stepsVtran-1)                       # cm/sec
+
+z_elecCrrnt=np.zeros(6)                                            # 6-vector for electron
+begTracks=np.zeros(stepsVtran*stepsImpctParMin_Rlarm+1)
+endTracks=np.zeros(stepsVtran*stepsImpctParMin_Rlarm)
+minLarmR_b=np.zeros(stepsImpctParMin_Rlarm)                        # dimensionless     
+maxLarmR_b=np.zeros(stepsImpctParMin_Rlarm)                        # dimensionless
+minUpot_enrgKin=np.zeros(stepsImpctParMin_Rlarm)                   # dimensionless      
+maxUpot_enrgKin=np.zeros(stepsImpctParMin_Rlarm)                   # dimensionless      
+'''
+#========================== Obsoleted (begin) ===========================
+#
+# Case: the same transversal (eVrmsTran) and different longidudinal velocities: 
+#
+for i in range(1):    # stepsVlong):
+   eVlong=maxVlong-stepVlong*i                                     # cm/sec
+   kinEnergy=m_elec*(eVrmsTran**2+eVlong**2)/2.                    # erg
+   for j in range(stepsImpctParMin_Rlarm):
+      impctParMin_Rlarm=maxImpctParMin_Rlarm-stepImpctParMin_Rlarm*j         # dimensionless
+      minImpctPar=impctParMin_Rlarm*ro_larmRMS                     # cm
+      halfIntrcnLength=minImpctPar*math.tan(pi/2-stepAlpha)        # cm
+      timePath=halfIntrcnLength/eVlong
+      numbLarmor=int(timePath/T_larm)
+      timePoints=numbLarmor*stepsNumberOnGyro
+      timestep=timePath/timePoints                                 # sec
+      matr_elec=solenoid_eMatrix(B_mag,timeStep)       # matrix for electron for half of the time step (magnetic field)
+      print 'minImpctPar(mkm)=%e, halfIntrcnLength=%e, timePath(sec)=%e,  numbLarmor=%d, timePoints=%d, timestep=%e' % \
+            (1.e+4*minImpctPar,1.e+4*halfIntrcnLength,timePath,numbLarmor,timePoints,timestep)
+      matr_elec=solenoid_eMatrix(B_mag,timeStep)                   # matrix for electron for time step (magnetic field)
+      if j == 0:
+         elecCoor=np.zeros((3,timePoints,2))                       # points of trajectory; cm
+# Distance from origin of the coordinate system to electron along the trajectory; cm:
+         b=np.zeros((stepsImpctParMin_Rlarm,timePoints))           # cm
+# log10 of two important ratios; dimensionless:
+         larmR_b=np.zeros((stepsImpctParMin_Rlarm,timePoints))     # ratio R_larmor/b
+         upot_enrgKin=np.zeros((stepsImpctParMin_Rlarm,timePoints))          # ratio potential_energy/kinetic_energy
+      for m in range(6):
+          z_elecCrrnt[m]=0.                                        # Initial zero-vector for electron
+      z_elecCrrnt[Ix]=minImpctPar                                  # x, cm
+      z_elecCrrnt[Iz]=-halfIntrcnLength                            # z, cm
+      z_elecCrrnt[Ipy]=m_elec*eVrmsTran                            # py, g*cm/sec
+      z_elecCrrnt[Ipz]=m_elec*eVlong                               # pz, g*cm/sec
+      for k in range(timePoints):
+ 	  z_elecCrrnt=matr_elec.dot(z_elecCrrnt)
+          for ic in (Ix,Iy,Iz):
+             elecCoor[ic//2,pointTrack[j],j]=z_elecCrrnt[ic]            # cm
+# Distance from origin of the coordinate system to electron along the trajectory; cm:
+ 	  b[j,k]=np.sqrt(elecCoor[0,pointTrack[j],j]**2+elecCoor[1,pointTrack[j],j]**2+elecCoor[2,pointTrack[j],j]**2)
+# log10 of two important ratios; dimensionless:
+	  larmR_b[j,k]=math.log10(ro_larmRMS/b[j,k])               # dimensionless 
+	  upot_enrgKin[j,k]=math.log10((q_elec**2/b[j,k])/kinEnergy)         # dimensionless   
+          pointTrack[j] += 1
+      minLarmR_b[j]=min(larmR_b[j,:])      
+      maxLarmR_b[j]=max(larmR_b[j,:])
+      print 'For j=%d larmR_b: min=%e, max=%e' % (j,minLarmR_b[j],maxLarmR_b[j])      
+      minUpot_enrgKin[j]=min(upot_enrgKin[j,:])
+      maxUpot_enrgKin[j]=max(upot_enrgKin[j,:])
+      print 'For j=%d upot_enrgKin: min=%e, max=%e' % (j,minUpot_enrgKin[j],maxUpot_enrgKin[j])      
+#========================== Obsoleted (end) ===========================
+'''
 #===============================================================================
 #
 # Case: the same longidudinal (eVrmsLong) and different transversal velocities: 
 #
 
-rhoMin=1.e-4                                                       # R_crit=1 mkm; cm
-rShield=100.e-4                                                    # max value of the R_shield=50 mkm; cm
-rhoMax=rShield                                                     # cm
-stepsRho=5                                                         # 33
-stepRho=(rhoMax-rhoMin)/(stepsRho-1)                               # cm
+'''
+#
+# To define the range for b (distance to the origin of coordinates):
+#
+roMin=1.e+8
+roMax=0.
+roLarmMin=1.e+8
+roLarmMax=0.
+halfIntrcnLengthMax=0.
+timeStart=os.times()
+for i in range(stepsVtran):
+#    pointTrack=np.zeros(stepsImpctParMin_Rlarm)             
+   eVtran=maxVtran-stepVtran*i                                     # cm/sec
+   ro_larm=eVtran/omega_L                                          # cm
+   if roLarmMin > ro_larm:
+      roLarmMin=ro_larm
+   if roLarmMax < ro_larm:
+      roLarmMax=ro_larm	 
+   kinEnergy=m_elec*(eVtran**2+eVrmsLong**2)/2.                    # erg
+   for j in range(stepsImpctParMin_Rlarm):
+      impctParMin_Rlarm=maxImpctParMin_Rlarm-stepImpctParMin_Rlarm*j         # dimensionless
+      impctPar=impctParMin_Rlarm*ro_larm                        # cm
+      if roMin > impctPar:
+         roMin=impctPar
+      if roMax < impctPar:
+         roMax=impctPar	 
+      halfIntrcnLength=impctPar*math.tan(pi/2-.25*stepAlpha)    # cm
+      timePath=halfIntrcnLength/eVrmsLong
+      numbLarmor=int(timePath/T_larm)
+#       print 'impctPar(mkm)=%e, rhoLarmour (mkm)=%e, halfIntrcnLength=%e, numbLarmor=%d' % \
+#             (1.e+4*impctPar,1.e+4*ro_larm,1.e+4*halfIntrcnLength,numbLarmor)
+      if halfIntrcnLengthMax < halfIntrcnLength:
+         halfIntrcnLengthMax=halfIntrcnLength
+print 'roMin=%e, roMax=%e, roLarmMin=%e, roLarmMax=%e, halfIntrcnLengthMax=%e (all sizes in mkm)' % \
+      (1.e+4*roMin,1.e+4*roMax,1.e+4*roLarmMin,1.e+4*roLarmMax,1.e+4*halfIntrcnLengthMax)
+timeEnd=os.times()
+cpuTime=1.e+6*float(timeEnd[0])-1.e+6*float(timeStart[0])   # CPU time , mks
+print 'cpuTime = %e' % cpuTime
 
-stepsVtran=5                                                       # 33
+sys.exit()
+'''
+#
+# Results of the commented above block:
+#
+roMin=2.623566e-4                                                  # cm
+roMax=5.962650e-2                                                  # cm
+roLarmMin=2.385060e-4                                              # cm
+roLarmMax=1.192530e-2                                              # cm
+halfIntrcnLengthMax=7.591726e+0                                    # cm
 
-pointTrack=np.zeros((stepsVtran-1)*(stepsRho-1))  
-larmorNumber=np.zeros((stepsVtran-1)*(stepsRho-1))
-# minLarmR_b=np.zeros(stepsRho)                                      # dimensionless     
-# maxLarmR_b=np.zeros(stepsRho)                                      # dimensionless
-# minUpot_enrgKin=np.zeros(stepsRho)                                 # dimensionless      
-# maxUpot_enrgKin=np.zeros(stepsRho)                                 # dimensionless      
+print 'roMin=%e, roMax=%e, roLarmMin=%e, roLarmMax=%e, halfIntrcnLengthMax=%e (all sizes in mkm)' % \
+      (1.e+4*roMin,1.e+4*roMax,1.e+4*roLarmMin,1.e+4*roLarmMax,1.e+4*halfIntrcnLengthMax)
 
-bMin=rhoMin                                                        # cm
-bMax=2*rhoMax                                                      # cm (In case with L_int=R_shield sqrt(2) instead 2 is  needed)
+bMin=roMin-roLarmMin                                               # cm
+bMax=.5*np.sqrt(roMax**2+halfIntrcnLengthMax**2)+roLarmMax            # cm
 
-nTotal=500
+nTotal=2000
 bEdges=np.zeros(nTotal+1)
 bStep=(bMax-bMin)/nTotal                                           # cm
 
@@ -170,61 +290,51 @@ print 'bEdges[0]=%e, bEdges[nTotal]=%e (all sizes in mkm)' % (1.e+4*bEdges[0],1.
 # All data will be placed in nTotal bins (for range of impact parameters):
 #
 bTot=np.zeros(nTotal)                                              # cm
-larmR_bTot=np.zeros(nTotal)                                        # ratio R_larmor/b; dimensionless
-uPot_enrgKinTot=np.zeros(nTotal)                                   # ratio eVca/Ekin; dimensionless
+larmR_bTot=np.zeros(nTotal)                                        # ratio R_larmor/b
+uPot_enrgKinTot=np.zeros(nTotal)                                   # ratio eVca/Ekin
 population=np.zeros(nTotal)                                        # number of data in each bin
-momChange_1=np.zeros((3,nTotal))                                   # transfered momentum (approach 1); g*cm/sec
-momChange_2=np.zeros((3,nTotal))                                   # transfered momentum (approach 2); g*cm/sec
-momChange_3=np.zeros((3,nTotal))                                   # transfered momentum (approach 3); g*cm/sec
 
-'''
-minRhoLarm=1.e+8
-maxRhoLarm=0.
-
-minHalfLintr=1.e+8
-maxHalfLintr=0.
-
-minNumbLarm=100000000
-maxNumbLarm=0
-'''
-
+minLarmorTurns=5000
 mPrev=0
 bPrev=0.
-sumPoints=0
-timeStart=os.times()
-max_bCrrnt=0
-
-matr_elec=solenoid_eMatrix(B_mag,timeStep)                         # matrix for electron for timeStep in magnetic field
-for j in range(1,stepsRho):
-   rhoCrrnt=rhoMin+stepRho*j                                       # cm
-   eVtranMax=(rhoCrrnt-rhoCrit)*omega_L                            # cm/sec
-   stepVtran=eVtranMax/(stepsVtran-1)                              # cm/sec
-   for i in range(1,stepsVtran):                                   # 
-      trackNumb=(stepsVtran-1)*(j-1)+(i-1)                         # Tracks are enumerated from 0!     
-      eVtran=stepVtran*i                                           # cm/sec
-      rho_larm=eVtran/omega_L                                      # cm
-      kinEnergy=m_elec*(eVtran**2+eVrmsLong**2)/2.                 # erg
-      halfLintr=np.sqrt(rShield**2+rhoCrrnt**2)                    # cm
-      timePath=halfLintr/eVrmsLong                                 # sec
+for i in range(stepsVtran):
+   timeStart=os.times()
+#    pointTrack=np.zeros(stepsImpctParMin_Rlarm)             
+   eVtran=maxVtran-stepVtran*i                                     # cm/sec
+   ro_larm=eVtran/omega_L                                          # cm
+   kinEnergy=m_elec*(eVtran**2+eVrmsLong**2)/2.                    # erg
+   for j in range(stepsImpctParMin_Rlarm):
+      impctParMin_Rlarm=maxImpctParMin_Rlarm-stepImpctParMin_Rlarm*j         # cm
+      minImpctPar=impctParMin_Rlarm*ro_larm                        # cm
+      alphaStep=stepAlpha*np.random.uniform(low=0.25,high=1.,size=1)
+      halfIntrcnLength=minImpctPar*math.tan(pi/2-alphaStep)        # cm
+#      halfIntrcnLength=50.e-4                                      # cm
+      timePath=halfIntrcnLength/eVrmsLong
       numbLarmor=int(timePath/T_larm)
-      larmorNumber[trackNumb]=numbLarmor
-      timePoints=int(numbLarmor*stepsNumberOnGyro)
+      numbLarmorCalc=numbLarmor
+      if numbLarmorCalc < minLarmorTurns:
+         numbLarmorCalc=minLarmorTurns
+      timePoints=numbLarmor*stepsNumberOnGyro
+      timePoints=int(timePath/timeStep)
+      pointTrack=np.zeros(timePoints)             
+#      timeStep=timePath/timePoints                                 # sec
+      if numbLarmorCalc == minLarmorTurns:
+         halfIntrcnLength=timePoints*timeStep*eVrmsLong            # cm
+      print 'minImpctPar(mkm)=%e, rhoLarmour (mkm)=%e, halfIntrcnLength (mkm)=%e, numbLarmor=%d (calculated %d)' % \
+            (1.e+4*minImpctPar,1.e+4*ro_larm,1.e+4*halfIntrcnLength,numbLarmor,numbLarmorCalc)
+      matr_elec=solenoid_eMatrix(B_mag,timeStep)                   # matrix for electron for timeStep in magnetic field
 # To draw only first trajectory (for checking only):
-      if i == 1 and j == 1:
-	 rhoFirstTurn=rhoCrrnt
-	 rhoLarmorFirstTurn=rho_larm
-# Points of the first trajectory (x,y,z for first index=0,1,2 and b for first index=3; cm):
-         elecCoor=np.zeros((4,timePoints))                    
-# Current distance from origin of the coordinate system to electron along the trajectory; cm
+      if i == 0 and j == 0:
+         elecCoor=np.zeros((4,timePoints))                         # points of trajectory; cm
+# Current distance from origin of the coordinate system to electron along the trajectory; cm:
       bCrrnt=np.zeros(timePoints)                                  # cm
 # Current log10 of two important ratios; dimensionless:
-      larmR_bCrrnt=np.zeros(timePoints)                            # ratio R_larmor/b; dimensionless
-      uPot_enrgKinCrrnt=np.zeros(timePoints)                       # ratio potential_energy/kinetic_energy; dimensionless
-      coeffApprch_1=np.zeros((3,timePoints))                       # 1/cm^2; deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|
-      for m in range(6): 
-         z_elecCrrnt[m]=0.                                         # Initial zero-vector for electron
-      z_elecCrrnt[Ix]=rhoCrrnt                                     # x, cm
-      z_elecCrrnt[Iz]=-halfLintr                                   # z, cm
+      larmR_bCrrnt=np.zeros(timePoints)                            # ratio R_larmor/b
+      uPot_enrgKinCrrnt=np.zeros(timePoints)                       # ratio potential_energy/kinetic_energy
+      for m in range(6):
+          z_elecCrrnt[m]=0.                                        # Initial zero-vector for electron
+      z_elecCrrnt[Ix]=minImpctPar                                  # x, cm
+      z_elecCrrnt[Iz]=-halfIntrcnLength                            # z, cm
       z_elecCrrnt[Ipy]=-m_elec*eVtran                              # py, g*cm/sec
       z_elecCrrnt[Ipz]=m_elec*eVrmsLong                            # pz, g*cm/sec
 #-----------------------------------------------
@@ -234,19 +344,14 @@ for j in range(1,stepsRho):
  	 z_elecCrrnt=matr_elec.dot(z_elecCrrnt)
 # Current distance from origin of the coordinate system to electron along the trajectory; cm:
  	 bCrrnt[k]=np.sqrt(z_elecCrrnt[0]**2+z_elecCrrnt[2]**2+z_elecCrrnt[4]**2)
-	 if max_bCrrnt < bCrrnt[k]:
-	    max_bCrrnt=bCrrnt[k]
 # Current log10 of two important ratios:  
-	 larmR_bCrrnt[k]=math.log10(rho_larm/bCrrnt[k])            # dimensionless 
-	 uPot_enrgKinCrrnt[k]=math.log10((q_elec**2/bCrrnt[k])/kinEnergy)            # dimensionless 
-# Current values to calculate deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|:  
-         for ic in range(3):
-	    coeffApprch_1[ic,k]= abs(z_elecCrrnt[2*ic])/ bCrrnt[k]**2                # 1/cm^2;  
+	 larmR_bCrrnt[k]=math.log10(ro_larm/bCrrnt[k])             # dimensionless 
+	 uPot_enrgKinCrrnt[k]=math.log10((q_elec**2/bCrrnt[k])/kinEnergy)      # dimensionless   
 # To draw only first trajectory (for checking only):
-         if i==1 and j==1:
+         if i==0 and j==0:
             for ic in (Ix,Iy,Iz):
-               elecCoor[ic//2,pointTrack[trackNumb]]=z_elecCrrnt[ic]                 # cm
-	       elecCoor[3,pointTrack[trackNumb]]=bCrrnt[k]         # cm
+               elecCoor[ic//2,pointTrack[j]]=z_elecCrrnt[ic]       # cm
+	       elecCoor[3,pointTrack[j]]=bCrrnt[k]                 # cm
 #++++++++++++++++++++++++++++++++++
 # "Depopulating":
 #
@@ -270,52 +375,51 @@ for j in range(1,stepsRho):
 		  uPot_enrgKinTot[m]=uPot_enrgKinCrrnt[k]
 	          mPrev=m
 	          bPrev=bCrrnt[k]
-		  depopFlag=1
 	       population[m] += 1
 	       break
 #++++++++++++++++++++++++++++++++++
 #  	 print 'i=%d, j=%d, k=%d: bPrev=%e (m=%d), bCrrnt=%e, x=%e, y=%e, z=%e' % \
 #  	       (i,j,k,1.e+4*bPrev,mPrev,1.e+4*bCrrnt[k],1.e+4*z_elecCrrnt[0],1.e+4*z_elecCrrnt[2],1.e+4*z_elecCrrnt[4])       
-         pointTrack[trackNumb] += 1
+         pointTrack[j] += 1
 # End of gragging of the current trajectory	  
 #-----------------------------------------------
-      if i == 1 and j == 1: 
+      minLarmR_b[j]=min(larmR_bCrrnt)      
+      maxLarmR_b[j]=max(larmR_bCrrnt)
+#       print 'For j=%d larmR_bCrrnt: min=%e, max=%e' % (j,minLarmR_b[j],maxLarmR_b[j])      
+      minUpot_enrgKin[j]=min(uPot_enrgKinCrrnt)
+      maxUpot_enrgKin[j]=max(uPot_enrgKinCrrnt)
+#       print 'For j=%d upot_enrgKinCrrnt: min=%e, max=%e' % (j,minUpot_enrgKin[j],maxUpot_enrgKin[j])      
+#========================== Obsoleted (begin) ===========================
+      if i == 0 and j == 0: 
 # First definition of the total distance from origin of the coordinate system to electron along the trajectory; cm:
  	 b=bCrrnt
 # First definition of the total log10 of two important ratios; dimensionless:  
-	 larmR_b=larmR_bCrrnt                                      # dimensionless 
-	 uPot_enrgKin=uPot_enrgKinCrrnt                            # dimensionless 
-# First definition of the values to calculate deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|:
-####         for ic in range(3):
-####            for k in range(timePoints):
-####	       apprch_1[ic,k]=coeffApprch_1[ic,k]                     # 1/cm^2;  
+	 larmR_b=larmR_bCrrnt                                     # dimensionless 
+	 uPot_enrgKin=uPot_enrgKinCrrnt                           # dimensionless 
       else:  
 # Total distance from origin of the coordinate system to electron along the trajectory:
- 	 b=np.concatenate((b,bCrrnt),axis=0)                       # cm
+ 	 b=np.concatenate((b,bCrrnt),axis=0)                      # cm
 # Total log10 of two important ratios; dimensionless :  
-	 larmR_b=np.concatenate((larmR_b,larmR_bCrrnt),axis=0)                  
-	 uPot_enrgKin=np.concatenate((uPot_enrgKin,uPot_enrgKinCrrnt),axis=0)        
-# Total values to calculate deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|:
-####         for ic in range(3):
-####	    apprch_1[ic,:]=np.concatenate((apprch_1[ic,:],coeffApprch_1[ic,:]),axis=0)      # 1/cm^2;  
-      lastTrackNumber=trackNumb+1                                  # quantity of tracks = trackNumber + 1     
-      sumPoints += pointTrack[trackNumb]
+	 larmR_b=np.concatenate((larmR_b,larmR_bCrrnt),axis=0)    # dimensionless               
+	 uPot_enrgKin=np.concatenate((uPot_enrgKin,uPot_enrgKinCrrnt),axis=0)          # cm
+#========================== Obsoleted (end) ===========================
+      trackNumb=stepsImpctParMin_Rlarm*i+j 
+      endTracks[trackNumb]=begTracks[trackNumb]+pointTrack[j]     # index of the start of the current track     
+      print 'i=%d, j=%d: beg=%d, end=%d' % (i,j,begTracks[trackNumb],endTracks[trackNumb])# index of the end of current track
+      begTracks[trackNumb+1]=endTracks[trackNumb]+1      
 bTotalPoints=b.shape
 bDataSize=bTotalPoints[0]
 print 'totalPoints: bDataSize=%d' % bDataSize
-print 'For %d tracks number of points is %d' % (lastTrackNumber,sumPoints)
-# print 'larmorNumber: ', larmorNumber
-# print 'pointTrack: ', pointTrack
-
 
 nonZeroRslts=0
 for m in range(nTotal):
    if population[m] != 0:
       nonZeroRslts += 1
+#       print '%d: left=%e, value(mkm)=%e (%d), right=%e' % (m,1.e+4*bEdges[m],1.e+4*bTot[m],population[m],1.e+4*bEdges[m+1])
+print 'Summa of population=%d; nonZeroRslts=%d' % (sum(population),nonZeroRslts)
 
 timeEnd=os.times()
-cpuTime=1.e+6*float(timeEnd[0])-1.e+6*float(timeStart[0])          # CPU time , mks
-print 'Summa of population=%d; nonZeroRslts=%d' % (sum(population),nonZeroRslts)
+cpuTime=1.e+6*float(timeEnd[0])-1.e+6*float(timeStart[0])   # CPU time , mks
 print 'cpuTime(mksec) = %e' % cpuTime
 
 #
@@ -330,9 +434,7 @@ ax10=fig10.gca(projection='3d')
 ax10.plot(1.e+4*elecCoor[0,0:points],1.e+4*elecCoor[1,0:points],1.e+4*elecCoor[2,0:points],'-r',linewidth=2)
 plt.xlabel('x, $\mu m$',color='m',fontsize=16)
 plt.ylabel('y, $\mu m$',color='m',fontsize=16)
-ax10.set_zlabel('z, $\mu m$',color='m',fontsize=16)
-plt.title(('First %d Larmor Turns of the First Trajectory:\nImpact Parameter=%6.3f $\mu$m, $R_L$=%6.3f $\mu$m' \
-           % (turns,1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
+plt.title(('First %d Larmor Turns of the First Trajectory' % turns),color='m',fontsize=16)
 
 fig20=plt.figure(20)
 ax20=fig20.gca(projection='3d')
@@ -340,26 +442,23 @@ ax20.plot(1.e+4*elecCoor[0,pointsTot-points:pointsTot],1.e+4*elecCoor[1,pointsTo
           1.e+4*elecCoor[2,pointsTot-points:pointsTot],'-r',linewidth=2)
 plt.xlabel('x, $\mu m$',color='m',fontsize=16)
 plt.ylabel('y, $\mu m$',color='m',fontsize=16)
-ax20.set_zlabel('z, $\mu m$',color='m',fontsize=16)
-plt.title(('First %d Larmor Turns of the First Trajectory:\nImpact Parameter=%6.3f $\mu$m, $R_L$=%6.3f $\mu$m' \
-           % (turns,1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
+plt.title(('Last %d Larmor Turns of the First Trajectory' % turns),color='m',fontsize=16)
 
 # plt.show()   
 
+
 plt.figure(30)
-plt.plot(range(pointsTot),1.e4*elecCoor[2,0:pointsTot],'-r',linewidth=2)
+plt.plot(range(pointsTot),10*elecCoor[2,0:pointsTot],'-r',linewidth=2)
 plt.xlabel('Points',color='m',fontsize=16)
-plt.ylabel('z, $\mu$m',color='m',fontsize=16)
-plt.title(('First Trajectory: Impact Parameter=%6.3f $\mu$m, $R_L$=%6.3f $\mu$m' % \
-           (1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
+plt.ylabel('z, mm',color='m',fontsize=16)
+plt.title('First Trajectory',color='m',fontsize=16)
 plt.grid(True)
 
 plt.figure(40)
-plt.plot(1.e4*elecCoor[2,0:pointsTot],1.e4*elecCoor[3,0:pointsTot],'-r',linewidth=2)
-plt.xlabel('z, $\mu$m',color='m',fontsize=16)
-plt.ylabel('Distance from Motionless Ion, $\mu$m',color='m',fontsize=16)
-plt.title(('First Trajectory: Impact Parameter=%6.3f $\mu$m, $R_L$=%6.3f $\mu$m' % \
-           (1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
+plt.plot(10*elecCoor[2,0:pointsTot],10*elecCoor[3,0:pointsTot],'-r',linewidth=2)
+plt.xlabel('z, mm',color='m',fontsize=16)
+plt.ylabel('Distance from Motionless Ion, mm',color='m',fontsize=16)
+plt.title('First Trajectory',color='m',fontsize=16)
 plt.grid(True)
 
 plt.show()   
@@ -384,113 +483,90 @@ except:
 nInLine=10
 totEntries=nonZeroRslts
 
-outfile.write ('\n     Distance from Motionless Ion, mkm ( Entries %d )\n\n' % totEntries)
-
+outfile.write ('\n     Distance from Motionless Ion, mm ( Entries %d )\n\n' % totEntries)
 k=0
-for m in range(nTotal): 
-   if population[m] != 0:  
-      valCrrnt=1.e+4*bTot[m]
-      strVal='{:f}'.format(valCrrnt)
-      if k == 0:
-         bLine=strVal
-      else:
-         bLine=bLine+', '+strVal
-      k += 1
-      if k == nInLine:
-         outfile.write ('%s\n' % bLine)
-         k=0
-if k != 0:
-   outfile.write ('%s\n' % bLine)
+for m in range(totEntries):   
+   valCrrnt=1.e+3*bTot[m]
+   strVal='{:f}'.format(valCrrnt)
+   if k == 0:
+      bLine=strVal
+   else:
+      bLine=bLine+', '+strVal
+   k += 1
+   if k == nInLine or m == totEntries-1:
+      outfile.write ('%s\n' % bLine)
+      k=0
+
 
 outfile.write ('\n             Population ( Entries %d )\n\n' % totEntries)
-
 k=0
-for m in range(nTotal):   
-   if population[m] != 0:  
-      valCrrnt=int(population[m])
-      strVal='{:d}'.format(valCrrnt)
-      if k == 0:
-         bLine=strVal
-      else:
-         bLine=bLine+', '+strVal
-      k += 1
-      if k == nInLine:
-         outfile.write ('%s\n' % bLine)
-         k=0
-if k != 0:
-   outfile.write ('%s\n' % bLine)
+for m in range(totEntries):   
+   valCrrnt=int(population[m])
+   strVal='{:d}'.format(valCrrnt)
+   if k == 0:
+      bLine=strVal
+   else:
+      bLine=bLine+', '+strVal
+   k += 1
+   if k == nInLine or m == totEntries-1:
+      outfile.write ('%s\n' % bLine)
+      k=0
 
 outfile.write ('\n      Log10 of Ratio eVca/Ekin ( Entries %d )\n\n' % totEntries)
-
 k=0
-for m in range(nTotal):   
-   if population[m] != 0:  
-      valCrrnt=uPot_enrgKinTot[m]
-      strVal='{:f}'.format(valCrrnt)
-      if k == 0:
-         bLine=strVal
-      else:
-         bLine=bLine+', '+strVal
-      k += 1
-      if k == nInLine:
-         outfile.write ('%s\n' % bLine)
-         k=0
-if k != 0:
-   outfile.write ('%s\n' % bLine)
+for m in range(totEntries):   
+   valCrrnt=uPot_enrgKinTot[m]
+   strVal='{:f}'.format(valCrrnt)
+   if k == 0:
+      bLine=strVal
+   else:
+      bLine=bLine+', '+strVal
+   k += 1
+   if k == nInLine or m == totEntries-1:
+      outfile.write ('%s\n' % bLine)
+      k=0
 
 outfile.write ('\n       Log10 of Ratio R_larmor/b ( Entries %d )\n\n' % totEntries)
-
 k=0
-for m in range(nTotal):  
-   if population[m] != 0:  
-      valCrrnt=larmR_bTot[m]
-      strVal='{:f}'.format(valCrrnt)
-      if k == 0:
-         bLine=strVal
-      else:
-         bLine=bLine+', '+strVal
-      k += 1
-      if k == nInLine:
-         outfile.write ('%s\n' % bLine)
-         k=0
-if k != 0:
-   outfile.write ('%s\n' % bLine)
+for m in range(totEntries):  
+   valCrrnt=larmR_bTot[m]
+   strVal='{:f}'.format(valCrrnt)
+   if k == 0:
+      bLine=strVal
+   else:
+      bLine=bLine+', '+strVal
+   k += 1
+   if k == nInLine or m == totEntries-1:
+      outfile.write ('%s\n' % bLine)
+      k=0
 
 outfile.write ('\n        Approach1 Results:  deltaP ( Entries %d )\n\n' % totEntries)
-
 k=0
-for m in range(nTotal):   
-   if population[m] != 0:  
-      valCrrnt=larmR_b[m]
-      strVal='{:f}'.format(valCrrnt)
-      if k == 0:
-         bLine=strVal
-      else:
-         bLine=bLine+', '+strVal
-      k += 1
-      if k == nInLine:
-         outfile.write ('%s\n' % bLine)
-         k=0
-if k != 0:
-   outfile.write ('%s\n' % bLine)
+for m in range(totEntries):   
+   valCrrnt=larmR_b[m]
+   strVal='{:f}'.format(valCrrnt)
+   if k == 0:
+      bLine=strVal
+   else:
+      bLine=bLine+', '+strVal
+   k += 1
+   if k == nInLine or m == totEntries-1:
+      outfile.write ('%s\n' % bLine)
+      k=0
 
-outfile.write ('\n   Edges of the Bins, mkm ( Entries %d )\n\n' % totEntries)
-
+outfile.write ('\n   Edges of the Bins, mm ( Entries %d )\n\n' % totEntries)
 k=0
-for m in range(nTotal):   
-   if population[m] != 0:  
-      valCrrnt=1.e+4*bEdges[m]
-      strVal='{:f}'.format(valCrrnt)
-      if k == 0:
-         bLine=strVal
-      else:
-         bLine=bLine+', '+strVal
-      k += 1
-      if k == nInLine:
-         outfile.write ('%s\n' % bLine)
-         k=0
-if k != 0:
-   outfile.write ('%s\n' % bLine)
+for m in range(totEntries+1):   
+   valCrrnt=1.e+3*bEdges[m]
+   strVal='{:f}'.format(valCrrnt)
+   if k == 0:
+      bLine=strVal
+   else:
+      bLine=bLine+', '+strVal
+   k += 1
+   if k == nInLine or m == totEntries-1:
+      outfile.write ('%s\n' % bLine)
+      k=0
 
 outfile.close()
 print 'Close the writtenn output file "%s"...' % apprch1_file
@@ -539,6 +615,7 @@ while True:
    if not lineData:
       break
    lines += 1
+#    print '%d: %s' % (lines,lineData)
 # Header for distance-Data:
    if lines == 2: 
       words=lineData.split()
@@ -586,6 +663,7 @@ while True:
          for m in range(nWords):
             wordCrrnt=words[m].split(",")
             poplData[dataNumber]=int(wordCrrnt[0])
+#            print 'poplData(%d)=%d' % (dataNumber,poplData[dataNumber])
 	    dataNumber += 1
       if lines == xHeaderLineNumber-2:
          poplDataFlag=1   
@@ -678,18 +756,32 @@ timeEnd=os.times()
 cpuTime=1.e+6*float(timeEnd[0])-1.e+6*float(timeStart[0])   # CPU time , mks
 print 'cpuTime = %e' % cpuTime
 
+# 
+#
+#
+'''
+for i in range(stepsVtran):
+   for j in range(stepsImpctParMin_Rlarm):
+      trackNumb=stepsImpctParMin_Rlarm*i+j 
+      if trackNumb < 10:
+         plt.figure(trackNumb)
+         plt.plot(uPot_enrgKin[begTracks[trackNumb]:endTracks[trackNumb]], \
+                       larmR_b[begTracks[trackNumb]:endTracks[trackNumb]],'.r')
+lastTrack=stepsImpctParMin_Rlarm*stepsVtran-1
+plt.figure(100)
+plt.plot(uPot_enrgKin[0:endTracks[lastTrack]],larmR_b[0:endTracks[lastTrack]],'.r')
+
+plt.show()   
+'''
+
 #
 # Checking of writing/reading data from the output file:
 #
 flagError=0
-k=0
-for m in range(nTotal):
-   if population[m] != 0:
-      if population[m] != poplData[k]:
-#         print 'm=%d, k=%d: out=%d, inp=%d ==> delta=%d' % (m,k,population[m],poplData[k],population[m]-poplData[k])
-         flagError=1  
-      k +=1
+for m in range(entries):
+   if population[m] != poplData[m]:
+      print '%d: out=%d, inp=%d ==> delta=%d' % (m,population[m],poplData[m],population[m]-poplData[m])
+      flagError=1  
 if flagError==0:
    print 'No writing/reading errors'
-
 sys.exit()
