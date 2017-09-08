@@ -165,17 +165,6 @@ for i in range(nTotal+1):
    bEdges[i]=bMin+bStep*i                                          # cm
    
 print 'bEdges[0]=%e, bEdges[nTotal]=%e (all sizes in mkm)' % (1.e+4*bEdges[0],1.e+4*bEdges[nTotal])
-   
-#
-# All data will be placed in nTotal bins (for range of impact parameters):
-#
-bTot=np.zeros(nTotal)                                              # cm
-larmR_bTot=np.zeros(nTotal)                                        # ratio R_larmor/b; dimensionless
-uPot_enrgKinTot=np.zeros(nTotal)                                   # ratio eVca/Ekin; dimensionless
-population=np.zeros(nTotal)                                        # number of data in each bin
-momChange_1=np.zeros((3,nTotal))                                   # transfered momentum (approach 1); g*cm/sec
-momChange_2=np.zeros((3,nTotal))                                   # transfered momentum (approach 2); g*cm/sec
-momChange_3=np.zeros((3,nTotal))                                   # transfered momentum (approach 3); g*cm/sec
 
 '''
 minRhoLarm=1.e+8
@@ -187,6 +176,27 @@ maxHalfLintr=0.
 minNumbLarm=100000000
 maxNumbLarm=0
 '''
+# 
+# All data will be placed in nTotal bins (sorted by the range of impact parameters):
+#
+bTot=np.zeros(nTotal)                                              # cm
+larmR_bTot=np.zeros(nTotal)                                        # ratio R_larmor/b; dimensionless
+uPot_enrgKinTot=np.zeros(nTotal)                                   # ratio eVca/Ekin; dimensionless
+population=np.zeros(nTotal)                                        # number of data in each bin
+#
+# Transfered momenta for different approaches:
+#      deltaP=q_e^2*timeStep*abs(dpApprch_NTot|).
+# First index numerates the x,y and z-component od deltaP:
+#
+dpApprch_1Tot=np.zeros((3,nTotal))                                   # 1/cm^2
+dpApprch_2Tot=np.zeros((3,nTotal))                                   # 1/cm^2
+dpApprch_3Tot=np.zeros((3,nTotal))                                   # 1/cm^2
+
+###################################################
+#
+# Here was be placed block A): not in used now
+#
+###################################################   
 
 mPrev=0
 bPrev=0.
@@ -213,6 +223,9 @@ for j in range(1,stepsRho):
       if i == 1 and j == 1:
 	 rhoFirstTurn=rhoCrrnt
 	 rhoLarmorFirstTurn=rho_larm
+#---------------------------------------------
+# Definition of the current arrays:
+#	 
 # Points of the first trajectory (x,y,z for first index=0,1,2 and b for first index=3; cm):
          elecCoor=np.zeros((4,timePoints))                    
 # Current distance from origin of the coordinate system to electron along the trajectory; cm
@@ -220,7 +233,8 @@ for j in range(1,stepsRho):
 # Current log10 of two important ratios; dimensionless:
       larmR_bCrrnt=np.zeros(timePoints)                            # ratio R_larmor/b; dimensionless
       uPot_enrgKinCrrnt=np.zeros(timePoints)                       # ratio potential_energy/kinetic_energy; dimensionless
-      coeffApprch_1=np.zeros((3,timePoints))                       # 1/cm^2; deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|
+      dpApprch_1Crrnt=np.zeros((3,timePoints))                     # 1/cm^2; deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|
+#---------------------------------------------
       for m in range(6): 
          z_elecCrrnt[m]=0.                                         # Initial zero-vector for electron
       z_elecCrrnt[Ix]=rhoCrrnt                                     # x, cm
@@ -241,7 +255,7 @@ for j in range(1,stepsRho):
 	 uPot_enrgKinCrrnt[k]=math.log10((q_elec**2/bCrrnt[k])/kinEnergy)            # dimensionless 
 # Current values to calculate deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|:  
          for ic in range(3):
-	    coeffApprch_1[ic,k]= abs(z_elecCrrnt[2*ic])/ bCrrnt[k]**2                # 1/cm^2;  
+	    dpApprch_1Crrnt[ic,k]= abs(z_elecCrrnt[2*ic])/ bCrrnt[k]**2              # 1/cm^2;  
 # To draw only first trajectory (for checking only):
          if i==1 and j==1:
             for ic in (Ix,Iy,Iz):
@@ -265,9 +279,11 @@ for j in range(1,stepsRho):
          for m in range(mBeg,mEnd,mIncr):
 	    if bEdges[m] < bCrrnt[k] <= bEdges[m+1]:
 	       if population[m] == 0:
-	          bTot[m]=bCrrnt[k]
-	          larmR_bTot[m]=larmR_bCrrnt[k]
-		  uPot_enrgKinTot[m]=uPot_enrgKinCrrnt[k]
+	          bTot[m]=bCrrnt[k]                                # cm
+	          larmR_bTot[m]=larmR_bCrrnt[k]                    # dimensionless
+		  uPot_enrgKinTot[m]=uPot_enrgKinCrrnt[k]          # dimensionless
+                  for ic in range(3):
+	             dpApprch_1Tot[ic,m]=dpApprch_1Crrnt[ic,k]     # 1/cm^2;  
 	          mPrev=m
 	          bPrev=bCrrnt[k]
 		  depopFlag=1
@@ -279,34 +295,16 @@ for j in range(1,stepsRho):
          pointTrack[trackNumb] += 1
 # End of gragging of the current trajectory	  
 #-----------------------------------------------
-      if i == 1 and j == 1: 
-# First definition of the total distance from origin of the coordinate system to electron along the trajectory; cm:
- 	 b=bCrrnt
-# First definition of the total log10 of two important ratios; dimensionless:  
-	 larmR_b=larmR_bCrrnt                                      # dimensionless 
-	 uPot_enrgKin=uPot_enrgKinCrrnt                            # dimensionless 
-# First definition of the values to calculate deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|:
-####         for ic in range(3):
-####            for k in range(timePoints):
-####	       apprch_1[ic,k]=coeffApprch_1[ic,k]                     # 1/cm^2;  
-      else:  
-# Total distance from origin of the coordinate system to electron along the trajectory:
- 	 b=np.concatenate((b,bCrrnt),axis=0)                       # cm
-# Total log10 of two important ratios; dimensionless :  
-	 larmR_b=np.concatenate((larmR_b,larmR_bCrrnt),axis=0)                  
-	 uPot_enrgKin=np.concatenate((uPot_enrgKin,uPot_enrgKinCrrnt),axis=0)        
-# Total values to calculate deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|:
-####         for ic in range(3):
-####	    apprch_1[ic,:]=np.concatenate((apprch_1[ic,:],coeffApprch_1[ic,:]),axis=0)      # 1/cm^2;  
-      lastTrackNumber=trackNumb+1                                  # quantity of tracks = trackNumber + 1     
+###################################################
+#
+# Here was be placed block B): not in used now
+#
+###################################################   
+      lastTrackNumber=trackNumb+1                                  # quantity of tracks = trackNumber + 1!     
       sumPoints += pointTrack[trackNumb]
-bTotalPoints=b.shape
-bDataSize=bTotalPoints[0]
-print 'totalPoints: bDataSize=%d' % bDataSize
 print 'For %d tracks number of points is %d' % (lastTrackNumber,sumPoints)
 # print 'larmorNumber: ', larmorNumber
 # print 'pointTrack: ', pointTrack
-
 
 nonZeroRslts=0
 for m in range(nTotal):
@@ -341,7 +339,7 @@ ax20.plot(1.e+4*elecCoor[0,pointsTot-points:pointsTot],1.e+4*elecCoor[1,pointsTo
 plt.xlabel('x, $\mu m$',color='m',fontsize=16)
 plt.ylabel('y, $\mu m$',color='m',fontsize=16)
 ax20.set_zlabel('z, $\mu m$',color='m',fontsize=16)
-plt.title(('First %d Larmor Turns of the First Trajectory:\nImpact Parameter=%6.3f $\mu$m, $R_L$=%6.3f $\mu$m' \
+plt.title(('Last %d Larmor Turns of the First Trajectory:\nImpact Parameter=%6.3f $\mu$m, $R_L$=%6.3f $\mu$m' \
            % (turns,1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
 
 # plt.show()   
@@ -362,9 +360,27 @@ plt.title(('First Trajectory: Impact Parameter=%6.3f $\mu$m, $R_L$=%6.3f $\mu$m'
            (1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
 plt.grid(True)
 
+plt.figure(50)
+plt.plot(larmR_bTot,uPot_enrgKinTot,'.r')
+plt.xlabel('$log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.ylabel('$log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.title('Map for Transfered Momenta $dP_x,dP_y,dP_z$ Calculations', color='m',fontsize=20)
+plt.grid(True)
+
+X,Y=np.meshgrid(larmR_bTot,uPot_enrgKinTot)      
+fig60=plt.figure(60)
+ax60=fig60.gca(projection='3d')
+surf=ax60.plot_surface(X,Y,dpApprch_1Tot[0,:],cmap=cm.coolwarm,linewidth=0,antialiased=False)
+plt.title('Transfered Momentum $dP_x$:\n$dP_x=q_e^2/b \cdot C_x$', color='m',fontsize=20)
+plt.xlabel('$log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.ylabel('$log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+ax60.set_zlabel('$C_x$, $cm^{-2}$',color='m',fontsize=16)
+fig60.colorbar(surf, shrink=0.5, aspect=5)
+plt.grid(True)
+
 plt.show()   
 
-# sys.exit()
+sys.exit()
 
 #
 # Opening the output file: 
@@ -456,13 +472,49 @@ for m in range(nTotal):
 if k != 0:
    outfile.write ('%s\n' % bLine)
 
-outfile.write ('\n        Approach1 Results:  deltaP ( Entries %d )\n\n' % totEntries)
+outfile.write ('\n        Approach1 Results:  deltaPx ( Entries %d )\n\n' % totEntries)
 
 k=0
 for m in range(nTotal):   
    if population[m] != 0:  
-      valCrrnt=larmR_b[m]
-      strVal='{:f}'.format(valCrrnt)
+      valCrrnt=dpApprch_1Tot[0,m]
+      strVal='{:e}'.format(valCrrnt)
+      if k == 0:
+         bLine=strVal
+      else:
+         bLine=bLine+', '+strVal
+      k += 1
+      if k == nInLine:
+         outfile.write ('%s\n' % bLine)
+         k=0
+if k != 0:
+   outfile.write ('%s\n' % bLine)
+
+outfile.write ('\n        Approach1 Results:  deltaPy ( Entries %d )\n\n' % totEntries)
+
+k=0
+for m in range(nTotal):   
+   if population[m] != 0:  
+      valCrrnt=dpApprch_1Tot[1,m]
+      strVal='{:e}'.format(valCrrnt)
+      if k == 0:
+         bLine=strVal
+      else:
+         bLine=bLine+', '+strVal
+      k += 1
+      if k == nInLine:
+         outfile.write ('%s\n' % bLine)
+         k=0
+if k != 0:
+   outfile.write ('%s\n' % bLine)
+
+outfile.write ('\n        Approach1 Results:  deltaPz ( Entries %d )\n\n' % totEntries)
+
+k=0
+for m in range(nTotal):   
+   if population[m] != 0:  
+      valCrrnt=dpApprch_1Tot[2,m]
+      strVal='{:e}'.format(valCrrnt)
       if k == 0:
          bLine=strVal
       else:
@@ -493,10 +545,15 @@ if k != 0:
    outfile.write ('%s\n' % bLine)
 
 outfile.close()
-print 'Close the writtenn output file "%s"...' % apprch1_file
+print 'Close the written output file "%s"...' % apprch1_file
 
 # sys.exit()
 
+#####################################################
+#
+# Reading the output file for checking:
+#
+#####################################################
 #
 # Opening the input file: 
 #
@@ -512,28 +569,34 @@ except:
 #
 # Reading the results from input file: 
 #
-lines=0                                                            # Number of current line from input file   
-linesFull=0                                                        # Number of fully filled rows with each type of data
 poplHeaderLineNumber=0                                             # Serial number of line with header for population-Data
 xHeaderLineNumber=0                                                # Serial number of line with header for x-Data
 yHeaderLineNumber=0                                                # Serial number of line with header for y-Data
-dataHeaderLineNumber=0                                             # Serial number of line with header result-Data
+dataDpxHeaderLineNumber=0                                          # Serial number of line with header for dataDpx
+dataDpyHeaderLineNumber=0                                          # Serial number of line with header for dataDpy
+dataDpzHeaderLineNumber=0                                          # Serial number of line with header for dataDpz
 edgesHeaderLineNumber=0                                            # Serial number of line with header edges-Data
 lastLineNumber=0                                                   # Number of the last line 
 distDataFlag=0                                                     # =1 when distance-Data already read
 poplDataFlag=0                                                     # =1 when population-Data already read
 xDataFlag=0                                                        # =1 when x-Data already read
 yDataFlag=0                                                        # =1 when y-Data already read 
-dataFlag=0                                                         # =1 when result-Data already read
+dataDpxFlag=0                                                      # =1 when dataDpx already read
+dataDpyFlag=0                                                      # =1 when dataDpy already read
+dataDpzFlag=0                                                      # =1 when dataDpz already read
 edgesFlag=0                                                        # =1 when edges-Data already read
-dataNumber=0                                                       # Number of current value of each type of Data
 distData=[]                                                        # Array of distance-Data
 poplData=[]                                                        # Array of population-Data
 xData=[]                                                           # Array of x-Data
 yData=[]                                                           # Array of y-Data
-data=[]                                                            # Array of result-Data
+dataDpx=[]                                                         # Array of dataDpx
+dataDpy=[]                                                         # Array of dataDpy
+dataDpz=[]                                                         # Array of dataDpz
 edgesData=[]                                                       # Array of edges-Data
 
+lines=0                                                            # Number of current line from input file   
+linesFull=0                                                        # Number of fully filled rows with each type of data
+dataNumber=0                                                       # Number of current value of any types of Data
 while True:
    lineData=inpfile.readline()
    if not lineData:
@@ -549,7 +612,9 @@ while True:
       poplData=np.zeros(entries)
       xData=np.zeros(entries)
       yData=np.zeros(entries)
-      data=np.zeros(entries)
+      dataDpx=np.zeros(entries)
+      dataDpy=np.zeros(entries)
+      dataDpz=np.zeros(entries)
       edgesData=np.zeros(entries)
       linesFull=entries//10
       entriesRem=entries-10*linesFull
@@ -612,14 +677,14 @@ while True:
          print 'x-Data already read'  
 # Header for y-Data:
    if lines == yHeaderLineNumber:
-      dataHeaderLineNumber=yHeaderLineNumber+linesFull+3
+      dataDpxHeaderLineNumber=yHeaderLineNumber+linesFull+3
       if entriesRem > 0:
-         dataHeaderLineNumber += 1
-      print 'dataHeaderLineNumber=%d' % dataHeaderLineNumber
+         dataDpxHeaderLineNumber += 1
+      print 'dataDpxHeaderLineNumber=%d' % dataDpxHeaderLineNumber
       dataNumber=0
    if xDataFlag == 1 and yDataFlag == 0:
 # y-Data:
-      if lines >  yHeaderLineNumber+1 and lines <= dataHeaderLineNumber-2:
+      if lines >  yHeaderLineNumber+1 and lines <= dataDpxHeaderLineNumber-2:
          words=lineData.split()
          nWords=len(words)
 #          print 'y-Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
@@ -627,29 +692,68 @@ while True:
             wordCrrnt=words[m].split(",")
             yData[dataNumber]=float(wordCrrnt[0])
 	    dataNumber += 1
-      if lines == dataHeaderLineNumber-2:
+      if lines == dataDpxHeaderLineNumber-2:
          yDataFlag=1   
          print 'y-Data already read'  
-# Header for result-Data:
-   if lines == dataHeaderLineNumber:
-      edgesHeaderLineNumber=dataHeaderLineNumber+linesFull+3
+# Header for dataDpx:
+   if lines == dataDpxHeaderLineNumber:
+      dataDpyHeaderLineNumber=dataDpxHeaderLineNumber+linesFull+3
       if entriesRem > 0:
-         edgesHeaderLineNumber += 1
-      print 'edgesHeaderLineNumber=%d' % edgesHeaderLineNumber
+         dataDpyHeaderLineNumber += 1
+      print 'dataDpysHeaderLineNumber=%d' % dataDpyHeaderLineNumber
       dataNumber=0
-   if yDataFlag == 1 and dataFlag == 0:    
-# result-Data:
-      if lines >  dataHeaderLineNumber+1 and lines <= edgesHeaderLineNumber-2:
+   if yDataFlag == 1 and dataDpxFlag == 0:    
+# dataDpx:
+      if lines >  dataDpxHeaderLineNumber+1 and lines <= dataDpyHeaderLineNumber-2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+         for m in range(nWords):
+            dataDpx[dataNumber]=float(wordCrrnt[0])
+	    dataNumber += 1
+      if lines == dataDpyHeaderLineNumber-2:
+         dataDpxFlag=1   
+         print 'dataDpx already read'  
+# Header for dataDpy:
+   if lines == dataDpyHeaderLineNumber:
+      dataDpzHeaderLineNumber=dataDpyHeaderLineNumber+linesFull+3
+      if entriesRem > 0:
+         dataDpzHeaderLineNumber += 1
+      print 'dataDpzHeaderLineNumber=%d' % dataDpzHeaderLineNumber
+      dataNumber=0
+   if dataDpxFlag == 1 and dataDpyFlag == 0:    
+# dataDpy:
+      if lines >  dataDpyHeaderLineNumber+1 and lines <= dataDpzHeaderLineNumber-2:
          words=lineData.split()
          nWords=len(words)
 #          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
          for m in range(nWords):
             wordCrrnt=words[m].split(",")
-            data[dataNumber]=float(wordCrrnt[0])
+            dataDpy[dataNumber]=float(wordCrrnt[0])
+	    dataNumber += 1
+      if lines == dataDpzHeaderLineNumber-2:
+         dataDpyFlag=1   
+         print 'dataDpy already read'  
+# Header for dataDpz:
+   if lines == dataDpzHeaderLineNumber:
+      edgesHeaderLineNumber=dataDpzHeaderLineNumber+linesFull+3
+      if entriesRem > 0:
+         edgesHeaderLineNumber += 1
+      print 'edgesHeaderLineNumber=%d' % edgesHeaderLineNumber
+      dataNumber=0
+   if dataDpyFlag == 1 and dataDpzFlag == 0:    
+# dataDpz:
+      if lines >  dataDpzHeaderLineNumber+1 and lines <= edgesHeaderLineNumber-2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+         for m in range(nWords):
+            wordCrrnt=words[m].split(",")
+            dataDpz[dataNumber]=float(wordCrrnt[0])
 	    dataNumber += 1
       if lines == edgesHeaderLineNumber-2:
-         dataFlag=1   
-         print 'Data already read'  
+         dataDpzFlag=1   
+         print 'dataDpz already read'  
 # Header for edges-Data:
    if lines == edgesHeaderLineNumber:
       lastLineNumber=edgesHeaderLineNumber+1+linesFull
@@ -657,7 +761,7 @@ while True:
          lastLineNumber += 1
       print 'lastLineNumber=%d' % lastLineNumber
       dataNumber=0
-   if dataFlag == 1 and edgesFlag == 0:    
+   if dataDpzFlag == 1 and edgesFlag == 0:    
 # edges-Data:
       if lines >  edgesHeaderLineNumber+1 and lines <= lastLineNumber:
          words=lineData.split()
@@ -665,7 +769,7 @@ while True:
 #          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
          for m in range(nWords):
             wordCrrnt=words[m].split(",")
-            data[dataNumber]=float(wordCrrnt[0])
+            edgesData[dataNumber]=float(wordCrrnt[0])
 	    dataNumber += 1
       if lines == lastLineNumber:
          edgesFlag=1   
@@ -693,3 +797,31 @@ if flagError==0:
    print 'No writing/reading errors'
 
 sys.exit()
+
+#####################################################################
+#
+# Block A)
+#
+#--------------------------------------------------------------------
+# 
+#       if i == 1 and j == 1: 
+# # First definition of the total distance from origin of the coordinate system to electron along the trajectory; cm:
+#  	 b=bCrrnt
+# # First definition of the total log10 of two important ratios; dimensionless:  
+# 	 larmR_b=larmR_bCrrnt                                      # dimensionless 
+# 	 uPot_enrgKin=uPot_enrgKinCrrnt                            # dimensionless 
+# # First definition of the values to calculate deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|:
+# #         for ic in range(3):
+# #            for k in range(timePoints):
+# #	       apprch_1[ic,k]=coeffApprch_1[ic,k]                     # 1/cm^2;  
+#       else:  
+# # Total distance from origin of the coordinate system to electron along the trajectory:
+#  	 b=np.concatenate((b,bCrrnt),axis=0)                       # cm
+# # Total log10 of two important ratios; dimensionless :  
+# 	 larmR_b=np.concatenate((larmR_b,larmR_bCrrnt),axis=0)                  
+# 	 uPot_enrgKin=np.concatenate((uPot_enrgKin,uPot_enrgKinCrrnt),axis=0)        
+# # Total values to calculate deltaPapprch_1=q_e^2*timeStep*|coeffApprch_1|:
+# #         for ic in range(3):
+# #	    apprch_1[ic,:]=np.concatenate((apprch_1[ic,:],coeffApprch_1[ic,:]),axis=0)      # 1/cm^2;  
+#
+##################### End of block A) ###############################
