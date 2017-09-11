@@ -99,6 +99,14 @@ root=np.zeros((nA,nB))
 vTransv=np.zeros((nA,nB))
 rhoLarm=np.zeros((nA,nB))
 dist=np.zeros((nA,nB))
+rho=np.zeros((nA,nB))
+Lint=np.zeros((nA,nB))
+Lint=np.zeros((nA,nB))
+Nlarm=np.zeros((nA,nB))
+
+mapA=np.zeros(nA*nB)
+mapB=np.zeros(nA*nB)
+mapNlarm=np.zeros((nA*nB,nA*nB))
 
 minC=1.e8
 maxC=0.
@@ -125,6 +133,19 @@ maxDist=0.
 minRatio=1.e8
 maxRatio=0.
 
+minRho=1.e8
+maxRho=0.
+
+minLint=1.e8
+maxLint=0.
+
+minNlarm=10000000
+maxNlarm=0
+
+lenMap=0
+NlarmCutofDown=39
+NlarmCutofUp=300
+
 for iA in range(nA):
    crrntA[iA]=minA+stepA*iA
    for iB in range(nB):
@@ -138,7 +159,7 @@ for iA in range(nA):
 #      print 'A=%f, B=%f: C=%e, logC=%e' % (crrntA[iA],crrntB[iB],C[iA,iB],logC[iA,iB])
       q=-C[iA,iB]
 #
-# Equation: x^3+x+q=0:
+# Equation: y^3+y+q=0:
 #
       D=1./27+(q/2)**2
 #       print 'A=%f, B=%f: D=%e' % (crrntA[iA],crrntB[iB],D)
@@ -155,21 +176,25 @@ for iA in range(nA):
          maxLeftPart=leftPart
 #       if abs(leftPart) > 1.e-8:
 #          print 'A=%f, B=%f: C=%e, root=%e, leftPart=%e' % (crrntA[iA],crrntB[iB],C[iA,iB],root[iA,iB],leftPart)  
+
       vTransv[iA,iB]=eVrmsLong*root[iA,iB] 
       if vTransvMin > vTransv[iA,iB]:
          vTransvMin=vTransv[iA,iB]
       if vTransvMax < vTransv[iA,iB]:
          vTransvMax=vTransv[iA,iB]
+
       rhoLarm[iA,iB]=vTransv[iA,iB]/omega_L	 
       if minRhoLarm > rhoLarm[iA,iB]:
          minRhoLarm=rhoLarm[iA,iB]
       if maxRhoLarm < rhoLarm[iA,iB]:
          maxRhoLarm=rhoLarm[iA,iB]
+
       dist[iA,iB]=rhoLarm[iA,iB]/math.pow(10.,crrntB[iB])
       if minDist > dist[iA,iB]:
          minDist=dist[iA,iB]
       if maxDist < dist[iA,iB]:
          maxDist=dist[iA,iB]
+
       ratio=dist[iA,iB]/rhoLarm[iA,iB]
       if minRatio > ratio:
          minRatio=ratio
@@ -178,14 +203,77 @@ for iA in range(nA):
       if ratio < 1.:
          print 'A=%f, B=%f: vTransv=%e, rhoLarm=%e, dist=%e, dist/rhoLarm=%e' \
                (crrntA[iA],crrntB[iB],vTransv[iA,iB],1e+4*rhoLarm[iA,iB],1e+4*dist[iA,iB],ratio)  
-#       print 'A=%f, B=%f: vTransv=%e, rhoLarm=%e, dist=%e, dist/rhoLarm=%e' % \
-#             (crrntA[iA],crrntB[iB],vTransv[iA,iB],1e+4*rhoLarm[iA,iB],1e+4*dist[iA,iB],ratio)  
 # print 'minC=%e, maxC=%e' % (minC,maxC)
+
+      rho[iA,iB]=rhoCrit+rhoLarm[iA,iB]
+      if minRho > rho[iA,iB]:
+         minRho=rho[iA,iB]
+      if maxRho < rho[iA,iB]:
+         maxRho=rho[iA,iB]
+
+      Lint[iA,iB]=np.sqrt(dist[iA,iB]**2-rho[iA,iB]**2)
+      if minLint > Lint[iA,iB]:
+         minLint=Lint[iA,iB]
+      if maxLint < Lint[iA,iB]:
+         maxLint=Lint[iA,iB]
+
+      Nlarm[iA,iB]=int(Lint[iA,iB]/eVrmsLong/T_larm)      
+      if minNlarm > Nlarm[iA,iB]:
+         minNlarm=Nlarm[iA,iB]
+      if maxNlarm < Nlarm[iA,iB]:
+         maxNlarm=Nlarm[iA,iB]
+
+#       print 'A=%f, B=%f: vTransv=%e, rhoLarm=%e, dist=%e, dist/rhoLarm=%e, rho=%e, Lint=%e, Nlarm=%d' % \
+#             (crrntA[iA],crrntB[iB],vTransv[iA,iB],1e+4*rhoLarm[iA,iB],1e+4*dist[iA,iB],ratio, \
+# 	     1e+4*rho[iA,iB],1e+4*Lint[iA,iB],Nlarm[iA,iB]) 
+      
+      if (Nlarm[iA,iB] > NlarmCutofDown) and (Nlarm[iA,iB] < NlarmCutofUp):
+         mapA[lenMap]=crrntA[iA]
+         mapB[lenMap]=crrntB[iB]
+         mapNlarm[lenMap,lenMap]=Nlarm[iA,iB]
+         lenMap += 1
 print 'minRoot=%e, maxroot=%e, minLeftPart=%e, maxLeftPart=%e' % (minR,maxR,minLeftPart,maxLeftPart)
 print 'Transverse velocity (cm/sec): min=%e, max=%e' % (vTransvMin,vTransvMax)
 print 'Larmor radius: (mkm): min=%e, max=%e' % (1e+4*minRhoLarm,1e+4*maxRhoLarm)
 print 'Distance (mkm): min=%e, max=%e; dist/rholarm: min=%e, max=%e' % (1e+4*minDist,1e+4*maxDist,minRatio,maxRatio)
+print 'minRho=%e, maxRho=%e, minLint=%e, maxLint=%e' % (1e+4*minRho,1e+4*maxRho,1e+4*minLint,1e+4*maxLint)
+print ' minNlarm=%d, maxNlarm=%d' % (minNlarm,maxNlarm)
 
+
+plt.figure(10)
+plt.plot(mapA[0:lenMap-1],mapB[0:lenMap-1],'.r')
+plt.xlabel('$A=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.title('Map for Transfered Momenta $dP_x,dP_y,dP_z$ Calculations', color='m',fontsize=20)
+plt.text(-4.0,-.65,'Magnetized Electrons:', color='m',fontsize=20)
+plt.text(-4.3,-.8,('Number of Larmor Turns > %d' % NlarmCutofDown), color='m',fontsize=20)
+plt.grid(True)
+
+fig15=plt.figure(15)
+ax=fig15.add_subplot(111)
+X,Y=np.meshgrid(crrntA,crrntB) 
+aa=ax.contourf(X,Y,Nlarm)   
+# X,Y=np.meshgrid(mapA[0:lenMap-1],mapB[0:lenMap-1]) 
+# aa=ax.contourf(X,Y,mapNlarm[0:lenMap-1][0:lenMap-1])   
+plt.xlabel('$A=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.title('Magnetized Electrons: Number of Larmor Turns', color='m',fontsize=20)
+# plt.text(-4.0,-.65,'Magnetized Electrons:', color='m',fontsize=20)
+# plt.text(-4.3,-.8,('Number of Larmor Turns > %d' % NlarmCutof), color='m',fontsize=20)
+fig15.colorbar(aa, shrink=1)
+
+'''
+X=np.zeros(nA)
+for iA in range(nA):
+   X=crrntA[iA]*np.ones(nA)
+   plt.figure(15)
+   plt.hold(True)
+   plt.plot(X,crrntB,'.r')
+plt.xlabel('$log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.ylabel('$log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.title('Map for Transfered Momenta $dP_x,dP_y,dP_z$ Calculations', color='m',fontsize=20)
+plt.grid(True)
+'''
 
 '''      
 fig10=plt.figure(10)
