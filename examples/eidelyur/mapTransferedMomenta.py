@@ -2,7 +2,7 @@
 
 #-------------------------------------
 #
-#        Started at 07/25/2017 (YuE)
+#        Started at 09/08/2017 (YuE)
 # 
 #-------------------------------------
 
@@ -78,19 +78,19 @@ rhoCrit=math.pow(q_elec**2/(m_elec*omega_L**2),1./3)               # cm
 print 'rhoCrit (mkm) = ' , 1.e+4*rhoCrit
 
 
-alpha=2*q_elec**2*omega_L/(m_elec*eVrmsLong**3)
+alpha=2*q_elec**2*omega_L/(m_elec*eVrmsLong**3)                    # dimensionless
 print 'alpha = %f' % alpha
 
 nA=150
 crrntA=np.zeros(nA)
-minA=-5.
+minA=-6.
 maxA=0.
 stepA=(maxA-minA)/(nA-1)
 
 nB=150
 crrntB=np.zeros(nB)
 minB=-3.
-maxB=-.5
+maxB=-.45
 stepB=(maxB-minB)/(nB-1)
 
 C=np.zeros((nA,nB))
@@ -101,8 +101,9 @@ rhoLarm=np.zeros((nA,nB))
 dist=np.zeros((nA,nB))
 rho=np.zeros((nA,nB))
 Lint=np.zeros((nA,nB))
-Lint=np.zeros((nA,nB))
 Nlarm=np.zeros((nA,nB))
+smallNlarm=np.zeros((nA*nB,3))
+largeNlarm=np.zeros((nA*nB,3))
 
 mapA=np.zeros(nA*nB)
 mapB=np.zeros(nA*nB)
@@ -118,8 +119,11 @@ maxR=0.
 minR=1.e8
 maxR=0.
 
-minLeftPart=1.e8
-maxLeftPart=-1.e8
+minLeftPartFirst=1.e8
+maxLeftPartFirst=-1.e8
+
+minLeftPartLast=1.e8
+maxLeftPartLast=-1.e8
 
 vTransvMin=3.e10
 vTransvMax=0.
@@ -144,7 +148,9 @@ maxNlarm=0
 
 lenMap=0
 NlarmCutofDown=39
-NlarmCutofUp=300
+NlarmCutofUp=500
+indxSmallNlarm=0
+indxLargeNlarm=0
 
 for iA in range(nA):
    crrntA[iA]=minA+stepA*iA
@@ -170,12 +176,21 @@ for iA in range(nA):
          maxR=root[iA,iB]
 # Checking, that root^3+root+q=0:
       leftPart=root[iA,iB]**3+root[iA,iB]+q  
-      if minLeftPart > leftPart:
-         minLeftPart=leftPart
-      if maxLeftPart < leftPart:
-         maxLeftPart=leftPart
-#       if abs(leftPart) > 1.e-8:
-#          print 'A=%f, B=%f: C=%e, root=%e, leftPart=%e' % (crrntA[iA],crrntB[iB],C[iA,iB],root[iA,iB],leftPart)  
+      if minLeftPartFirst > leftPart:
+         minLeftPartFirst=leftPart
+      if maxLeftPartFirst < leftPart:
+         maxLeftPartFirst=leftPart
+# Corrections of the root:
+      mm=0
+      while (abs(leftPart) > 1.e-8) and (mm  < 5):
+         deltaRoot=-leftPart/(root[iA,iB]*(3.*root[iA,iB]+1))
+         root[iA,iB] += deltaRoot
+         leftPart=root[iA,iB]**3+root[iA,iB]+q  
+	 mm += 1
+      if minLeftPartLast > leftPart:
+         minLeftPartLast=leftPart
+      if maxLeftPartLast < leftPart:
+         maxLeftPartLast=leftPart
 
       vTransv[iA,iB]=eVrmsLong*root[iA,iB] 
       if vTransvMin > vTransv[iA,iB]:
@@ -227,18 +242,37 @@ for iA in range(nA):
 #             (crrntA[iA],crrntB[iB],vTransv[iA,iB],1e+4*rhoLarm[iA,iB],1e+4*dist[iA,iB],ratio, \
 # 	     1e+4*rho[iA,iB],1e+4*Lint[iA,iB],Nlarm[iA,iB]) 
       
-      if (Nlarm[iA,iB] > NlarmCutofDown) and (Nlarm[iA,iB] < NlarmCutofUp):
+      if (Nlarm[iA,iB] >= NlarmCutofDown) and (Nlarm[iA,iB] <= NlarmCutofUp):
          mapA[lenMap]=crrntA[iA]
          mapB[lenMap]=crrntB[iB]
          mapNlarm[lenMap,lenMap]=Nlarm[iA,iB]
          lenMap += 1
-print 'minRoot=%e, maxroot=%e, minLeftPart=%e, maxLeftPart=%e' % (minR,maxR,minLeftPart,maxLeftPart)
+      if Nlarm[iA,iB] <= NlarmCutofDown:
+         smallNlarm[indxSmallNlarm,0]=crrntA[iA]	 
+         smallNlarm[indxSmallNlarm,1]=crrntB[iB]	 
+         smallNlarm[indxSmallNlarm,2]=Nlarm[iA,iB]
+	 indxSmallNlarm += 1	 
+      if Nlarm[iA,iB] >= NlarmCutofUp:
+         largeNlarm[indxLargeNlarm,0]=crrntA[iA]	 
+         largeNlarm[indxLargeNlarm,1]=crrntB[iB]	 
+         largeNlarm[indxLargeNlarm,2]=Nlarm[iA,iB]	 
+	 indxLargeNlarm += 1	 
+print 'Root: min=%e, max=%e, LeftPart: minFirst=%e, maxFirst=%e, minLast=%e, maxLast=%e' % \
+      (minR,maxR,minLeftPartFirst,maxLeftPartFirst,minLeftPartLast,maxLeftPartLast)
 print 'Transverse velocity (cm/sec): min=%e, max=%e' % (vTransvMin,vTransvMax)
 print 'Larmor radius: (mkm): min=%e, max=%e' % (1e+4*minRhoLarm,1e+4*maxRhoLarm)
 print 'Distance (mkm): min=%e, max=%e; dist/rholarm: min=%e, max=%e' % (1e+4*minDist,1e+4*maxDist,minRatio,maxRatio)
 print 'minRho=%e, maxRho=%e, minLint=%e, maxLint=%e' % (1e+4*minRho,1e+4*maxRho,1e+4*minLint,1e+4*maxLint)
 print ' minNlarm=%d, maxNlarm=%d' % (minNlarm,maxNlarm)
+print 'lenMap=%d' % lenMap
 
+print '%d Cases with Small Larmor Radius (from Total %d)' % (indxSmallNlarm, nA*nB)
+# for i in range(indxSmallNlarm):
+#    print '%d): A=%f, B=%f, Nlarm=%d' % (i,smallNlarm[i,0],smallNlarm[i,1],smallNlarm[i,2])
+
+print '%d Cases with Large Larmor Radius (from Total %d)' % (indxLargeNlarm, nA*nB)
+# for i in range(indxLargeNlarm):
+#    print '%d): A=%f, B=%f, Nlarm=%d' % (i,largeNlarm[i,0],largeNlarm[i,1],largeNlarm[i,2])
 
 plt.figure(10)
 plt.plot(mapA[0:lenMap-1],mapB[0:lenMap-1],'.r')
@@ -247,20 +281,22 @@ plt.ylabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.title('Map for Transfered Momenta $dP_x,dP_y,dP_z$ Calculations', color='m',fontsize=20)
 plt.text(-4.0,-.65,'Magnetized Electrons:', color='m',fontsize=20)
 plt.text(-4.3,-.8,('Number of Larmor Turns > %d' % NlarmCutofDown), color='m',fontsize=20)
-plt.grid(True)
+# plt.grid(True)
 
+stepLevel=int(maxNlarm/20)
+levels=np.arange(0,maxNlarm,stepLevel)
 fig15=plt.figure(15)
 ax=fig15.add_subplot(111)
 X,Y=np.meshgrid(crrntA,crrntB) 
-aa=ax.contourf(X,Y,Nlarm)   
+mapTurns=ax.contourf(X,Y,Nlarm,levels)   
 # X,Y=np.meshgrid(mapA[0:lenMap-1],mapB[0:lenMap-1]) 
-# aa=ax.contourf(X,Y,mapNlarm[0:lenMap-1][0:lenMap-1])   
+# aa=ax.contourf(X,Y,mapNlarm[0:lenMap-1,0:lenMap-1])   
 plt.xlabel('$A=log_{10}(R_L/b)$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.title('Magnetized Electrons: Number of Larmor Turns', color='m',fontsize=20)
 # plt.text(-4.0,-.65,'Magnetized Electrons:', color='m',fontsize=20)
 # plt.text(-4.3,-.8,('Number of Larmor Turns > %d' % NlarmCutof), color='m',fontsize=20)
-fig15.colorbar(aa, shrink=1)
+fig15.colorbar(mapTurns)
 
 '''
 X=np.zeros(nA)
@@ -327,20 +363,7 @@ ax40.set_zlabel('$b$, $\mu m$',color='m',fontsize=16)
 fig40.colorbar(surf)
 plt.grid(True)
 
-
-
 plt.show()   
 
-      
-      
-
-
-
-
-
 sys.exit()
-
-
-
-
 
