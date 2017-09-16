@@ -94,7 +94,7 @@ stepA=(maxA-minA)/(nA-1)
 nB=150
 crrntB=np.zeros(nB)
 minB=-3.
-maxB=-.45
+maxB=-.5
 stepB=(maxB-minB)/(nB-1)
 
 C=np.zeros((nA,nB))
@@ -251,14 +251,14 @@ for iA in range(nA):
          mapB[lenMap]=crrntB[iB]
          mapNlarm[lenMap,lenMap]=Nlarm[iA,iB]
          lenMap += 1
-      if Nlarm[iA,iB] <= NlarmCutofDown:
+      if Nlarm[iA,iB] < NlarmCutofDown:
          smallNlarm[indxSmallNlarm,0]=crrntA[iA]	 
          smallNlarm[indxSmallNlarm,1]=crrntB[iB]	 
          smallNlarm[indxSmallNlarm,2]=Nlarm[iA,iB]
          smallNlarm[indxSmallNlarm,3]=dist[iA,iB]
          smallNlarm[indxSmallNlarm,4]=ratio
 	 indxSmallNlarm += 1	 
-      if Nlarm[iA,iB] >= NlarmCutofUp:
+      if Nlarm[iA,iB] > NlarmCutofUp:
          largeNlarm[indxLargeNlarm,0]=crrntA[iA]	 
          largeNlarm[indxLargeNlarm,1]=crrntB[iB]	 
          largeNlarm[indxLargeNlarm,2]=Nlarm[iA,iB]	 
@@ -285,8 +285,8 @@ print '%d Cases with Large Larmor Radius (from Total %d)' % (indxLargeNlarm, nA*
 #
 plt.figure(10)
 plt.plot(mapA[0:lenMap-1],mapB[0:lenMap-1],'.r')
-plt.xlabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$A=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
 plt.title('Map for Transfered Momenta $dP_x,dP_y,dP_z$ Calculations', color='m',fontsize=20)
 plt.text(-4.0,-.65,'Magnetized Electrons:', color='m',fontsize=20)
 plt.text(-4.3,-.8,('Number of Larmor Turns > %d' % NlarmCutofDown), color='m',fontsize=20)
@@ -300,13 +300,12 @@ fig15=plt.figure(15)
 ax=fig15.add_subplot(111)
 X,Y=np.meshgrid(crrntA,crrntB) 
 mapTurns=ax.contourf(X,Y,Nlarm,levels)   
-# X,Y=np.meshgrid(mapA[0:lenMap-1],mapB[0:lenMap-1]) 
-# aa=ax.contourf(X,Y,mapNlarm[0:lenMap-1,0:lenMap-1])   
-plt.xlabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$A=log_{10}(R_L/b)$',color='m',fontsize=16)
+Contourrange=[int(NlarmCutofDown+1)]
+mapTurnCutoff=ax.contour(X,Y,Nlarm,Contourrange,format='%d',colors=('w'),linewidths=(2)) 
+plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
 plt.title('Magnetized Electrons: Number of Larmor Turns', color='m',fontsize=20)
-# plt.text(-4.0,-.65,'Magnetized Electrons:', color='m',fontsize=20)
-# plt.text(-4.3,-.8,('Number of Larmor Turns > %d' % NlarmCutof), color='m',fontsize=20)
 fig15.colorbar(mapTurns)
 
 '''
@@ -345,8 +344,8 @@ fig20=plt.figure(20)
 ax20=fig20.gca(projection='3d')
 surf=ax20.plot_surface(X,Y,logC,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 plt.title('Map C:\n$C=log_{10}[2q_e^2 \cdot \omega_L/(m_e \cdot V_{e||}^3)] + B - A$', color='m',fontsize=16)
-plt.xlabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$A=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
 ax20.set_zlabel('$C$',color='m',fontsize=16)
 # fig20.colorbar(surf, shrink=0.5, aspect=5)
 fig20.colorbar(surf)
@@ -359,10 +358,9 @@ fig30=plt.figure(30)
 ax30=fig30.gca(projection='3d')
 surf=ax30.plot_surface(X,Y,1.e+4*rhoLarm,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 plt.title('Larmor Radius $R_L$', color='m',fontsize=16)
-plt.xlabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$A=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
 ax30.set_zlabel('$R_L$, $\mu m$',color='m',fontsize=16)
-# fig20.colorbar(surf, shrink=0.5, aspect=5)
 fig30.colorbar(surf)
 plt.grid(True)
 
@@ -374,13 +372,9 @@ fig35=plt.figure(35)
 ax=fig35.add_subplot(111)
 X,Y=np.meshgrid(crrntA,crrntB) 
 mapTurns=ax.contourf(X,Y,1.e+4*rhoLarm,levels)   
-# X,Y=np.meshgrid(mapA[0:lenMap-1],mapB[0:lenMap-1]) 
-# aa=ax.contourf(X,Y,mapNlarm[0:lenMap-1,0:lenMap-1])   
-plt.xlabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$A=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
 plt.title('Larmor Radius $R_L$, $\mu$m', color='m',fontsize=16)
-# plt.text(-4.0,-.65,'Magnetized Electrons:', color='m',fontsize=20)
-# plt.text(-4.3,-.8,('Number of Larmor Turns > %d' % NlarmCutof), color='m',fontsize=20)
 fig35.colorbar(mapTurns)
 
 # A=log_10(U_pot/E_kin), B=log_10(Rlarm/b):
@@ -390,10 +384,9 @@ fig40=plt.figure(40)
 ax40=fig40.gca(projection='3d')
 surf=ax40.plot_surface(X,Y,1.e+4*dist,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 plt.title('Distance $b$', color='m',fontsize=16)
-plt.xlabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$A=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
 ax40.set_zlabel('$b$, $\mu$m',color='m',fontsize=16)
-# fig20.colorbar(surf, shrink=0.5, aspect=5)
 fig40.colorbar(surf)
 plt.grid(True)
 
@@ -405,13 +398,9 @@ fig45=plt.figure(45)
 ax=fig45.add_subplot(111)
 X,Y=np.meshgrid(crrntA,crrntB) 
 mapTurns=ax.contourf(X,Y,1.e+4*dist,levels)   
-# X,Y=np.meshgrid(mapA[0:lenMap-1],mapB[0:lenMap-1]) 
-# aa=ax.contourf(X,Y,mapNlarm[0:lenMap-1,0:lenMap-1])   
-plt.xlabel('$B=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$A=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
 plt.title('Distance $b$, $\mu$m', color='m',fontsize=16)
-# plt.text(-4.0,-.65,'Magnetized Electrons:', color='m',fontsize=20)
-# plt.text(-4.3,-.8,('Number of Larmor Turns > %d' % NlarmCutof), color='m',fontsize=20)
 fig45.colorbar(mapTurns)
 
 plt.show()   
