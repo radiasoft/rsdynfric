@@ -32,7 +32,6 @@ from scipy.constants import electron_mass as me
 from scipy.constants import proton_mass as mp
 from scipy.constants import Boltzmann as kB
 
-
 eVtoErg=1.602e-12                                                  # energy from eV to erg (from CI to CGS)
 # Indices:
 (Ix, Ipx, Iy, Ipy, Iz, Ipz) = range(6)
@@ -96,9 +95,6 @@ try:
 except:
    print 'Problem to open input file "%s"' % inputFile
 
-#
-# Reading the results from input file: 
-#
 xAheaderLineNumber=0                                               # Serial number of line with header for xA-Data
 yBheaderLineNumber=0                                               # Serial number of line with header for yB-Data
 dpxDataHeaderLineNumber=0                                          # Serial number of line with header for dpxData
@@ -225,8 +221,8 @@ while True:
  	       indxBrsktOpn=wordCrrnt[0].find('(')
  	       if indxBrsktOpn > 0:
  	          indxBrsktCls=wordCrrnt[0].find(')')
-# Nonrepeated zero values:
  	       if indxBrsktOpn < 0:
+# Non zero value:
 # 	          print 'nonZero value=%e' % float(wordCrrnt[0])
                   dpxData[mA,mB]=float(wordCrrnt[0])
                   total_mAmB += 1
@@ -235,6 +231,7 @@ while True:
 	             mA=0
 		     mB += 1
  	       else:
+# Repeated zero values:
 		  wordHelp=wordCrrnt[0]
  	          nZero=int(wordHelp[indxBrsktOpn+1:indxBrsktCls])
 # 	           print 'Number of zero=%d' % nZero
@@ -286,8 +283,8 @@ while True:
  	       indxBrsktOpn=wordCrrnt[0].find('(')
  	       if indxBrsktOpn > 0:
  	          indxBrsktCls=wordCrrnt[0].find(')')
-# Nonrepeated zero values:
  	       if indxBrsktOpn < 0:
+# Non zero value:
 # 	          print 'nonZero value=%e' % float(wordCrrnt[0])
                   dpyData[mA,mB]=float(wordCrrnt[0])
                   total_mAmB += 1
@@ -296,6 +293,7 @@ while True:
 	             mA=0
 		     mB += 1
  	       else:
+# Repeated zero values:
 		  wordHelp=wordCrrnt[0]
  	          nZero=int(wordHelp[indxBrsktOpn+1:indxBrsktCls])
 # 	           print 'Number of zero=%d' % nZero
@@ -348,8 +346,8 @@ while True:
  	       indxBrsktOpn=wordCrrnt[0].find('(')
  	       if indxBrsktOpn > 0:
  	          indxBrsktCls=wordCrrnt[0].find(')')
-# Nonrepeated zero values:
  	       if indxBrsktOpn < 0:
+# Non zero value:
 # 	          print 'nonZero value=%e' % float(wordCrrnt[0])
                   dpzData[mA,mB]=float(wordCrrnt[0])
                   total_mAmB += 1
@@ -358,6 +356,7 @@ while True:
 	             mA=0
 		     mB += 1
  	       else:
+# Repeated zero values:
 		  wordHelp=wordCrrnt[0]
  	          nZero=int(wordHelp[indxBrsktOpn+1:indxBrsktCls])
 # 	           print 'Number of zero=%d' % nZero
@@ -379,23 +378,8 @@ print 'Close input file "%s"' % inputFile
 # Visualization of results
 #
 
-xAmin=min(xAdata)
-xAmax=np.max(xAdata)
-
-yBmin=min(yBdata)
-yBmax=max(yBdata)
-
-
-plt.figure(55)
-plt.plot(xAdata,yBdata,'.r')
-plt.xlim([xAmin-.1,xAmax+.1])
-plt.ylim([yBmin-.1,yBmax+.1])
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
-plt.title('Map for Transfered Momenta $dP_x,dP_y,dP_z$ Calculations', color='m',fontsize=20)
-plt.grid(True)
-
 X,Y=np.meshgrid(xAdata,yBdata) 
+
 fig70=plt.figure(70)
 ax70=fig70.gca(projection='3d')
 # surf=ax70.plot_surface(X,Y,zApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
@@ -418,7 +402,7 @@ plt.grid(True)
 
 fig75=plt.figure(75)
 ax=fig75.add_subplot(111)         # for contours poltting
-X,Y=np.meshgrid(xAdata,yBdata) 
+# X,Y=np.meshgrid(xAdata,yBdata) 
 mapDpx=ax.contourf(X,Y,dpxData)   
 # mapDpx=ax.contourf(X,Y,dpxApprch_1,levels)   
 # Contourrange=[int(NlarmCutofDown+1)]
@@ -429,7 +413,7 @@ plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
 plt.title('$C_x (cm^{-2})$ for Transf. Momntm. $dP_x$: $dP_x=q_e^2/b\cdot C_x$', color='m',fontsize=20)
 fig75.colorbar(mapDpx)
 
-X,Y=np.meshgrid(xAdata,yBdata) 
+# X,Y=np.meshgrid(xAdata,yBdata) 
 fig80=plt.figure(80)
 ax80=fig80.gca(projection='3d')
 # surf=ax80.plot_surface(X,Y,zApprch1dpy,cmap=cm.coolwarm,linewidth=0,antialiased=False)
