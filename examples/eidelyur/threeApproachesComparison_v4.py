@@ -24,6 +24,11 @@ import scipy.integrate as integrate
 from scipy.integrate import quad, nquad, dblquad
 
 from scipy.constants import pi
+
+#
+# All physical constants have its dimension in units in the system CI.
+# This code uses units in the system CGS!
+#
 from scipy.constants import speed_of_light as clight
 from scipy.constants import epsilon_0 as eps0
 from scipy.constants import mu_0 as mu0
@@ -80,31 +85,31 @@ print 'rhoCrit (mkm) = ' , 1.e+4*rhoCrit
 
 #
 # Convertion from electron's "coordinates" to guiding-center coordinates:
-# For each electron z_e=(x_e,px_e,y_e,py_e,z_e,pz_e) --> zgc_e=(phi,p_phi,y_gc,py_gc,z_e,pz_e);
-# z_c and zgc_e are 2D arrays with dimension (6,n_elec) 
+# For electron z_e=(x_e,px_e,y_e,py_e,z_e,pz_e) --> zgc_e=(phi,p_phi,y_gc,py_gc,z_e,pz_e);
+# z_e and zgc_e are 6-vectors 
 #
 def toGuidingCenter(z_e):
     mOmega=m_elec*omega_L                                          # g/sec
-    zgc_e=z_e.copy()                                               # 2D array with dimension (6,n_elec)
-    zgc_e[Ix,:] = np.arctan2(z_e[Ipx,:]+mOmega*z_e[Iy,:],z_e[Ipy,:])                 # radians
-    zgc_e[Ipx,:]= (((z_e[Ipx,:]+mOmega*z_e[Iy,:])**2+z_e[Ipy,:]**2)/(2.*mOmega))     # g*cm**2/sec
-    zgc_e[Iy,:] =-z_e[Ipx,:]/mOmega                                # cm
-    zgc_e[Ipy,:]= z_e[Ipy,:]+mOmega*z_e[Ix,:]                      # g/sec
+    zgc_e=z_e.copy()                                               # 6-vector
+    zgc_e[Ix] = np.arctan2(z_e[Ipx]+mOmega*z_e[Iy],z_e[Ipy])       # radians
+    zgc_e[Ipx]= (((z_e[Ipx]+mOmega*z_e[Iy])**2+z_e[Ipy]**2)/(2.*mOmega))     # g*cm**2/sec
+    zgc_e[Iy] =-z_e[Ipx]/mOmega                                    # cm
+    zgc_e[Ipy]= z_e[Ipy]+mOmega*z_e[Ix]                            # g/sec
     return zgc_e
 
 #
 # Convertion from guiding-center coordinates to electron's "coordinates":
 # For each electron zgc_e=(phi,p_phi,y_gc,py_gc,z_e,pz_e) --> z_e=(x_e,px_e,y_e,py_e,z_e,pz_e);
-# zgc_c and z_e are 2D arrays with dimension (6,n_elec) 
+# zgc_c and z_e are 6-vectors
 #
 def fromGuidingCenter(zgc_e):
     mOmega=m_elec*omega_L                                          # g/sec
-    rho_larm=np.sqrt(2.*zgc_e[Ipx,:]/mOmega)                       # cm
-    z_e = zgc.copy()                                               # 2D array with dimension (6,n_elec)
-    z_e[Ix,:] = zgc_e[Ipy,:]/mOmega-rho_larm*np.cos(zgc_e[Ix,:])   # cm
-    z_e[Ipx,:]=-mOmega*zgc_e[Iy,:]                                 # g*cm/sec
-    z_e[Iy,:] = zgc_e[Iy,:]+rho_larm*np.sin(zgc_e[Ix,:])           # cm
-    z_e[Ipy,:]= mOmega*rho_larm*np.cos(zgc_e[Ix,:])                # g*cm/sec
+    rho_larm=np.sqrt(2.*zgc_e[Ipx]/mOmega)                         # cm
+    z_e = zgc_e.copy()                                             # 6-vector
+    z_e[Ix] = zgc_e[Ipy]/mOmega-rho_larm*np.cos(zgc_e[Ix])         # cm
+    z_e[Ipx]=-mOmega*zgc_e[Iy]                                     # g*cm/sec
+    z_e[Iy] = zgc_e[Iy]+rho_larm*np.sin(zgc_e[Ix])                 # cm
+    z_e[Ipy]= mOmega*rho_larm*np.cos(zgc_e[Ix])                    # g*cm/sec
     return z_e
 
 #
@@ -131,16 +136,55 @@ def solenoid_eMatrix(B_mag,deltaT):
     return slndMtrx
 
 #
-# Matrix to dragg ion (through the drift during time interval 'deltaT':
+# Matrix to dragg particle through the drift during time interval 'deltaT':
 #
-def drift_iMatrix(M_ion,deltaT):
+def drift_Matrix(M_prtcl,deltaT):
     driftMtrx = np.identity(6)
-    for i in (Ix, Iy, Iz):
-        driftMtrx[i,i+1]=deltaT/M_ion                              # sec/g
+    for i in (Ix,Iy,Iz):
+        driftMtrx[i,i+1]=deltaT/M_prtcl                            # sec/g
     return driftMtrx
 
-z_elecCrrnt=np.zeros(6)                                            # 6-vector for electron
-z_ionCrrnt=np.zeros(6)                                             # 6-vector for ion
+#
+# Matrix to dragg electron in the "guiding center" system during time interval 'deltaT':
+#
+def guidingCenter_Matrix(deltaT):
+    gcMtrx = np.identity(6)
+    gcMtrx[Iz,Ipz]=deltaT/m_elec                                   # sec/g
+    return gcMtrx
+
+#
+# Matrix describes the electron - collision during time interval 'deltaT'
+# in the system coordinates of "guiding center" of electron
+# input - 6-vectors for electron and ion before collision and time step deltaT; 
+# output - both vectors after collision: 
+#
+def guidingCenterCollision(vectrElec,vectrIon,deltaT):
+   mOmegaLarm=m_elec*omega_L                                       # g/sec
+   denom=((vectrIon[0]-vectrElec[3]/mOmegaLarm)**2+ \
+          (vectrIon[2]-vectrElec[2])**2+(vectrIon[4]-vectrElec[4])**2)**(3/2)        # cm^3
+   omega_gc=Z_ion*q_elec**2/(mOmegaLarm*denom)                     # 1/sec
+   phase=omega_gc*deltaT                                           # dimensionless
+   sinOmega_gc=math.sin(phase)
+   cosOmega_gc=1.-math.cos(phase)
+   dx_gc=(vectrIon[0]-vectrElec[3]/mOmegaLarm)*cosOmega_gc+ \
+         (vectrIon[2]-vectrElec[2])*sinOmega_gc                    # cm 
+   dy_gc=-(vectrIon[0]-vectrElec[3]/mOmegaLarm)*sinOmega_gc+ \
+          (vectrIon[2]-vectrElec[2])*cosOmega_gc                   # cm
+   dpz=mOmegaLarm*phase*(vectrIon[4]-vectrElec[4])                 # g*cm/sec
+   vectrIon[1] +=  mOmegaLarm*dy_gc                                # g*cm/sec 
+   vectrIon[3] += -mOmegaLarm*dx_gc                                # g*cm/sec
+   vectrIon[5] += -dpz                                             # g*cm/sec
+   vectrElec[2] += dy_gc                                           # cm
+   vectrElec[3] += mOmegaLarm*dx_gc                                # g*cm/sec 
+   vectrIon[5] +=  dpz                                             # g*cm/sec
+   return vectrElec,vectrIon                                       
+
+z_elecCrrnt=np.zeros(6)                                            # 6-vector for electron (for Approach_1)
+z_ionCrrnt=np.zeros(6)                                             # 6-vector for ion (for Approach_1)
+z_elecCrrnt_2=np.zeros(6)                                          # 6-vector for electron (for Approach_2)
+z_ionCrrnt_2=np.zeros(6)                                           # 6-vector for ion (for Approach_2)
+z_elecCrrnt_prev=np.zeros(6)                                       # 6-vector for electron for previous time step (for Approach_2)
+z_elecCrrnt_gc=np.zeros(6)                                         # 6-vector for electron in #guiding center" system (for Approach_2)
 
 #===============================================================================
 #
@@ -185,6 +229,7 @@ dpApprch_3Tot=np.zeros((3,nTotal))                                 # 1/cm^2
 mPrev=0
 bPrev=0.
 sumPoints=0
+sumPoints_2=0
 
 #
 # Electrons are magnetized for impact parameter >> rhoCrit:
@@ -214,14 +259,17 @@ stepB=(maxB-minB)/(nB-1)
 pointTrack=np.zeros(nA*nB)  
 larmorNumber=np.zeros(nA*nB)
 cpuTime=np.zeros(nA*nB)
+pointTrack_2=np.zeros(nA*nB)  
+larmorNumber_2=np.zeros(nA*nB)
+cpuTime_2=np.zeros(nA*nB)
 
 
 # 
 # For approach_1 (without averaging over larmor rotation):
 #
 matr_elec=solenoid_eMatrix(B_mag,timeStep)                         # matrix for electron for timeStep in magnetic field
-matr_ion=drift_iMatrix(M_ion,timeStep)                             # matrix for ion (with mass M_ion) for timeStep
-trackNumb_1=-1                                                     # Tracks will be enumerated from 0!
+matr_ion=drift_Matrix(M_ion,timeStep)                              # matrix for ion (with mass M_ion) for timeStep
+trackNumb=-1                                                       # Tracks will be enumerated from 0!
 dpFactor=q_elec**2*timeStep                                        # g*cm^3/sec
 minLarmR_b_1=1.e8                                                  # dimensionless     
 maxLarmR_b_1=-1.e8                                                 # dimensionless
@@ -233,8 +281,8 @@ maxUpot_enrgKin_1=-1.e8                                            # dimensionle
 #
 nLarmorAvrgng=1                                                    # number of averaged Larmor rotations 
 timeStep_2=nLarmorAvrgng*stepsNumberOnGyro*timeStep                # time step for approach_2
-matr_elec_2=drift_iMatrix(m_elec,timeStep_2)                       # matrix for electron for timeStep_2 
-matr_ion_2=drift_iMatrix(M_ion,timeStep_2)                         # matrix for ion (with mass M_ion) for timeStep_2
+matr_elec_2=guidingCenter_Matrix(.5*timeStep_2)                    # matrix for electron for timeStep_2/2 
+matr_ion_2=drift_Matrix(M_ion,.5*timeStep_2)                       # matrix for ion (with mass M_ion) for timeStep_2/2
 trackNumb_2=-1                                                     # Tracks will be enumerated from 0!
 dpFactor_2=q_elec**2*timeStep_2                                    # g*cm^3/sec
 minLarmR_b_2=1.e8                                                  # dimensionless     
@@ -271,10 +319,10 @@ for iA in range(nA):
       numbLarmor=int(timePath/T_larm)                              # dimensionless
       if numbLarmor >= 40:
          timeStart=os.times()
-         trackNumb_1 += 1                                          # Tracks are enumerated from 0!  
+         trackNumb += 1                                            # Tracks are enumerated from 0!  
          trackNumb_2 += 1                                          # Tracks are enumerated from 0!  
-         larmorNumber[trackNumb_1]=numbLarmor
-	 print 'iA=%d, iB=%d, trackNumber_1=%d, numbLarmor=%d; trackNumber_2=%d' % (iA,iB,trackNumb_1,numbLarmor,trackNumb_2)   
+         larmorNumber[trackNumb]=numbLarmor
+	 print 'iA=%d, iB=%d, trackNumber_1=%d, numbLarmor=%d; trackNumber_2=%d' % (iA,iB,trackNumb,numbLarmor,trackNumb_2)   
          timePoints=int(numbLarmor*stepsNumberOnGyro)              # for approach_1; dimensionless
          timePoints_2=int(numbLarmor//nLarmorAvrgng)               # for approach_2; dimensionless
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -283,7 +331,10 @@ for iA in range(nA):
 #
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # To draw only first trajectories (for checking only):
-         if trackNumb_1 == 0:
+#
+#------- Start of calculations for approach_1 --------------
+#
+         if trackNumb == 0:
 	    rhoFirstTurn=rhoCrrnt
 	    rhoLarmorFirstTurn=rho_larm
 # 6-vectors for ion and electron and distance 'b' between them for the first trajectories 
@@ -295,7 +346,6 @@ for iA in range(nA):
          larmR_bCrrnt=np.zeros(timePoints)                         # ratio R_larmor/b; dimensionless
          uPot_enrgKinCrrnt=np.zeros(timePoints)                    # ratio potential_energy/kinetic_energy; dimensionless
          dpApprch_1Crrnt=np.zeros((3,timePoints))                  # 1/cm^2; deltaPapprch_1=dpFactor*dpApprch_1Crrnt; dpFactor=q_e^2*timeStep
-#---------------------------------------------
          for m in range(6): 
             z_ionCrrnt[m]=0.                                       # Current initial zero-vector for ion
             z_elecCrrnt[m]=0.                                      # Zeroing out of vector for electron
@@ -323,7 +373,7 @@ for iA in range(nA):
 	       maxLarmR_b_1=larmR_bCrrnt[k]
 	    if minLarmR_b_1 > larmR_bCrrnt[k]:
 	       minLarmR_b_1=larmR_bCrrnt[k]
-	    uPot_enrgKinCrrnt[k]=math.log10((q_elec**2/bCrrnt[k])/kinEnergy)       # dimensionless 
+	    uPot_enrgKinCrrnt[k]=math.log10((q_elec**2/bCrrnt[k])/kinEnergy)         # dimensionless 
 	    if maxUpot_enrgKin_1 < uPot_enrgKinCrrnt[k]:
 	       maxUpot_enrgKin_1=uPot_enrgKinCrrnt[k]
 	    if minUpot_enrgKin_1 > uPot_enrgKinCrrnt[k]:
@@ -332,11 +382,11 @@ for iA in range(nA):
             for ic in range(3):
 	       dpApprch_1Crrnt[ic,k]= abs(z_elecCrrnt[2*ic])/ bCrrnt[k]**2           # 1/cm^2;  
 # To draw only first trajectory (for checking only):
-            if trackNumb_1 == 0:
+            if trackNumb == 0:
                for ic in range(6):
-                  prtclCoor[ic,pointTrack[trackNumb_1]]=z_elecCrrnt[ic]              # 6-vector for electron
-                  prtclCoor[6+ic,pointTrack[trackNumb_1]]=z_ionCrrnt[ic]             # 6-vector for ion 
-	       prtclCoor[12,pointTrack[trackNumb_1]]=bCrrnt[k]                       # cm
+                  prtclCoor[ic,pointTrack[trackNumb]]=z_elecCrrnt[ic]                # 6-vector for electron
+                  prtclCoor[6+ic,pointTrack[trackNumb]]=z_ionCrrnt[ic]               # 6-vector for ion 
+	       prtclCoor[12,pointTrack[trackNumb]]=bCrrnt[k]                         # cm
 #  	 print 'i=%d, j=%d, k=%d: bPrev=%e (m=%d), bCrrnt=%e, x=%e, y=%e, z=%e' % \
 #  	       (i,j,k,1.e+4*bPrev,mPrev,1.e+4*bCrrnt[k],1.e+4*z_elecCrrnt[0],1.e+4*z_elecCrrnt[2],1.e+4*z_elecCrrnt[4])       
 #
@@ -345,40 +395,154 @@ for iA in range(nA):
             for ic in range(3):
                z_ionCrrnt[2*ic+1] += -dpFactor*dpApprch_1Crrnt[ic,k]
                z_elecCrrnt[2*ic+1] += dpFactor*dpApprch_1Crrnt[ic,k]
-            pointTrack[trackNumb_1] += 1
-# End of gragging of the current trajectory	  
+            pointTrack[trackNumb] += 1
 # 
-         if trackNumb_1 == 0: 
+# End of gragging of the current trajectory	  
+#-----------------------------------------------
+# 
+         if trackNumb == 0: 
 # First definition of the total distance from origin of the coordinate system to electron along the trajectory; cm:
- 	    b=bCrrnt
+ 	    b=bCrrnt                                               # cm
 # First definition of the total log10 of two important ratios; dimensionless:  
-	    larmR_b=larmR_bCrrnt                                # dimensionless 
-	    uPot_enrgKin=uPot_enrgKinCrrnt                      # dimensionless 
+	    larmR_b=larmR_bCrrnt                                   # dimensionless 
+	    uPot_enrgKin=uPot_enrgKinCrrnt                         # dimensionless 
 # First definition of the values to calculate deltaPapprch_1=dpFactor*dpApprch_1Crrnt; dpFactor=q_e^2*timeStep:
-            dpxApprch_1=dpApprch_1Crrnt[0,:]                    # 1/cm^2;  
-            dpyApprch_1=dpApprch_1Crrnt[1,:]                    # 1/cm^2;  
-            dpzApprch_1=dpApprch_1Crrnt[2,:]                    # 1/cm^2;  
+            dpxApprch_1=dpApprch_1Crrnt[0,:]                       # 1/cm^2;  
+            dpyApprch_1=dpApprch_1Crrnt[1,:]                       # 1/cm^2;  
+            dpzApprch_1=dpApprch_1Crrnt[2,:]                       # 1/cm^2;  
          else:  
 # Total distance from origin of the coordinate system to electron along the trajectory:
- 	    b=np.concatenate((b,bCrrnt),axis=0)                 # cm
+ 	    b=np.concatenate((b,bCrrnt),axis=0)                    # cm
 # Total log10 of two important ratios; dimensionless :  
 	    larmR_b=np.concatenate((larmR_b,larmR_bCrrnt),axis=0)                  
 	    uPot_enrgKin=np.concatenate((uPot_enrgKin,uPot_enrgKinCrrnt),axis=0)        
 # Total values to calculate deltaPapprch_1=dpFactor*dpApprch_1Crrnt; dpFactor=q_e^2*timeStep:
-            dpxApprch_1=np.concatenate((dpxApprch_1,dpApprch_1Crrnt[0,:]),axis=0)      # 1/cm^2;  
-            dpyApprch_1=np.concatenate((dpyApprch_1,dpApprch_1Crrnt[1,:]),axis=0)      # 1/cm^2;  
-            dpzApprch_1=np.concatenate((dpzApprch_1,dpApprch_1Crrnt[2,:]),axis=0)      # 1/cm^2;  
-#          print 'trackNumb_1:%d: shapes: b=%d, larmR_b=%d, uPot=%d, dpx=%d, dpy=%d, dpz=%d' % \
-# 	          (trackNumb_1,b.shape[0],larmR_b.shape[0],uPot_enrgKin.shape[0], \
+            dpxApprch_1=np.concatenate((dpxApprch_1,dpApprch_1Crrnt[0,:]),axis=0)                 # 1/cm^2;  
+            dpyApprch_1=np.concatenate((dpyApprch_1,dpApprch_1Crrnt[1,:]),axis=0)                 # 1/cm^2;  
+            dpzApprch_1=np.concatenate((dpzApprch_1,dpApprch_1Crrnt[2,:]),axis=0)                 # 1/cm^2;  
+#          print 'trackNumb:%d: shapes: b=%d, larmR_b=%d, uPot=%d, dpx=%d, dpy=%d, dpz=%d' % \
+# 	          (trackNumb,b.shape[0],larmR_b.shape[0],uPot_enrgKin.shape[0], \
 # 		   dpxApprch_1.shape[0],dpyApprch_1.shape[0],dpzApprch_1.shape[0])  
 #
-#--------------------------------------------------------------------
-         lastTrackNumber=trackNumb_1+1                             # quantity of tracks = trackNumb_1 + 1!     
-         sumPoints += pointTrack[trackNumb_1]
+         lastTrackNumber=trackNumb+1                               # quantity of tracks = trackNumb + 1!     
+         sumPoints += pointTrack[trackNumb]
          timeEnd=os.times()
-	 cpuTime[trackNumb_1]=1.e+6*(float(timeEnd[0])-float(timeStart[0]))          # CPU time , mks
-         cpuTimeTotal += cpuTime[trackNumb_1] 
+	 cpuTime[trackNumb]=1.e+6*(float(timeEnd[0])-float(timeStart[0]))            # CPU time , mks
+         cpuTimeTotal += cpuTime[trackNumb] 
+#
+#------- End of calculations for approach_1 --------------
+#
+# for i in range(lastTrackNumber):
+#    print 'Track %d: larmor turns=%d, cpuTime(mks)=%e, time per turn(mks)=%6.1f' % \
+#          (i,larmorNumber[i],cpuTime[i],cpuTime[i]/larmorNumber[i])
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#
+# Approach_2: dragging with averaging over nLarmorAvrgng larmor rotation
+#
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+#
+#------- Start of calculations for approach_2 --------------
+#
+         if trackNumb_2 == 0:
+	    rhoFirstTurn=rhoCrrnt
+	    rhoLarmorFirstTurn=rho_larm
+# 6-vectors for ion and electron and distance 'b' between them for the first trajectories 
+# (for checking only; indices 0-5 for electron, indices 6-11 for ion and index=12 for 'b'):
+         prtclCoor_2=np.zeros((13,timePoints_2))                    
+# Current distance from origin of the coordinate system to electron along the trajectory; cm
+         bCrrnt_2=np.zeros(timePoints_2)                           # cm
+# Current log10 of two important ratios; dimensionless:
+         larmR_bCrrnt_2=np.zeros(timePoints_2)                     # ratio R_larmor/b; dimensionless
+         uPot_enrgKinCrrnt_2=np.zeros(timePoints_2)                # ratio potential_energy/kinetic_energy; dimensionless
+         dpApprch_2Crrnt=np.zeros((3,timePoints_2))                # g*cm/sec
+         timeEnd=os.times()
+         for m in range(6): 
+            z_ionCrrnt_2[m]=0.                                     # Current initial zero-vector for ion
+            z_elecCrrnt_2[m]=0.                                    # Zeroing out of vector for electron
+# Current initial vector for electron:
+         z_elecCrrnt_2[Ix]=rhoCrrnt                                # x, cm
+         z_elecCrrnt_2[Iz]=-halfLintr                              # z, cm
+         z_elecCrrnt_2[Ipy]=m_elec*eVtran                          # py, g*cm/sec
+         z_elecCrrnt_2[Ipz]=m_elec*eVrmsLong                       # pz, g*cm/sec
+	 z_elecCrrnt_gc=toGuidingCenter(z_elecCrrnt_2)             # transfer to system of guiding center
+#-----------------------------------------------
+# Main action - dragging of the current trajectories (for given i and j)
+#
+         for k in range(timePoints_2):
+ 	    z_elecCrrnt_gc=matr_elec_2.dot(z_elecCrrnt_gc)         # electron's dragging for first nhalf timeStep
+ 	    z_ionCrrnt_2=matr_ion_2.dot(z_ionCrrnt_2)              # ion's dragging for first half timeStep
+ 	    z_elecCrrnt_gc=matr_elec_2.dot(z_elecCrrnt_gc)         # electron's dragging for second half timeStep
+# gragging both paticles through interaction point:
+	    z_elecCrrnt_gc,z_ionCrrnt=guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt_2,timeStep_2)    
+ 	    z_ionCrrnt_2=matr_ion_2.dot(z_ionCrrnt_2)              # ion's dragging for second half timeStep
+	    z_elecCrrnt_2=fromGuidingCenter(z_elecCrrnt_gc)        # transfer from system of guiding center 
+# Current distance between ion and electron; cm:
+ 	    bCrrnt_2[k]=np.sqrt((z_ionCrrnt_2[0]-z_elecCrrnt_2[0])**2+ \
+	                        (z_ionCrrnt_2[2]-z_elecCrrnt_2[2])**2+ \
+			        (z_ionCrrnt_2[4]-z_elecCrrnt_2[4])**2)
+# Current log10 of two important ratios:  
+	    larmR_bCrrnt_2[k]=math.log10(rho_larm/bCrrnt_2[k])     # dimensionless 
+	    if maxLarmR_b_2 < larmR_bCrrnt_2[k]:
+	       maxLarmR_b_2=larmR_bCrrnt_2[k]
+	    if minLarmR_b_2 > larmR_bCrrnt_2[k]:
+	       minLarmR_b_2=larmR_bCrrnt_2[k]
+	    uPot_enrgKinCrrnt_2[k]=math.log10((q_elec**2/bCrrnt_2[k])/kinEnergy)     # dimensionless 
+	    if maxUpot_enrgKin_2 < uPot_enrgKinCrrnt_2[k]:
+	       maxUpot_enrgKin_2=uPot_enrgKinCrrnt_2[k]
+	    if minUpot_enrgKin_2 > uPot_enrgKinCrrnt_2[k]:
+	       minUpot_enrgKin_2=uPot_enrgKinCrrnt_2[k]
+# Current values to calculate deltaPapprch_2:  
+#            for ic in range(3):
+#	       dpApprch_2Crrnt[ic,k]= z_elecCrrnt_prev[2*ic]-z_elecCrrnt_2[2*ic]     # g*scm/sec 
+	    z_elecCrrnt_prev=z_elecCrrnt_2.copy() 
+# To draw only first trajectory (for checking only):
+            if trackNumb_2 == 0:
+               for ic in range(6):
+                  prtclCoor_2[ic,pointTrack_2[trackNumb_2]]=z_elecCrrnt_2[ic]        # 6-vector for electron
+                  prtclCoor_2[6+ic,pointTrack_2[trackNumb_2]]=z_ionCrrnt_2[ic]       # 6-vector for ion 
+	       prtclCoor_2[12,pointTrack_2[trackNumb_2]]=bCrrnt_2[k]                 # cm
+            pointTrack_2[trackNumb_2] += 1
+#
+# End of gragging of the current trajectory	  
+#-----------------------------------------------
+#
+         if trackNumb_2 == 0: 
+# First definition of the total distance from origin of the coordinate system to electron along the trajectory; cm:
+ 	    b_2=bCrrnt_2                                           # cm 
+### # First definition of the total log10 of two important ratios; dimensionless:  
+	    larmR_b_2=larmR_bCrrnt_2                               # dimensionless 
+	    uPot_enrgKin_2=uPot_enrgKinCrrnt_2                     # dimensionless 
+# First definition of the values deltaPapprch_2:
+            dpxApprch_2=dpApprch_2Crrnt[0,:]                       # g*cm/sec  
+            dpyApprch_2=dpApprch_2Crrnt[1,:]                       # g*cm/sec  
+            dpzApprch_2=dpApprch_2Crrnt[2,:]                       # g*cm/sec  
+         else:  
+# Total distance from origin of the coordinate system to electron along the trajectory:
+ 	    b_2=np.concatenate((b_2,bCrrnt),axis=0)                # cm
+# Total log10 of two important ratios; dimensionless :  
+	    larmR_b_2=np.concatenate((larmR_b_2,larmR_bCrrnt_2),axis=0)                  
+	    uPot_enrgKin_2=np.concatenate((uPot_enrgKin_2,uPot_enrgKinCrrnt_2),axis=0)        
+# Total values deltaPapprch_2:
+            dpxApprch_2=np.concatenate((dpxApprch_2,dpApprch_2Crrnt[0,:]),axis=0)                      # g*cm/sec  
+            dpyApprch_2=np.concatenate((dpyApprch_2,dpApprch_2Crrnt[1,:]),axis=0)                      # g*cm/sec
+            dpzApprch_2=np.concatenate((dpzApprch_2,dpApprch_2Crrnt[2,:]),axis=0)                      # g*cm/sec 
+#          print 'trackNumb_2:%d: shapes: b=%d, larmR_b_2=%d, uPot=%d, dpx=%d, dpy=%d, dpz=%d' % \
+# 	         (trackNumb_2,b.shape[0],larmR_b_2.shape[0],uPot_enrgKin_2.shape[0], \
+# 		 dpxApprch_2.shape[0],dpyApprch_2.shape[0],dpzApprch_2.shape[0])  
+#
+         lastTrackNumber_2=trackNumb_2+1                           # quantity of tracks = trackNumb_2 + 1!     
+         sumPoints_2 += pointTrack_2[trackNumb_2]
+         timeEnd=os.times()
+	 cpuTime_2[trackNumb_2]=1.e+6*(float(timeEnd[0])-float(timeStart[0]))        # CPU time , mks
+         cpuTimeTotal += cpuTime_2[trackNumb_2] 
+#
+#------- End of calculations for approach_2 --------------
+#
+
 print 'Approach_1: for %d tracks number of points is %d' % (lastTrackNumber,sumPoints)
+print 'Approach_2: for %d tracks number of points is %d' % (lastTrackNumber_2,sumPoints_2)
 
 # for i in range(lastTrackNumber):
 #    print 'Track %d: larmor turns=%d, cpuTime(mks)=%e, time per turn(mks)=%6.1f' % \
@@ -388,7 +552,8 @@ print 'cpuTimeTotal(mksec) = %e' % cpuTimeTotal
 
 ###################################################
 #
-# Data processing: layout of arrays xA=uPot_enrgKin, yB=larmR_b to nBins channels
+#       Data processing of the first approach:
+#: layout of arrays xA=uPot_enrgKin, yB=larmR_b to nBins channels
 # and arrays zApprch1dpx, zApprch1dpy, zApprch1dpz to (nBins x nBins) channels
 #
 ###################################################   
@@ -440,7 +605,7 @@ for nPoint in range(int(sumPoints)):
 	 searchBflag=1
 	 break
    if searchBflag == 0:
-      yB[nBins-1]=(yB[nBins-1]*yBnumb[nBins-1]+larmR_b[nPoint])/(yBnumb[nBins-1]+1) # averaging inside bin iB 
+      yB[nBins-1]=(yB[nBins-1]*yBnumb[nBins-1]+larmR_b[nPoint])/(yBnumb[nBins-1]+1)  # averaging inside bin iB 
       yBnumb[nBins-1] += 1
    if zApprch1dpNumb[iA,iB] == 0:
       zApprch1dpx[iA,iB]=dpxApprch_1[nPoint]
@@ -470,7 +635,7 @@ for iA in range(nBins):
 print 'sumA=%d, sumB=%d, sumC=%d; sumPoints=%d' % (sumAnumb,sumBnumb,sumCnumb,int(sumPoints)) 
 
 timeEnd=os.times()
-runTime=1.e+6*(float(timeEnd[0])-float(timeStart[0]))       # CPU time , mks
+runTime=1.e+6*(float(timeEnd[0])-float(timeStart[0]))              # CPU time , mks
 print 'runTime(mksec) = %e' % runTime
 
 #
@@ -480,9 +645,13 @@ pointsTot=len(prtclCoor[0,:])
 turns=10                                                           # Number of larmorturns for drawing 
 points=turns*stepsNumberOnGyro                                     # Number of points for drawing
 
+lengthArrowElc=4
 fig10=plt.figure(10)
 ax10=fig10.gca(projection='3d')
 ax10.plot(1.e+4*prtclCoor[0,0:points],1.e+4*prtclCoor[2,0:points],1.e+4*prtclCoor[4,0:points],'-r',linewidth=2)
+ax10.plot(1.e+4*prtclCoor[0,0:lengthArrowElc],1.e+4*prtclCoor[2,0:lengthArrowElc],1.e+4*prtclCoor[4,0:lengthArrowElc],'-b',linewidth=2)
+ax10.plot(1.e+4*prtclCoor[0,points-lengthArrowElc:points],1.e+4*prtclCoor[2,points-lengthArrowElc:points], \
+          1.e+4*prtclCoor[4,points-lengthArrowElc:points],'-b',linewidth=2)
 plt.xlabel('x, $\mu m$',color='m',fontsize=16)
 plt.ylabel('y, $\mu m$',color='m',fontsize=16)
 ax10.set_zlabel('z, $\mu m$',color='m',fontsize=16)
@@ -491,32 +660,30 @@ plt.title(('First Electron Trajectory (Start; $N_L=$%d):\nImpact Parameter=%5.2f
 
 # Data to traw the arrow in the direction of motion:
 #
-legsBegx=1.e+7*prtclCoor[6,points/2+50]
-legEnd1x=1.14*legsBegx
-legEnd2x=.72*legsBegx
-legEnd3x=1.e+7*prtclCoor[6,points/2]
-legsBegy=1.e+7*prtclCoor[8,points/2+50]
-legEnd1y=.46*legsBegy
-legEnd2y=.64*legsBegy
-legEnd3y=1.e+7*prtclCoor[8,points/2]
-legsBegz=1.e+7*prtclCoor[10,points/2+50]
-legEnd1_2z=1.e+7*prtclCoor[10,points/2+50]
-legEnd3z=1.e+7*prtclCoor[10,points/2]
+arrwBegxIon=1.e+7*prtclCoor[6,points/2+50]
+arrwBegyIon=1.e+7*prtclCoor[8,points/2+50]
+arrwBegzIon=1.e+7*prtclCoor[10,points/2+50]
+arrwEndxIon=1.e+7*prtclCoor[6,points/2]
+arrwEndyIon=1.e+7*prtclCoor[8,points/2]
+arrwEndzIon=1.e+7*prtclCoor[10,points/2]
 fig15=plt.figure(15)
 ax15=fig15.gca(projection='3d')
 ax15.plot(1.e+7*prtclCoor[6,0:points],1.e+7*prtclCoor[8,0:points],1.e+7*prtclCoor[10,0:points],'-b',linewidth=2)
+ax15.plot([arrwBegxIon,arrwEndxIon],[arrwBegyIon,arrwEndyIon],[arrwBegzIon,arrwEndzIon],color='r',alpha=0.8,lw=2)
 plt.xlabel('x, $nm$',color='m',fontsize=16)
 plt.ylabel('y, $nm$',color='m',fontsize=16)
 ax15.set_zlabel('z, $nm$',color='m',fontsize=16)
 plt.title('First Ion Trajectory (Start)',color='m',fontsize=16)
-ax15.plot([legsBegx,legEnd1x],[legsBegy,legEnd1y],[legsBegz,legEnd1_2z],color='r',alpha=0.8,lw=2)
-ax15.plot([legsBegx,legEnd2x],[legsBegy,legEnd2y],[legsBegz,legEnd1_2z],color='r',alpha=0.8,lw=2)
-ax15.plot([legsBegx,legEnd3x],[legsBegy,legEnd3y],[legsBegz,legEnd3z],color='r',alpha=0.8,lw=2)
 
 fig20=plt.figure(20)
 ax20=fig20.gca(projection='3d')
 ax20.plot(1.e+4*prtclCoor[0,pointsTot-points:pointsTot],1.e+4*prtclCoor[2,pointsTot-points:pointsTot], \
           1.e+4*prtclCoor[4,pointsTot-points:pointsTot],'-r',linewidth=2)
+ax20.plot(1.e+4*prtclCoor[0,pointsTot-lengthArrowElc:pointsTot],1.e+4*prtclCoor[2,pointsTot-lengthArrowElc:pointsTot], \
+          1.e+4*prtclCoor[4,pointsTot-lengthArrowElc:pointsTot],'-b',linewidth=2)
+ax20.plot(1.e+4*prtclCoor[0,pointsTot-points:pointsTot-points+lengthArrowElc], \
+          1.e+4*prtclCoor[2,pointsTot-points:pointsTot-points+lengthArrowElc], \
+          1.e+4*prtclCoor[4,pointsTot-points:pointsTot-points+lengthArrowElc],'-b',linewidth=2)
 plt.xlabel('x, $\mu m$',color='m',fontsize=16)
 plt.ylabel('y, $\mu m$',color='m',fontsize=16)
 ax20.set_zlabel('z, $\mu m$',color='m',fontsize=16)
@@ -525,28 +692,21 @@ plt.title(('First Electron Trajectory (End; $N_L=$%d):\nImpact Parameter=%5.2f $
 
 # Data to traw the arrow in the direction of motion:
 #
-legsBegx=1.e+7*prtclCoor[6,pointsTot-points/2]
-legEnd1x=.96*legsBegx
-legEnd2x=1.01*legsBegx
-legEnd3x=1.e+7*prtclCoor[6,pointsTot-points/2-50]
-legsBegy=1.e+7*prtclCoor[8,pointsTot-points/2]
-legEnd1y=.98*legsBegy
-legEnd2y=.93*legsBegy
-legEnd3y=1.e+7*prtclCoor[8,pointsTot-points/2-50]
-legsBegz=1.e+7*prtclCoor[10,pointsTot-points/2]
-legEnd1_2z=1.e+7*prtclCoor[10,pointsTot-points/2-10]
-legEnd3z=1.e+7*prtclCoor[10,pointsTot-points/2-50]
+arrwBegxIon=1.e+7*prtclCoor[6,pointsTot-points/2]
+arrwBegyIon=1.e+7*prtclCoor[8,pointsTot-points/2]
+arrwBegzIon=1.e+7*prtclCoor[10,pointsTot-points/2]
+arrwEndxIon=1.e+7*prtclCoor[6,pointsTot-points/2-50]
+arrwEndyIon=1.e+7*prtclCoor[8,pointsTot-points/2-50]
+arrwEndzIon=1.e+7*prtclCoor[10,pointsTot-points/2-50]
 fig25=plt.figure(25)
 ax25=fig25.gca(projection='3d')
 ax25.plot(1.e+7*prtclCoor[6,pointsTot-points:pointsTot],1.e+7*prtclCoor[8,pointsTot-points:pointsTot], \
           1.e+7*prtclCoor[10,pointsTot-points:pointsTot],'-b',linewidth=2)
+ax25.plot([arrwBegxIon,arrwEndxIon],[arrwBegyIon,arrwEndyIon],[arrwBegzIon,arrwEndzIon],color='r',alpha=0.8,lw=2)
 plt.xlabel('x, $nm$',color='m',fontsize=16)
 plt.ylabel('y, $nm$',color='m',fontsize=16)
 ax25.set_zlabel('z, $nm$',color='m',fontsize=16)
 plt.title('First Ion Trajectory (End)',color='m',fontsize=16)
-ax25.plot([legsBegx,legEnd1x],[legsBegy,legEnd1y],[legsBegz,legEnd1_2z],color='r',alpha=0.8,lw=2)
-ax25.plot([legsBegx,legEnd2x],[legsBegy,legEnd2y],[legsBegz,legEnd1_2z],color='r',alpha=0.8,lw=2)
-ax25.plot([legsBegx,legEnd3x],[legsBegy,legEnd3y],[legsBegz,legEnd3z],color='r',alpha=0.8,lw=2)
 
 plt.figure(30)
 plt.plot(range(pointsTot),1.e4*prtclCoor[4,0:pointsTot],'-r',linewidth=2)
