@@ -112,6 +112,16 @@ dpxData=[]                                                         # Array of dp
 dpyData=[]                                                         # Array of dpyData
 dpzData=[]                                                         # Array of dpzData
 
+dpxDataMax=0                                                       # maximum for array of dpxData
+indxAdpxDataMax=0                                                  # index A of the maximum for array of dpxData
+indxBdpxDataMax=0                                                  # index B of the maximum for array of dpxData
+dpyDataMax=0                                                       # maximum for array of dpyData
+indxAdpyDataMax=0                                                  # index A of the maximum for array of dpyData
+indxBdpyDataMax=0                                                  # index B of the maximum for array of dpyData
+dpzDataMax=0                                                       # maximum for array of dpzData
+indxAdpzDataMax=0                                                  # index A of the maximum for array of dpzData
+indxBdpzDataMax=0                                                  # index B of the maximum for array of dpzData
+
 lines=0                                                            # Number of current line from input file   
 linesFull=0                                                        # Number of fully filled rows with each type of data
 dataNumber=0                                                       # Number of current value of any types of Data
@@ -121,8 +131,15 @@ while True:
    if not lineData:
       break
    lines += 1
+   if lines == 2:
+      words=lineData.split()
+      indx1=words.index('Tracks:')
+      lastTrackNumber=int(words[indx1+1])
+      indx2=words.index('Factor:')
+      normFactor=float(words[indx2+1])
+      print 'lastTrackNumber=%d, normFactor=%e' % (lastTrackNumber,normFactor)   
 # Header for xA-Data:
-   if lines == 2: 
+   if lines == 4: 
       words=lineData.split()
       indx1=words.index('Entries:')
       xAentries=int(words[indx1+1])
@@ -132,7 +149,7 @@ while True:
       xAdata=np.zeros(xAentries)
       linesFull=xAentries//perLine
       entriesRem=xAentries-perLine*linesFull
-      yBheaderLineNumber=linesFull+5
+      yBheaderLineNumber=linesFull+7
       if entriesRem > 0:
          yBheaderLineNumber += 1
 #      print 'yBheaderLineNumber=%d' % yBheaderLineNumber
@@ -140,7 +157,7 @@ while True:
 #   
 # xAdata=log10(Upot/Ekin): 
 #
-      if lines > 3 and lines <= yBheaderLineNumber-2:
+      if lines > 5 and lines <= yBheaderLineNumber-2:
          words=lineData.split()
          nWords=len(words)
 #          print 'xA-Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
@@ -202,7 +219,7 @@ while True:
       total_mAmB=0
    if yBdataFlag == 1 and dpxDataFlag == 0:    
 #   
-# dpxData=zApprch1dpx 
+# dpxData=zApprch1dpx (from script threeApproachesComparison_vN.py, N>=4) 
 # Format in input file: at the begining, the index mA for "xA-direction" increases and only after that index mB for "yB-direction")
 #   
       if lines >  dpxDataHeaderLineNumber+2:
@@ -224,7 +241,11 @@ while True:
  	       if indxBrsktOpn < 0:
 # Non zero value:
 # 	          print 'nonZero value=%e' % float(wordCrrnt[0])
-                  dpxData[mA,mB]=float(wordCrrnt[0])
+                  dpxData[mA,mB]=normFactor*float(wordCrrnt[0])
+		  if dpxDataMax < dpxData[mA,mB]:
+		     dpxDataMax=dpxData[mA,mB]
+		     indxAdpxDataMax=mA
+		     indxBdpxDataMax=mB
                   total_mAmB += 1
                   mA += 1
 	          if mA  == entriesA:
@@ -264,7 +285,7 @@ while True:
       total_mAmB=0
    if dpxDataFlag == 1 and dpyDataFlag == 0:    
 #   
-# dpyData=zApprch1dpy 
+# dpyData=zApprch1dpy (from script threeApproachesComparison_vN.py, N>=4) 
 # Format in input file: at the begining, the index mA for "xA-direction" increases and only after that index mB for "yB-direction")
 #   
       if lines >  dpyDataHeaderLineNumber+2:
@@ -286,7 +307,11 @@ while True:
  	       if indxBrsktOpn < 0:
 # Non zero value:
 # 	          print 'nonZero value=%e' % float(wordCrrnt[0])
-                  dpyData[mA,mB]=float(wordCrrnt[0])
+                  dpyData[mA,mB]=normFactor*float(wordCrrnt[0])
+		  if dpyDataMax < dpyData[mA,mB]:
+		     dpyDataMax=dpyData[mA,mB]
+		     indxAdpyDataMax=mA
+		     indxBdpyDataMax=mB
                   total_mAmB += 1
                   mA += 1
 	          if mA  == entriesA:
@@ -326,7 +351,7 @@ while True:
       total_mAmB=0
    if dpyDataFlag == 1 and dpzDataFlag == 0:    
 #   
-# dpzData=zApprch1dpz 
+# dpzData=zApprch1dpz (from script threeApproachesComparison_vN.py, N>=4) 
 # Format in input file: at the begining, the index mA for "xA-direction" increases and only after that index mB for "yB-direction")
 #   
       if lines >  dpzDataHeaderLineNumber+2:
@@ -349,7 +374,11 @@ while True:
  	       if indxBrsktOpn < 0:
 # Non zero value:
 # 	          print 'nonZero value=%e' % float(wordCrrnt[0])
-                  dpzData[mA,mB]=float(wordCrrnt[0])
+                  dpzData[mA,mB]=normFactor*float(wordCrrnt[0])
+		  if dpzDataMax < dpzData[mA,mB]:
+		     dpzDataMax=dpzData[mA,mB]
+		     indxAdpzDataMax=mA
+		     indxBdpzDataMax=mB
                   total_mAmB += 1
                   mA += 1
 	          if mA  == entriesA:
@@ -374,10 +403,85 @@ while True:
 inpfile.close()
 print 'Close input file "%s"' % inputFile
 
+print 'Maximum dpxData=%e (point mA=%d, mB=%d)' % (dpxDataMax,indxAdpxDataMax,indxBdpxDataMax)
+print 'Maximum dpyData=%e (point mA=%d, mB=%d)' % (dpyDataMax,indxAdpyDataMax,indxBdpyDataMax)
+print 'Maximum dpzData=%e (point mA=%d, mB=%d)' % (dpzDataMax,indxAdpzDataMax,indxBdpzDataMax)
+
 #
 # Visualization of results
 #
 
+X,Y=np.meshgrid(xAdata,yBdata) 
+
+fig70=plt.figure(70)
+ax70=fig70.gca(projection='3d')
+# surf=ax70.plot_surface(X,Y,dpxData,cmap=cm.coolwarm,linewidth=0,antialiased=False)
+surf=ax70.plot_surface(X,Y,dpxData,cmap=cm.jet,linewidth=0,antialiased=False)
+plt.title(('Approach-1: Transfered Momentum $dP_x$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpxDataMax)), color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+ax70.set_zlabel('$dP_x \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+cb = fig70.colorbar(surf)
+plt.grid(True)
+
+# X,Y=np.meshgrid(xA,yB) 
+
+fig75=plt.figure(75)
+ax=fig75.add_subplot(111)                                          # for contours poltting
+# mapDpx=ax.contourf(X,Y,dpxData)   
+mapDpx=ax.contourf(X,Y,dpxData)   
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_x$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$)' % \
+           (lastTrackNumber,dpxDataMax)), color='m',fontsize=14)
+fig75.colorbar(mapDpx)
+
+fig80=plt.figure(80)
+ax80=fig80.gca(projection='3d')
+# surf=ax80.plot_surface(X,Y,dpyData,cmap=cm.coolwarm,linewidth=0,antialiased=False)
+surf=ax80.plot_surface(X,Y,dpyData,cmap=cm.jet,linewidth=0,antialiased=False)
+plt.title(('Approach-1: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpyDataMax)), color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+ax80.set_zlabel('$dP_y \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+cb = fig80.colorbar(surf)
+plt.grid(True)
+
+fig85=plt.figure(85)
+ax=fig85.add_subplot(111)                                          # for contours poltting
+# mapDpx=ax.contourf(X,Y,dpyData)   
+mapDpx=ax.contourf(X,Y,dpyData)   
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_y$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$)' % \
+           (lastTrackNumber,dpyDataMax)), color='m',fontsize=14)
+fig85.colorbar(mapDpx)
+
+fig90=plt.figure(90)
+ax90=fig90.gca(projection='3d')
+# surf=ax90.plot_surface(X,Y,dpzData,cmap=cm.coolwarm,linewidth=0,antialiased=False)
+surf=ax90.plot_surface(X,Y,dpzData,cmap=cm.jet,linewidth=0,antialiased=False)
+plt.title(('Approach-1: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpzDataMax)), color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+ax90.set_zlabel('$dP_z \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+cb = fig90.colorbar(surf)
+plt.grid(True)
+
+fig95=plt.figure(95)
+ax=fig95.add_subplot(111)                                          # for contours poltting
+# mapDpx=ax.contourf(X,Y,dpzData)   
+mapDpx=ax.contourf(X,Y,dpzData)   
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_z$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$)' % \
+           (lastTrackNumber,dpzDataMax)), color='m',fontsize=14)
+fig95.colorbar(mapDpx)
+
+'''
 X,Y=np.meshgrid(xAdata,yBdata) 
 
 fig70=plt.figure(70)
@@ -480,6 +584,7 @@ plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
 plt.title('$C_z (cm^{-2})$ for Transf. Momntm. $dP_z$: $dP_z=q_e^2/b\cdot C_z$', color='m',fontsize=20)
 fig95.colorbar(mapDpz)
+'''
 
 plt.show()   
 

@@ -242,7 +242,7 @@ print 'rhoCrit(mkm)=%f, alpha=%f' % (1.e+4*rhoCrit, alpha)
 #
 # Array A=log10(Upot/Ekin): 
 #
-nA=2
+nA=5
 crrntA=np.zeros(nA)
 minA=-5.
 maxA=0.
@@ -251,7 +251,7 @@ stepA=(maxA-minA)/(nA-1)
 #
 # Array B=log10(R_larm/b): 
 #
-nB=2
+nB=5
 crrntB=np.zeros(nB)
 minB=-3.
 maxB=-.5
@@ -572,7 +572,7 @@ for iA in range(nA):
 #------- End of calculations for approach_2 --------------
 #
 
-print 'Approach_1: maxYcoorElec=%e, maxYcoorIon=%e' % (1.e+4*maxYcoorElec,1.e+7*maxYcoorIon)
+print 'Approach_1: maxYcoorElec=%e mkm, maxYcoorIon=%e nm' % (1.e+4*maxYcoorElec,1.e+7*maxYcoorIon)
 print 'Approach_1: for %d tracks number of points is %d' % (lastTrackNumber,sumPoints)
 print 'Approach_2: for %d tracks number of points is %d' % (lastTrackNumber_2,sumPoints_2)
 
@@ -583,21 +583,22 @@ print 'Approach_2: for %d tracks number of points is %d' % (lastTrackNumber_2,su
 print 'cpuTimeTotal(mksec) = %e' % cpuTimeTotal
 
 #
-# To compare distances between particles for different approaches:
+# First track: to compare distances between particles for different approaches (figure 325):
 #
 bArray=np.asarray(b)
 b_2Array=np.asarray(b_2)
-bLen=int(len(bArray))
-b_2Len=int(len(b_2Array))
-print 'Lengthes: for b %d, for b_2 %d', (bLen,b_2Len)
+bLenFirstTrack=int(timePoints[0])
+b_2LenFirstTrack=int(timePoints_2[0])
+print 'First track lengthes: for b %d, for b_2 %d' % (bLenFirstTrack,b_2LenFirstTrack)
 
-diff_b=np.zeros(b_2Len)
-nLeft=np.zeros(b_2Len)
+
+diff_b=np.zeros(b_2LenFirstTrack)
+nLeft=np.zeros(b_2LenFirstTrack)
 
 k=0
 nStart=0
-for m in range(b_2Len): 
-   for n in range(nStart,bLen):
+for m in range(b_2LenFirstTrack): 
+   for n in range(nStart,bLenFirstTrack):
       if bArray[n] < b_2Array[m]:
 	 if n == 0:
 	    diff_b[m]=bArray[n]-b_2Array[m]
@@ -789,7 +790,7 @@ pointsEndLarmor=int(larmorNumber[0])*stepsNumberOnGyro             # Number of p
 
 lengthArrowElc=4
 
-
+'''
 fig10=plt.figure(10)
 ax10=fig10.gca(projection='3d')
 ax10.plot(1.e+4*prtclCoor[0,0:pointsStartLarmor],1.e+4*prtclCoor[2,0:pointsStartLarmor], \
@@ -804,10 +805,12 @@ plt.ylabel('y, $\mu m$',color='m',fontsize=16)
 ax10.set_zlabel('z, $\mu m$',color='m',fontsize=16)
 plt.title(('Approach-1: First Electron Trajectory (Start; $N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' \
            % (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
-
+'''
 
 pBegArrw=pointsTurns/2
 pEndArrw=pointsTurns/2+50
+
+'''
 fig15=plt.figure(15)
 ax15=fig15.gca(projection='3d')
 ax15.plot(1.e+7*prtclCoor[6,0:pointsStartLarmor],1.e+7*prtclCoor[8,0:pointsStartLarmor], \
@@ -819,9 +822,9 @@ plt.xlabel('x, $nm$',color='m',fontsize=16)
 plt.ylabel('y, $nm$',color='m',fontsize=16)
 ax15.set_zlabel('z, $nm$',color='m',fontsize=16)
 plt.title('Approach-1: First Ion Trajectory (Start)',color='m',fontsize=16)
-
+'''
 pBeg=pointsEndLarmor-pointsTurns
-
+'''
 fig20=plt.figure(20)
 ax20=fig20.gca(projection='3d')
 ax20.plot(1.e+4*prtclCoor[0,pBeg:pointsEndLarmor], \
@@ -837,10 +840,12 @@ plt.ylabel('y, $\mu m$',color='m',fontsize=16)
 ax20.set_zlabel('z, $\mu m$',color='m',fontsize=16)
 plt.title(('Approach-1: First Electron Trajectory (End; $N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' \
            % (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
-
+'''
 
 pEndArrw=pointsEndLarmor-pointsTurns/2
 pBegArrw=pEndArrw-50
+
+'''
 fig25=plt.figure(25)
 ax25=fig25.gca(projection='3d')
 ax25.plot(1.e+7*prtclCoor[6,pBeg:pointsEndLarmor],1.e+7*prtclCoor[8,pBeg:pointsEndLarmor], \
@@ -851,12 +856,15 @@ plt.xlabel('x, $nm$',color='m',fontsize=16)
 plt.ylabel('y, $nm$',color='m',fontsize=16)
 ax25.set_zlabel('z, $nm$',color='m',fontsize=16)
 plt.title('Approach-1: First Ion Trajectory (End)',color='m',fontsize=16)
+'''
 
 pointsGCtot=int(pointTrack_2[0])
 
 turns_2=10*turns
 pBegArrw_2=pointsGCtot-turns_2/2
 pEndArrw_2=pBegArrw_2+25
+
+'''
 fig225=plt.figure(225)
 ax225=fig225.gca(projection='3d')
 ax225.plot(1.e+7*prtclCoor_2[6,pointsGCtot-turns_2:pointsGCtot],1.e+7*prtclCoor_2[8,pointsGCtot-turns_2:pointsGCtot], \
@@ -867,16 +875,18 @@ plt.xlabel('x, $nm$',color='m',fontsize=16)
 plt.ylabel('y, $nm$',color='m',fontsize=16)
 ax225.set_zlabel('z, $nm$',color='m',fontsize=16)
 plt.title('Approach-2: First Ion Trajectory (End)',color='m',fontsize=16)
+'''
 
 fig325=plt.figure(325)
-plt.plot(1.e+4*prtclCoor_2[4,0:b_2Len],1.e+4*diff_b[0:b_2Len],'.r',linewidth=2)
+plt.plot(1.e+4*prtclCoor_2[4,0:b_2LenFirstTrack],1.e+4*diff_b[0:b_2LenFirstTrack],'.r',linewidth=2)
 plt.xlabel('z, $\mu m$',color='m',fontsize=16)
 plt.ylabel('$\Delta b=b_{Apprch-1}-b_{Apprch-2}$, $\mu m$',color='m',fontsize=16)
 plt.title('First Trajectory: $\Delta b$ (Difference for Distances $b$ between Particles)',color='m',fontsize=16)
-plt.xlim([1.e+4*prtclCoor_2[4,0]-50,1.e+4*prtclCoor_2[4,b_2Len-1]+50])
+plt.xlim([1.e+4*prtclCoor_2[4,0]-50,1.e+4*prtclCoor_2[4,b_2LenFirstTrack-1]+50])
 plt.ylim([-.3,.3])
 plt.grid(True)
 
+'''
 plt.figure(30)
 plt.plot(range(int(pointsEndLarmor)),1.e4*prtclCoor[4,0:pointsEndLarmor],'-r',linewidth=2)
 plt.xlabel('Points',color='m',fontsize=16)
@@ -901,7 +911,7 @@ plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
 plt.title('Approach-1: Map for Transfered Momenta Calculations', color='m',fontsize=16)
 plt.grid(True)
-
+'''
 #
 # Normalization of the arrays zApprch1dpx,zApprch1dpy,zApprch1dpz
 # to improve visual presentation of the results:
@@ -918,6 +928,7 @@ for iA in range(nBins):
       visPrezApprch1dpz[iA,iB]=normFactor*zApprch1dpz[iA,iB]
 
 X,Y=np.meshgrid(xA,yB) 
+
 fig70=plt.figure(70)
 ax70=fig70.gca(projection='3d')
 # surf=ax70.plot_surface(X,Y,visPrezApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
@@ -929,7 +940,7 @@ ax70.set_zlabel('$dP_x \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig70.colorbar(surf)
 plt.grid(True)
 
-X,Y=np.meshgrid(xA,yB) 
+# X,Y=np.meshgrid(xA,yB) 
 
 fig75=plt.figure(75)
 ax=fig75.add_subplot(111)                                          # for contours poltting
@@ -952,6 +963,16 @@ ax80.set_zlabel('$dP_y \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig80.colorbar(surf)
 plt.grid(True)
 
+fig85=plt.figure(85)
+ax=fig85.add_subplot(111)                                          # for contours poltting
+# mapDpx=ax.contourf(X,Y,zApprch1dpx)   
+mapDpx=ax.contourf(X,Y,visPrezApprch1dpy)   
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_y$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d' % lastTrackNumber), \
+          color='m',fontsize=16)
+fig85.colorbar(mapDpx)
+
 fig90=plt.figure(90)
 ax90=fig90.gca(projection='3d')
 # surf=ax90.plot_surface(X,Y,visPrezApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
@@ -963,9 +984,21 @@ ax90.set_zlabel('$dP_z \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig90.colorbar(surf)
 plt.grid(True)
 
+fig95=plt.figure(95)
+ax=fig95.add_subplot(111)                                          # for contours poltting
+# mapDpx=ax.contourf(X,Y,zApprch1dpx)   
+mapDpx=ax.contourf(X,Y,visPrezApprch1dpz)   
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_z$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d' % lastTrackNumber), \
+          color='m',fontsize=16)
+fig95.colorbar(mapDpx)
+
 pointsGCturns=turns                                                # Number of points for drawing ("GC")
 
 pBegArrw=pointsGCturns/2-1
+
+'''
 fig110=plt.figure(110)
 ax110=fig110.gca(projection='3d')
 ax110.plot(1.e+4*prtclCoor[0,0:pointsStartLarmor],1.e+4*prtclCoor[2,0:pointsStartLarmor], \
@@ -985,6 +1018,7 @@ ax110.set_zlabel('z, $\mu m$',color='m',fontsize=16)
 plt.title(('First Trajectory (Start; $N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' \
            % (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
 ax110.text(0.,0.,-5425.,'Blue is Trajectory in the System of "Guiding Center"',color='b',fontsize=16)
+'''
 
 # for m in range(pointsEndLarmor-50,pointsEndLarmor):
 #    print 'Electron: z(%d)=%e' % (m,1.e+4*prtclCoor[4,m])
@@ -994,6 +1028,7 @@ ax110.text(0.,0.,-5425.,'Blue is Trajectory in the System of "Guiding Center"',c
 print 'Last point of the first track: z(%d)=%e mkm, z_gc(%d)=%e mkm' % \
       (pointsEndLarmor,1.e+4*prtclCoor[4,pointsEndLarmor-1],pointsGCtot,1.e+4*prtclCoor_2[4,pointsGCtot-1])
 
+'''
 fig120=plt.figure(120) 
 ax120=fig120.gca(projection='3d')
 ax120.plot(1.e+4*prtclCoor[0,pBeg:pointsEndLarmor], \
@@ -1014,13 +1049,16 @@ ax120.set_zlabel('z, $\mu m$',color='m',fontsize=16)
 plt.title(('First Electron Trajectory (End; $N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' \
            % (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
 ax120.text(0.,0.,25.,'Blue is Trajectory in the System of "Guiding Center"',color='b',fontsize=16)
+'''
 
 pEndArrw=pointsEndLarmor-pointsTurns/2
 pBegArrw=pEndArrw-50
+
 # print 'pointsGCtot=%d, turns=%d' % (pointsGCtot,turns)
 # for m in range(pointsGCtot-turns,pointsGCtot):
 #    print 'Point %d: x=%e, y=%e, z=%e' % (m,1.e+7*prtclCoor_2[6,m],1.e+7*prtclCoor_2[8,m],1.e+7*prtclCoor_2[10,m])
 
+'''
 fig125=plt.figure(125)
 ax125=fig125.gca(projection='3d')
 ax125.plot(1.e+7*prtclCoor[6,pBeg:pointsEndLarmor],1.e+7*prtclCoor[8,pBeg:pointsEndLarmor], \
@@ -1033,11 +1071,13 @@ plt.xlabel('x, $nm$',color='m',fontsize=16)
 plt.ylabel('y, $nm$',color='m',fontsize=16)
 ax125.set_zlabel('z, $nm$',color='m',fontsize=16)
 plt.title('First Ion Trajectory (End)',color='m',fontsize=16)
+'''
 
 pointCoor_2=np.zeros(pointsGCtot)
 zCoor_2=np.zeros(pointsGCtot)
 stepNzCoor=50
 
+'''
 k=0
 for m in range(0,pointsGCtot,stepNzCoor):
    pointCoor_2[k]=k*stepNzCoor*stepsNumberOnGyro
@@ -1064,6 +1104,7 @@ plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
 plt.title('Approach-2: Map for Transfered Momenta Calculations', color='m',fontsize=16)
 plt.grid(True)
+'''
 
 #
 # Normalization of the arrays zApprch1dpx,zApprch1dpy,zApprch1dpz
@@ -1200,8 +1241,7 @@ print 'Close the written output file "%s"' % outputFile
 #
 ###################################################   
 #
-#
-# Opening the output file: 
+# Opening the output file for approach-1: 
 #
 outputFile='dpApprch1.dat'
 print 'Open output file "%s"...' % outputFile
@@ -1213,6 +1253,8 @@ except:
    print 'Problem to open output file "%s"' % outputFile
 
 nInLine=10
+
+outfile.write ('\n       Tracks: %d , Normalization Factor: %e\n' % (lastTrackNumber,normFactor))
 
 #
 # Writing the array xA=log10(Upot/Ekin) to output file: 
@@ -1309,7 +1351,7 @@ for mB in range(nBins):
                zRes_line=zRes_line+strVal+', '
             k += 1
             countsRes += 1
-         if valPrev != 0. and valCrrnt == 0:
+         if valPrev != 0. and valCrrnt == 0.:
             if countsRes == 1:
                zRes_line=zRes_line+', '+strVal
 	    else:
@@ -1388,7 +1430,7 @@ for mB in range(nBins):
                zRes_line=zRes_line+strVal+', '
             k += 1
             countsRes += 1
-         if valPrev != 0. and valCrrnt == 0:
+         if valPrev != 0. and valCrrnt == 0.:
             if countsRes == 1:
                zRes_line=zRes_line+', '+strVal
 	    else:
@@ -1433,6 +1475,7 @@ if k != 0:
 print 'Total counts for zApprch1dpy data =%d' % countsRes
 if countsRes != nBins*nBins:
    print 'Something wrong in the writing of zApprch1dpy data to output file!'
+
 #
 # Writing the array zApprch1dpz to output file (skiping of the repeated zero values): 
 #
@@ -1466,7 +1509,7 @@ for mB in range(nBins):
                zRes_line=zRes_line+strVal+', '
             k += 1
             countsRes += 1
-         if valPrev != 0. and valCrrnt == 0:
+         if valPrev != 0. and valCrrnt == 0.:
             if countsRes == 1:
                zRes_line=zRes_line+', '+strVal
 	    else:
@@ -1518,7 +1561,331 @@ if countsRes != nBins*nBins:
 outfile.close()
 print 'Close the written output file "%s"' % outputFile
 
-# sys.exit()
+#
+# Opening the output file for approach-2: 
+#
+outputFile='dpApprch2.dat'
+print 'Open output file "%s"...' % outputFile
+outfileFlag=0
+try:
+   outfile = open(outputFile,'w')
+   outfileFlag=1
+except:
+   print 'Problem to open output file "%s"' % outputFile
+
+nInLine=10
+
+outfile.write ('\n       Tracks: %d , Normalization Factor: %e\n' % (lastTrackNumber,normFactor))
+
+#
+# Writing the array xA_2=log10(Upot/Ekin) to output file: 
+#
+outfile.write ('\n       xA_2=log10(eVca/Ekin) ( Entries: %d with %d per line)\n\n' % (nBins,nInLine))
+
+k=0
+for m in range(nBins): 
+   strVal='{:f}'.format(xA_2[m])
+   if k == 0:
+      xA_line=strVal
+   else:
+      xA_line=xA_line+', '+strVal
+   k += 1
+   if k == nInLine:
+      outfile.write ('%s\n' % xA_line)
+      k=0
+if k != 0:
+   outfile.write ('%s\n' % xA_line)
+
+#
+# Writing the array yB_2=log10(Rlarm/b) to output file: 
+#
+outfile.write ('\n       yB_2=log10(Rlarm/b) ( Entries: %d with %d per line)\n\n' % (nBins,nInLine))
+
+k=0
+for m in range(nBins): 
+   strVal='{:f}'.format(yB_2[m])
+   if k == 0:
+      yB_line=strVal
+   else:
+      yB_line=yB_line+', '+strVal
+   k += 1
+   if k == nInLine:
+      outfile.write ('%s\n' % yB_line)
+      k=0
+if k != 0:
+   outfile.write ('%s\n' % yB_line)
+
+'''
+#
+# Writing the array zApprch2dpx to output file (without of the skiping of the repeated zero values): 
+#
+outfile.write ('\n    zApprch2dpx[iA_2,iB_2] (1/cm**2; Entries: %d x %d )' % (nBins,nBins)) 
+outfile.write \
+('\nFormat: for iB_2=0: iA_2=0 --> nBins-1; then for iB_2=1: iA=0 --> nBins-1 and so on till iB_2=nBins-1\n\n')
+
+k=0
+for mB_2 in range(2): 
+   for mA_2 in range(nBins):
+      strVal='{:e}'.format(zApprch2dpx[mA_2,mB_2])
+      if k == 0:
+         zRes_line=strVal
+      else:
+         zRes_line=zRes_line+', '+strVal
+      k += 1
+      if k == nInLine:
+         outfile.write ('%s\n' % zRes_line)
+         k=0
+if k != 0:
+   outfile.write ('%s\n' % zRes_line)
+'''
+
+#
+# Writing the array zApprch2dpx to output file (skiping of the repeated zero values): 
+#
+
+nInLine=8
+
+outfile.write ('\n    zApprch2dpx[iA_2,iB_2] (1/cm**2; Entries: %d x %d with %d per line)' % (nBins,nBins,nInLine)) 
+outfile.write \
+('\nFormat: for iB_2=0: iA_2=0 --> nBins-1, then for iB_2=1: iA_2=0 --> nBins-1 and so on till for iB_2=nBins-1: iA_2=0 --> nBins-1\n\n')
+
+k=0
+countsRes=0
+zRes_line=''
+nZero=0
+valPrev=-1.
+for mB_2 in range(nBins): 
+   for mA_2 in range(nBins):
+      valCrrnt=zApprch2dpx[mA_2,mB_2]
+      strVal='{:e}'.format(valCrrnt)
+      if valPrev == -1.:
+         zRes_line=zRes_line+strVal
+         k += 1
+         countsRes += 1
+	 if valCrrnt == 0.:
+	    nZero=1
+      else:	 
+         if valPrev != 0. and valCrrnt != 0.:
+            if countsRes == 1:
+               zRes_line=zRes_line+', '+strVal+', '
+	    else:
+               zRes_line=zRes_line+strVal+', '
+            k += 1
+            countsRes += 1
+         if valPrev != 0. and valCrrnt == 0.:
+            if countsRes == 1:
+               zRes_line=zRes_line+', '+strVal
+	    else:
+               zRes_line=zRes_line+strVal
+            k += 1
+            nZero += 1
+         if valPrev == 0. and valCrrnt == 0.:
+            nZero += 1
+         if valPrev == 0. and valCrrnt != 0.:
+	    if k < nInLine:
+               zRes_line=zRes_line+'('+'{:d}'.format(nZero)+'), '+strVal+', '
+	       k += 1
+               countsRes += nZero+1
+	       nZero=0
+	    else:
+               zRes_line=zRes_line+'('+'{:d}'.format(nZero)+'),'
+               outfile.write ('%s\n' % zRes_line)
+               zRes_line=''
+	       k=0
+               zRes_line=zRes_line+strVal+', '
+	       k += 1
+               countsRes += nZero+1
+	       nZero=0
+      if k >= nInLine:
+         if nZero == 0:
+            outfile.write ('%s\n' % zRes_line)
+            zRes_line=''
+	    k=0 
+#      print 'mA_2=%d, mB_2=%d,valCrrnt=%e, valPrev=%e; nZero=%d, k=%d, countsRes=%d' % \
+#            (mA_2,mB_2,valCrrnt,valPrev,nZero,k,countsRes)
+      valPrev=valCrrnt        
+if k == 0:
+   if nZero !=0:   
+      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+      countsRes += nZero
+      outfile.write ('%s\n' % zRes_line)
+if k != 0:
+   if nZero !=0:   
+      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+      countsRes += nZero
+      outfile.write ('%s\n' % zRes_line)
+
+print 'Total counts for zApprch2dpx data =%d' % countsRes
+if countsRes != nBins*nBins:
+   print 'Something wrong in the writing of zApprch2dpx data to output file!'
+
+#
+# Writing the array zApprch2dpy to output file (skiping of the repeated zero values): 
+#
+
+nInLine=8
+
+outfile.write ('\n    zApprch2dpy[iA_2,iB_2] (1/cm**2; Entries: %d x %d with %d per line)' % (nBins,nBins,nInLine)) 
+outfile.write \
+('\nFormat: for iB_2=0: iA_2=0 --> nBins-1, then for iB_2=1: iA_2=0 --> nBins-1 and so on till for iB_2=nBins-1: iA_2=0 --> nBins-1\n\n')
+
+k=0
+countsRes=0
+zRes_line=''
+nZero=0
+valPrev=-1.
+for mB_2 in range(nBins): 
+   for mA_2 in range(nBins):
+      valCrrnt=zApprch2dpy[mA_2,mB_2]
+      strVal='{:e}'.format(valCrrnt)
+      if valPrev == -1.:
+         zRes_line=zRes_line+strVal
+         k += 1
+         countsRes += 1
+	 if valCrrnt == 0.:
+	    nZero=1
+      else:	 
+         if valPrev != 0. and valCrrnt != 0.:
+            if countsRes == 1:
+               zRes_line=zRes_line+', '+strVal+', '
+	    else:
+               zRes_line=zRes_line+strVal+', '
+            k += 1
+            countsRes += 1
+         if valPrev != 0. and valCrrnt == 0.:
+            if countsRes == 1:
+               zRes_line=zRes_line+', '+strVal
+	    else:
+               zRes_line=zRes_line+strVal
+            k += 1
+            nZero += 1
+         if valPrev == 0. and valCrrnt == 0.:
+            nZero += 1
+         if valPrev == 0. and valCrrnt != 0.:
+	    if k < nInLine:
+               zRes_line=zRes_line+'('+'{:d}'.format(nZero)+'), '+strVal+', '
+	       k += 1
+               countsRes += nZero+1
+	       nZero=0
+	    else:
+               zRes_line=zRes_line+'('+'{:d}'.format(nZero)+'),'
+               outfile.write ('%s\n' % zRes_line)
+               zRes_line=''
+	       k=0
+               zRes_line=zRes_line+strVal+', '
+	       k += 1
+               countsRes += nZero+1
+	       nZero=0
+      if k >= nInLine:
+         if nZero == 0:
+            outfile.write ('%s\n' % zRes_line)
+            zRes_line=''
+	    k=0 
+#       print 'mA_2=%d, mB_2=%d,valCrrnt=%e, valPrev=%e; nZero=%d, k=%d, countsRes=%d' % \
+#             (mA_2,mB_2,valCrrnt,valPrev,nZero,k,countsRes)
+      valPrev=valCrrnt        
+if k == 0:
+   if nZero !=0:   
+      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+      countsRes += nZero
+      outfile.write ('%s\n' % zRes_line)
+if k != 0:
+   if nZero !=0:   
+      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+      countsRes += nZero
+      outfile.write ('%s\n' % zRes_line)
+
+print 'Total counts for zApprch2dpy data =%d' % countsRes
+if countsRes != nBins*nBins:
+   print 'Something wrong in the writing of zApprch2dpy data to output file!'
+
+#
+# Writing the array zApprch2dpz to output file (skiping of the repeated zero values): 
+#
+
+nInLine=8
+
+outfile.write ('\n    zApprch2dpz[iA_2,iB_2] (1/cm**2; Entries: %d x %d with %d per line)' % (nBins,nBins,nInLine)) 
+outfile.write \
+('\nFormat: for iB_2=0: iA_2=0 --> nBins-1, then for iB_2=1: iA_2=0 --> nBins-1 and so on till for iB_2=nBins-1: iA_2=0 --> nBins-1\n\n')
+
+k=0
+countsRes=0
+zRes_line=''
+nZero=0
+valPrev=-1.
+for mB_2 in range(nBins): 
+   for mA_2 in range(nBins):
+      valCrrnt=zApprch2dpz[mA_2,mB_2]
+      strVal='{:e}'.format(valCrrnt)
+      if valPrev == -1.:
+         zRes_line=zRes_line+strVal
+         k += 1
+         countsRes += 1
+	 if valCrrnt == 0.:
+	    nZero=1
+      else:	 
+         if valPrev != 0. and valCrrnt != 0.:
+            if countsRes == 1:
+               zRes_line=zRes_line+', '+strVal+', '
+	    else:
+               zRes_line=zRes_line+strVal+', '
+            k += 1
+            countsRes += 1
+         if valPrev != 0. and valCrrnt == 0.:
+            if countsRes == 1:
+               zRes_line=zRes_line+', '+strVal
+	    else:
+               zRes_line=zRes_line+strVal
+            k += 1
+            nZero += 1
+         if valPrev == 0. and valCrrnt == 0.:
+            nZero += 1
+         if valPrev == 0. and valCrrnt != 0.:
+	    if k < nInLine:
+               zRes_line=zRes_line+'('+'{:d}'.format(nZero)+'), '+strVal+', '
+	       k += 1
+               countsRes += nZero+1
+	       nZero=0
+	    else:
+               zRes_line=zRes_line+'('+'{:d}'.format(nZero)+'),'
+               outfile.write ('%s\n' % zRes_line)
+               zRes_line=''
+	       k=0
+               zRes_line=zRes_line+strVal+', '
+	       k += 1
+               countsRes += nZero+1
+	       nZero=0
+      if k >= nInLine:
+         if nZero == 0:
+            outfile.write ('%s\n' % zRes_line)
+            zRes_line=''
+	    k=0 
+#      print 'mA_2=%d, mB_2=%d,valCrrnt=%e, valPrev=%e; nZero=%d, k=%d, countsRes=%d' % \
+#            (mA_2,mB_2,valCrrnt,valPrev,nZero,k,countsRes)
+      valPrev=valCrrnt        
+if k == 0:
+   if nZero !=0:   
+      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+      countsRes += nZero
+      outfile.write ('%s\n' % zRes_line)
+if k != 0:
+   if nZero !=0:   
+      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+      countsRes += nZero
+      outfile.write ('%s\n' % zRes_line)
+
+outfile.write ('\n')
+            
+
+print 'Total counts for zApprch2dpz data =%d' % countsRes
+if countsRes != nBins*nBins:
+   print 'Something wrong in the writing of zApprch2dpz data to output file!'
+
+outfile.close()
+print 'Close the written output file "%s"' % outputFile
+
+sys.exit()
 
 ###################################################
 #
@@ -1567,8 +1934,15 @@ while True:
    if not lineData:
       break
    lines += 1
+   if lines == 2:
+      words=lineData.split()
+      indx1=words.index('Tracks:')
+      lastTrackNumber=int(words[indx1+1])
+      indx2=words.index('Factor:')
+      normFactor=float(words[indx2+1])
+      print 'lastTrackNumber=%d, normFactor=%e' % (lastTrackNumber,normFactor)   
 # Header for xA-Data:
-   if lines == 2: 
+   if lines == 4: 
       words=lineData.split()
       indx1=words.index('Entries:')
       xAentries=int(words[indx1+1])
@@ -1578,13 +1952,13 @@ while True:
       xAdata=np.zeros(xAentries)
       linesFull=xAentries//perLine
       entriesRem=xAentries-perLine*linesFull
-      yBheaderLineNumber=linesFull+5
+      yBheaderLineNumber=linesFull+7
       if entriesRem > 0:
          yBheaderLineNumber += 1
-#      print 'yBheaderLineNumber=%d' % yBheaderLineNumber
+      print 'yBheaderLineNumber=%d' % yBheaderLineNumber
    if xAdataFlag == 0:
 # xA-Data:
-      if lines > 3 and lines <= yBheaderLineNumber-2:
+      if lines > 5 and lines <= yBheaderLineNumber-2:
          words=lineData.split()
          nWords=len(words)
 #          print 'xA-Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
