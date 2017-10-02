@@ -919,6 +919,16 @@ plt.grid(True)
 visPrezApprch1dpx=np.zeros((nBins,nBins))
 visPrezApprch1dpy=np.zeros((nBins,nBins))
 visPrezApprch1dpz=np.zeros((nBins,nBins))
+dpxDataMax=0                                                       # maximum for array of zApprch1dpx
+indxAdpxDataMax=0                                                  # index A of the maximum for array of zApprch1dpx
+indxBdpxDataMax=0                                                  # index B of the maximum for array of zApprch1dpx
+dpyDataMax=0                                                       # maximum for array of zApprch1dpx
+indxAdpyDataMax=0                                                  # index A of the maximum for array of zApprch1dpx
+indxBdpyDataMax=0                                                  # index B of the maximum for array of zApprch1dpx
+dpzDataMax=0                                                       # maximum for array of zApprch1dpx
+indxAdpzDataMax=0                                                  # index A of the maximum for array of zApprch1dpx
+indxBdpzDataMax=0                                                  # index B of the maximum for array of zApprch1dpx
+
 
 normFactor=1.e24
 for iA in range(nBins):
@@ -926,6 +936,18 @@ for iA in range(nBins):
       visPrezApprch1dpx[iA,iB]=normFactor*zApprch1dpx[iA,iB]
       visPrezApprch1dpy[iA,iB]=normFactor*zApprch1dpy[iA,iB]
       visPrezApprch1dpz[iA,iB]=normFactor*zApprch1dpz[iA,iB]
+      if dpxDataMax < normFactor*zApprch1dpx[iA,iB]:
+         dpxDataMax=normFactor*zApprch1dpx[iA,iB]
+         indxAdpxDataMax=iA
+         indxBdpxDataMax=iB
+      if dpyDataMax < normFactor*zApprch1dpy[iA,iB]:
+         dpyDataMax=normFactor*zApprch1dpy[iA,iB]
+         indxAdpyDataMax=iA
+         indxBdpyDataMax=iB
+      if dpzDataMax < normFactor*zApprch1dpz[iA,iB]:
+         dpzDataMax=normFactor*zApprch1dpz[iA,iB]
+         indxAdpzDataMax=iA
+         indxBdpzDataMax=iB
 
 X,Y=np.meshgrid(xA,yB) 
 
@@ -933,10 +955,11 @@ fig70=plt.figure(70)
 ax70=fig70.gca(projection='3d')
 # surf=ax70.plot_surface(X,Y,visPrezApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 surf=ax70.plot_surface(X,Y,visPrezApprch1dpx,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title(('Approach-1: Transfered Momentum $dP_x$\nTracks: %d' % lastTrackNumber), color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_x$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpxDataMax)), color='m',fontsize=16)
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax70.set_zlabel('$dP_x \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+ax70.set_zlabel('$dP_x \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig70.colorbar(surf)
 plt.grid(True)
 
@@ -948,18 +971,19 @@ ax=fig75.add_subplot(111)                                          # for contour
 mapDpx=ax.contourf(X,Y,visPrezApprch1dpx)   
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-plt.title(('Approach-1: Transfered Momentum $dP_x$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d' % lastTrackNumber), \
-          color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_x$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+           (lastTrackNumber,dpxDataMax)), color='m',fontsize=14)
 fig75.colorbar(mapDpx)
 
 fig80=plt.figure(80)
 ax80=fig80.gca(projection='3d')
 # surf=ax80.plot_surface(X,Y,visPrezApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 surf=ax80.plot_surface(X,Y,visPrezApprch1dpy,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title(('Approach-1: Transfered Momentum $dP_y$\nTracks: %d' % lastTrackNumber), color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpyDataMax)), color='m',fontsize=16)
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax80.set_zlabel('$dP_y \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+ax80.set_zlabel('$dP_y \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig80.colorbar(surf)
 plt.grid(True)
 
@@ -969,18 +993,19 @@ ax=fig85.add_subplot(111)                                          # for contour
 mapDpx=ax.contourf(X,Y,visPrezApprch1dpy)   
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-plt.title(('Approach-1: Transfered Momentum $dP_y$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d' % lastTrackNumber), \
-          color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_y$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+           (lastTrackNumber,dpyDataMax)), color='m',fontsize=14)
 fig85.colorbar(mapDpx)
 
 fig90=plt.figure(90)
 ax90=fig90.gca(projection='3d')
 # surf=ax90.plot_surface(X,Y,visPrezApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 surf=ax90.plot_surface(X,Y,visPrezApprch1dpz,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title(('Approach-1: Transfered Momentum $dP_z$\nTracks: %d' % lastTrackNumber), color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpzDataMax)), color='m',fontsize=16)
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax90.set_zlabel('$dP_z \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+ax90.set_zlabel('$dP_z \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig90.colorbar(surf)
 plt.grid(True)
 
@@ -990,8 +1015,8 @@ ax=fig95.add_subplot(111)                                          # for contour
 mapDpx=ax.contourf(X,Y,visPrezApprch1dpz)   
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-plt.title(('Approach-1: Transfered Momentum $dP_z$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d' % lastTrackNumber), \
-          color='m',fontsize=16)
+plt.title(('Approach-1: Transfered Momentum $dP_z$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+           (lastTrackNumber,dpzDataMax)), color='m',fontsize=14)
 fig95.colorbar(mapDpx)
 
 pointsGCturns=turns                                                # Number of points for drawing ("GC")
@@ -1114,12 +1139,34 @@ visPrezApprch2dpx=np.zeros((nBins,nBins))
 visPrezApprch2dpy=np.zeros((nBins,nBins))
 visPrezApprch2dpz=np.zeros((nBins,nBins))
 
+dpxDataMax_2=0                                                     # maximum for array of zApprch2dpx
+indxAdpxDataMax_2=0                                                # index A_2 of the maximum for array of zApprch2dpx
+indxBdpxDataMax_2=0                                                # index B_2 of the maximum for array of zApprch2dpx
+dpyDataMax_2=0                                                     # maximum for array of zApprch2dpx
+indxAdpyDataMax_2=0                                                # index A_2 of the maximum for array of zApprch2dpx
+indxBdpyDataMax_2=0                                                # index B_2 of the maximum for array of zApprch2dpx
+dpzDataMax_2=0                                                     # maximum for array of zApprch2dpx
+indxAdpzDataMax_2=0                                                # index A_2 of the maximum for array of zApprch2dpx
+indxBdpzDataMax_2=0                                                # index B_2 of the maximum for array of zApprch2dpx
+
 normFactor=1.e24
 for iA in range(nBins):
    for iB in range(nBins):
       visPrezApprch2dpx[iA,iB]=normFactor*zApprch2dpx[iA,iB]
       visPrezApprch2dpy[iA,iB]=normFactor*zApprch2dpy[iA,iB]
       visPrezApprch2dpz[iA,iB]=normFactor*zApprch2dpz[iA,iB]
+      if dpxDataMax_2 < normFactor*zApprch2dpx[iA,iB]:
+         dpxDataMax_2=normFactor*zApprch2dpx[iA,iB]
+         indxAdpxDataMax_2=iA
+         indxBdpxDataMax_2=iB
+      if dpyDataMax_2 < normFactor*zApprch2dpy[iA,iB]:
+         dpyDataMax_2=normFactor*zApprch2dpy[iA,iB]
+         indxAdpyDataMax_2=iA
+         indxBdpyDataMax_2=iB
+      if dpzDataMax_2 < normFactor*zApprch2dpz[iA,iB]:
+         dpzDataMax_2=normFactor*zApprch2dpz[iA,iB]
+         indxAdpzDataMax_2=iA
+         indxBdpzDataMax_2=iB
 
 X2,Y2=np.meshgrid(xA_2,yB_2) 
 
@@ -1127,10 +1174,11 @@ fig170=plt.figure(170)
 ax170=fig170.gca(projection='3d')
 # surf=ax170.plot_surface(X2,Y2,zApprch2dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 surf=ax170.plot_surface(X2,Y2,visPrezApprch2dpx,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title(('Approach-2: Transfered Momentum $dP_x$\nTracks: %d' % lastTrackNumber), color='m',fontsize=16)
+plt.title(('Approach-2: Transfered Momentum $dP_x$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpxDataMax_2)), color='m',fontsize=16)
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax170.set_zlabel('$dP_x \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+ax170.set_zlabel('$dP_x \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig170.colorbar(surf)
 plt.grid(True)
 
@@ -1144,18 +1192,19 @@ mapDpx=ax.contourf(X2,Y2,visPrezApprch2dpx)
 # plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-plt.title(('Approach-2: Transfered Momentum $dP_x$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d' % lastTrackNumber), \
-          color='m',fontsize=16)
+plt.title(('Approach-2: Transfered Momentum $dP_x$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+           (lastTrackNumber,dpxDataMax_2)), color='m',fontsize=14)
 fig175.colorbar(mapDpx)
 
 fig180=plt.figure(180)
 ax180=fig180.gca(projection='3d')
 # surf=ax180.plot_surface(X2,Y2,visPrezApprch2dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 surf=ax180.plot_surface(X2,Y2,visPrezApprch2dpy,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title(('Approach-2: Transfered Momentum $dP_y$\nTracks: %d' % lastTrackNumber), color='m',fontsize=16)
+plt.title(('Approach-2: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpyDataMax_2)), color='m',fontsize=16)
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax80.set_zlabel('$dP_y \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+ax180.set_zlabel('$dP_y \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig180.colorbar(surf)
 # cbar=fig180.colorbar(surf,ticks=[0,1000,2000,3000,4000,5000,6000,7000])  # Next 2 commands not work
 # cbar.ax.set_yticklabels(['0','1000','2000','3000','4000','5000','6000','7000'])
@@ -1168,16 +1217,45 @@ cb = fig180.colorbar(surf)
 # cb.update_ticks()
 plt.grid(True)
 
+fig185=plt.figure(185)
+ax=fig185.add_subplot(111)                                          # for contours poltting
+# mapDpx=ax.contourf(X2,Y2,zApprch1dpy)   
+mapDpy=ax.contourf(X2,Y2,visPrezApprch2dpy)   
+# mapDpx=ax.contourf(X,Y,dpxApprch_2,levels)                        # Next 4 commands not work  
+# Contourrange=[int(NlarmCutofDown+1)]
+# mapTurnCutoff=ax.contour(X,Y,Nlarm,Contourrange,format='%d',colors=('w'),linewidths=(2)) 
+# plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+plt.title(('Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+           (lastTrackNumber,dpyDataMax_2)), color='m',fontsize=14)
+fig185.colorbar(mapDpy)
+
 fig190=plt.figure(190)
 ax190=fig190.gca(projection='3d')
 # surf=ax190.plot_surface(X2,Y2,visPrezApprch2dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 surf=ax190.plot_surface(X2,Y2,visPrezApprch2dpz,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title(('Approach-2: Transfered Momentum $dP_z$\nTracks: %d' % lastTrackNumber), color='m',fontsize=16)
+plt.title(('Approach-2: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpzDataMax_2)), color='m',fontsize=16)
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax90.set_zlabel('$dP_z \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+ax190.set_zlabel('$dP_z \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig190.colorbar(surf)
 plt.grid(True)
+
+fig195=plt.figure(195)
+ax=fig195.add_subplot(111)                                          # for contours poltting
+# mapDpx=ax.contourf(X2,Y2,zApprch1dpz)   
+mapDpz=ax.contourf(X2,Y2,visPrezApprch2dpz)   
+# mapDpx=ax.contourf(X,Y,dpxApprch_2,levels)                        # Next 4 commands not work  
+# Contourrange=[int(NlarmCutofDown+1)]
+# mapTurnCutoff=ax.contour(X,Y,Nlarm,Contourrange,format='%d',colors=('w'),linewidths=(2)) 
+# plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+plt.title(('Approach-2: Transfered Momentum $dP_z$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+           (lastTrackNumber,dpzDataMax_2)), color='m',fontsize=14)
+fig195.colorbar(mapDpz)
 
 plt.show()   
 
@@ -1382,16 +1460,13 @@ for mB in range(nBins):
 	    k=0 
 #      print 'mA=%d, mB=%d,valCrrnt=%e, valPrev=%e; nZero=%d, k=%d, countsRes=%d' % (mA,mB,valCrrnt,valPrev,nZero,k,countsRes)
       valPrev=valCrrnt        
-if k == 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+if nZero !=0:   
+   zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+   if nZero != nBins*nBins:
       countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
-if k != 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
-      countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
+   else:
+      countsRes=nBins*nBins
+   outfile.write ('%s\n' % zRes_line)
 
 print 'Total counts for zApprch1dpx data =%d' % countsRes
 if countsRes != nBins*nBins:
@@ -1461,16 +1536,13 @@ for mB in range(nBins):
 	    k=0 
 #      print 'mA=%d, mB=%d,valCrrnt=%e, valPrev=%e; nZero=%d, k=%d, countsRes=%d' % (mA,mB,valCrrnt,valPrev,nZero,k,countsRes)
       valPrev=valCrrnt        
-if k == 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+if nZero !=0:   
+   zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+   if nZero != nBins*nBins:
       countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
-if k != 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
-      countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
+   else:
+      countsRes=nBins*nBins
+   outfile.write ('%s\n' % zRes_line)
 
 print 'Total counts for zApprch1dpy data =%d' % countsRes
 if countsRes != nBins*nBins:
@@ -1540,16 +1612,13 @@ for mB in range(nBins):
 	    k=0 
 #      print 'mA=%d, mB=%d,valCrrnt=%e, valPrev=%e; nZero=%d, k=%d, countsRes=%d' % (mA,mB,valCrrnt,valPrev,nZero,k,countsRes)
       valPrev=valCrrnt        
-if k == 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+if nZero !=0:   
+   zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+   if nZero != nBins*nBins:
       countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
-if k != 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
-      countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
+   else:
+      countsRes=nBins*nBins
+   outfile.write ('%s\n' % zRes_line)
 
 outfile.write ('\n')
             
@@ -1704,16 +1773,13 @@ for mB_2 in range(nBins):
 #      print 'mA_2=%d, mB_2=%d,valCrrnt=%e, valPrev=%e; nZero=%d, k=%d, countsRes=%d' % \
 #            (mA_2,mB_2,valCrrnt,valPrev,nZero,k,countsRes)
       valPrev=valCrrnt        
-if k == 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+if nZero !=0:   
+   zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+   if nZero != nBins*nBins:
       countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
-if k != 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
-      countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
+   else:
+      countsRes=nBins*nBins
+   outfile.write ('%s\n' % zRes_line)
 
 print 'Total counts for zApprch2dpx data =%d' % countsRes
 if countsRes != nBins*nBins:
@@ -1784,16 +1850,13 @@ for mB_2 in range(nBins):
 #       print 'mA_2=%d, mB_2=%d,valCrrnt=%e, valPrev=%e; nZero=%d, k=%d, countsRes=%d' % \
 #             (mA_2,mB_2,valCrrnt,valPrev,nZero,k,countsRes)
       valPrev=valCrrnt        
-if k == 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+if nZero !=0:   
+   zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+   if nZero != nBins*nBins:
       countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
-if k != 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
-      countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
+   else:
+      countsRes=nBins*nBins
+   outfile.write ('%s\n' % zRes_line)
 
 print 'Total counts for zApprch2dpy data =%d' % countsRes
 if countsRes != nBins*nBins:
@@ -1864,16 +1927,13 @@ for mB_2 in range(nBins):
 #      print 'mA_2=%d, mB_2=%d,valCrrnt=%e, valPrev=%e; nZero=%d, k=%d, countsRes=%d' % \
 #            (mA_2,mB_2,valCrrnt,valPrev,nZero,k,countsRes)
       valPrev=valCrrnt        
-if k == 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+if nZero !=0:   
+   zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
+   if nZero != nBins*nBins:
       countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
-if k != 0:
-   if nZero !=0:   
-      zRes_line=zRes_line+'('+'{:d}'.format(nZero)+')'
-      countsRes += nZero
-      outfile.write ('%s\n' % zRes_line)
+   else:
+      countsRes=nBins*nBins
+   outfile.write ('%s\n' % zRes_line)
 
 outfile.write ('\n')
             
@@ -1889,12 +1949,13 @@ sys.exit()
 
 ###################################################
 #
-# Reading the data from output file for later processing and vizualization: 
+# Reading the data from output files for checking (these part of code  will be used in 
+# the script threeApproachesVisualozation.py for later processing and vizualization): 
 #
 ###################################################   
+
 #
-#
-# Opening the input file: 
+# Opening the input file 'dpApprch1.dat': 
 #
 inputFile='dpApprch1.dat'
 print 'Open input file "%s"...' % inputFile
@@ -2225,5 +2286,388 @@ for mB in range(entriesB):
 if nBad == 0:
    print 'Everything is OK for zApprch1dpz data' 
 	 
+#
+# Comparison written and readed data for checking writing/reading:
+#
+print 'Comparison written and readed data for checking writing/reading:' 
+nBad=0
+for mA in range(xAentries):
+   if abs(xA[mA]-xAdata[mA]) > 1.e-6:
+      nBad += 1
+      print 'Something wrong with xA data for %d: xA=%16.10e, xAdata=%16.10e' % (mA,xA[mA],xAdata[mA])
+if nBad == 0:
+   print 'Everything is OK for xA data' 
+   
+nBad=0
+for mB in range(yBentries):
+   if abs(yB[mA]-yBdata[mA]) > 1.e-6:
+      nBad += 1
+      print 'Something wrong with yB data for %d: yB=%16.10e, yBdata=%16.10e' % (mB,yB[mB],yBdata[mB])
+if nBad == 0:
+   print 'Everything is OK for yB data' 
+   
+nBad=0
+for mB in range(entriesB):
+   for mA in range(entriesA):
+      if abs(zApprch1dpx[mA,mB]-dataDpx[mA,mB]) > 1.e-3:
+         nBad += 1
+         print 'Something wrong with zApprch1dpx data for mA=%d and mB=%d: zApprch1dpx=%16.10e, dataDpx=%16.10e' % \
+	       (mA,mB,zApprch1dpx[mA,mB],dataDpx[mA,mB])
+if nBad == 0:
+   print 'Everything is OK for zApprch1dpx data' 
+	 
+nBad=0
+for mB in range(entriesB):
+   for mA in range(entriesA):
+      if abs(zApprch1dpy[mA,mB]-dataDpy[mA,mB]) > 1.e-3:
+         nBad += 1
+         print 'Something wrong with zApprch1dpy data for mA=%d and mB=%d: zApprch1dpy=%16.10e, dataDpy=%16.10e' % \
+	       (mA,mB,zApprch1dpy[mA,mB],dataDpy[mA,mB])
+if nBad == 0:
+   print 'Everything is OK for zApprch1dpy data' 
+	 
+nBad=0
+for mB in range(entriesB):
+   for mA in range(entriesA):
+      if abs(zApprch1dpz[mA,mB]-dataDpz[mA,mB]) > 1.e-3:
+         nBad += 1
+         print 'Something wrong with zApprch1dpz data for mA=%d and mB=%d: zApprch1dpz=%16.10e, dataDpz=%16.10e' % \
+	       (mA,mB,zApprch1dpz[mA,mB],dataDpz[mA,mB])
+if nBad == 0:
+   print 'Everything is OK for zApprch1dpz data' 
+
+#
+# Opening the input file 'dpApprch2.dat': 
+#
+inputFile='dpApprch2.dat'
+print 'Open input file "%s"...' % inputFile
+inpfileFlag=0
+try:
+   inpfile = open(inputFile,'r')
+   inpfileFlag=1
+except:
+   print 'Problem to open input file "%s"' % inputFile
+
+#
+# Reading the results from input file: 
+#
+xA_2headerLineNumber=0                                             # Serial number of line with header for xA_2data
+yB_2headerLineNumber=0                                             # Serial number of line with header for yB_2data
+dataDpxHeaderLineNumber_2=0                                        # Serial number of line with header for dataDpx_2
+dataDpyHeaderLineNumber_2=0                                        # Serial number of line with header for dataDpy_2
+dataDpzHeaderLineNumber_2=0                                        # Serial number of line with header for dataDpz_2
+lastLineNumber_2=0                                                 # Number of the last line 
+xA_2dataFlag=0                                                     # =1 when xA_2data already read
+yB_2dataFlag=0                                                     # =1 when yB_2data already read 
+dataDpxFlag_2=0                                                    # =1 when dataDpx_2 already read
+dataDpyFlag_2=0                                                    # =1 when dataDpy_2 already read
+dataDpzFlag_2=0                                                    # =1 when dataDpz_2 already read
+xA_2data=[]                                                        # Array of xA_2data
+yB_2data=[]                                                        # Array of yB_2data
+dataDpx_2=[]                                                       # Array of dataDpx_2
+dataDpy_2=[]                                                       # Array of dataDpy_2
+dataDpz_2=[]                                                       # Array of dataDpz_2
+
+lines=0                                                            # Number of current line from input file   
+linesFull=0                                                        # Number of fully filled rows with each type of data
+dataNumber=0                                                       # Number of current value of any types of Data
+while True:
+   lineData=inpfile.readline()
+#    print 'line=%d: %s' % (lines,lineData)
+   if not lineData:
+      break
+   lines += 1
+   if lines == 2:
+      words=lineData.split()
+      indx1=words.index('Tracks:')
+      lastTrackNumber=int(words[indx1+1])
+      indx2=words.index('Factor:')
+      normFactor=float(words[indx2+1])
+      print 'lastTrackNumber=%d, normFactor=%e' % (lastTrackNumber,normFactor)   
+# Header for xA-Data:
+   if lines == 4: 
+      words=lineData.split()
+      indx1=words.index('Entries:')
+      xAentries=int(words[indx1+1])
+      indx2=words.index('with')
+      perLine=int(words[indx2+1])
+#       print 'xAdata-Header from %d: words =%s, index1=%d, entries=%d, index2=%d, perLine=%d' % (lines,words,indx1,xAentries,indx2,perLine)
+      xA_2data=np.zeros(xAentries)
+      linesFull=xAentries//perLine
+      entriesRem=xAentries-perLine*linesFull
+      yB_2headerLineNumber=linesFull+7
+      if entriesRem > 0:
+         yB_2headerLineNumber += 1
+      print 'yB_2headerLineNumber=%d' % yB_2headerLineNumber
+   if xA_2dataFlag == 0:
+# xA_2data:
+      if lines > 5 and lines <= yB_2headerLineNumber-2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'xA_2data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+         for m in range(nWords):
+            wordCrrnt=words[m].split(",")
+            xA_2data[dataNumber]=float(wordCrrnt[0])
+	    dataNumber += 1
+      if lines == yB_2headerLineNumber-2:
+         xA_2dataFlag=1   
+         print 'xA_2data(%d entries) already read' % xAentries 
+# Header for yB_2data:
+   if lines == yBheaderLineNumber:
+      words=lineData.split()
+      indx1=words.index('Entries:')
+      yBentries=int(words[indx1+1])
+      indx2=words.index('with')
+      perLine=int(words[indx2+1])
+#       print 'yB_2data-Header from %d: words =%s, index1=%d, entries=%d, index2=%d, perLine=%d' % (lines,words,indx1,yBentries,indx2,perLine)
+      yB_2data=np.zeros(yBentries)
+      linesFull=yBentries//perLine
+      entriesRem=yBentries-perLine*linesFull
+      dataDpxHeaderLineNumber_2=yB_2headerLineNumber+linesFull+3
+      if entriesRem > 0:
+         dataDpxHeaderLineNumber_2 += 1
+#      print 'dataDpxHeaderLineNumber_2=%d' % dataDpxHeaderLineNumber_2
+      dataNumber=0
+   if xA_2dataFlag == 1 and yB_2dataFlag == 0:
+# yB-Data:
+      if lines >  yB_2headerLineNumber+1 and lines <= dataDpxHeaderLineNumber_2-2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'yB-Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+         for m in range(nWords):
+            wordCrrnt=words[m].split(",")
+            yB_2data[dataNumber]=float(wordCrrnt[0])
+	    dataNumber += 1
+      if lines == dataDpxHeaderLineNumber_2-2:
+         yB_2dataFlag=1   
+         print 'yB_2data(%d entries) already read' % yBentries  
+# Header for dataDpx_2:
+   if lines == dataDpxHeaderLineNumber_2:
+      words=lineData.split()
+      indx1=words.index('Entries:')
+      entriesA=int(words[indx1+1])
+      indx2=words.index('x')
+      entriesB=int(words[indx2+1])
+      indx3=words.index('with')
+      perLine=int(words[indx3+1])
+#       print 'dataDpx_2-Header from %d: words =%s, index1=%d, entriesA=%d, index2=%d, entriesB=%d, index3=%d, perLine=%d' % \
+#             (lines,words,indx1,entriesA,indx2,entriesB,indx3,perLine)
+      dataDpx_2=np.zeros((entriesA,entriesB))
+# If data are written without skiping of the repeated zero values:      
+#       linesFull=entriesA*entriesB//perLine
+#       entriesRem=entriesA*entriesB-perLine*linesFull
+      mA=0
+      mB=0
+      total_mAmB=0
+   if yB_2dataFlag == 1 and dataDpxFlag_2 == 0:    
+# dataDpx: (Format: at the begining, the index mA for "xA-direction" increases and only after that index mB for "yB-direction")
+      if lines >  dataDpxHeaderLineNumber_2+2:
+#            print 'line %d: "%s' % (lines,lineData)
+         words=lineData.split()
+         nWords=len(words)
+#          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+	 if nWords == 0:
+	    dataDpxFlag_2=1
+	    dataDpyHeaderLineNumber_2=lines+1   
+#             print 'dataDpyHeaderLineNumber_2=%d' % dataDpyHeaderLineNumber_2
+	 else:
+            for m in range(nWords):
+               wordCrrnt=words[m].split(",")
+#	        print 'wordCrrnt: ', wordCrrnt
+ 	       indxBrsktOpn=wordCrrnt[0].find('(')
+ 	       if indxBrsktOpn > 0:
+ 	          indxBrsktCls=wordCrrnt[0].find(')')
+# Nonrepeated zero values:
+ 	       if indxBrsktOpn < 0:
+# 	          print 'nonZero value=%e' % float(wordCrrnt[0])
+                  dataDpx_2[mA,mB]=float(wordCrrnt[0])
+                  total_mAmB += 1
+                  mA += 1
+	          if mA  == entriesA:
+	             mA=0
+		     mB += 1
+ 	       else:
+		  wordHelp=wordCrrnt[0]
+ 	          nZero=int(wordHelp[indxBrsktOpn+1:indxBrsktCls])
+# 	           print 'Number of zero=%d' % nZero
+                  for nZ in range(nZero):
+		     dataDpx_2[mA,mB]=0.
+                     total_mAmB += 1
+                     mA += 1
+	             if mA  == entriesA:
+	                mA=0
+		        mB += 1
+         if dataDpxFlag_2 == 1:
+            print 'dataDpx_2(%d x %d entries) already read (total %d)' % (entriesA,entriesB,total_mAmB) 
+# Header for dataDpy_2:
+   if lines == dataDpyHeaderLineNumber_2:
+      words=lineData.split()
+      indx1=words.index('Entries:')
+      entriesA=int(words[indx1+1])
+      indx2=words.index('x')
+      entriesB=int(words[indx2+1])
+      indx3=words.index('with')
+      perLine=int(words[indx3+1])
+#       print 'dataDpy_2-Header from %d: words =%s, index1=%d, entriesA=%d, index2=%d, entriesB=%d, index3=%d, perLine=%d' % \
+#             (lines,words,indx1,entriesA,indx2,entriesB,indx3,perLine)
+      dataDpy_2=np.zeros((entriesA,entriesB))
+# If data are written without skiping of the repeated zero values:      
+#       linesFull=entriesA*entriesB//perLine
+#       entriesRem=entriesA*entriesB-perLine*linesFull
+      mA=0
+      mB=0
+      total_mAmB=0
+   if dataDpxFlag_2 == 1 and dataDpyFlag_2 == 0:    
+# dataDpy: (Format: at the begining, the index mA for "xA-direction" increases and only after that index mB for "yB-direction")
+      if lines >  dataDpyHeaderLineNumber_2+2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+	 if nWords == 0:
+	    dataDpyFlag_2=1
+	    dataDpzHeaderLineNumber_2=lines+1   
+#             print 'dataDpzHeaderLineNumber_2=%d' % dataDpzHeaderLineNumber_2
+	 else:
+            for m in range(nWords):
+               wordCrrnt=words[m].split(",")
+#	        print 'wordCrrnt: ', wordCrrnt
+ 	       indxBrsktOpn=wordCrrnt[0].find('(')
+ 	       if indxBrsktOpn > 0:
+ 	          indxBrsktCls=wordCrrnt[0].find(')')
+# Nonrepeated zero values:
+ 	       if indxBrsktOpn < 0:
+# 	          print 'nonZero value=%e' % float(wordCrrnt[0])
+                  dataDpy_2[mA,mB]=float(wordCrrnt[0])
+                  total_mAmB += 1
+                  mA += 1
+	          if mA  == entriesA:
+	             mA=0
+		     mB += 1
+ 	       else:
+		  wordHelp=wordCrrnt[0]
+ 	          nZero=int(wordHelp[indxBrsktOpn+1:indxBrsktCls])
+# 	           print 'Number of zero=%d' % nZero
+                  for nZ in range(nZero):
+		     dataDpy_2[mA,mB]=0.
+                     total_mAmB += 1
+                     mA += 1
+	             if mA  == entriesA:
+	                mA=0
+		        mB += 1
+         if dataDpyFlag_2 == 1:
+            print 'dataDpy_2(%d x %d entries) already read (total %d)' % (entriesA,entriesB,total_mAmB) 
+# Header for dataDpz_2:
+   if lines == dataDpzHeaderLineNumber_2:
+      words=lineData.split()
+      indx1=words.index('Entries:')
+      entriesA=int(words[indx1+1])
+      indx2=words.index('x')
+      entriesB=int(words[indx2+1])
+      indx3=words.index('with')
+      perLine=int(words[indx3+1])
+#       print 'dataDpz-Header from %d: words =%s, index1=%d, entriesA=%d, index2=%d, entriesB=%d, index3=%d, perLine=%d' % \
+#             (lines,words,indx1,entriesA,indx2,entriesB,indx3,perLine)
+      dataDpz_2=np.zeros((entriesA,entriesB))
+# If data are written without skiping of the repeated zero values:      
+#       linesFull=entriesA*entriesB//perLine
+#       entriesRem=entriesA*entriesB-perLine*linesFull
+      mA=0
+      mB=0
+      total_mAmB=0
+   if dataDpyFlag_2 == 1 and dataDpzFlag_2 == 0:    
+# dataDpz: (Format: at the begining, the index mA for "xA-direction" increases and only after that index mB for "yB-direction")
+      if lines >  dataDpzHeaderLineNumber_2+2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+	 if nWords == 0:
+	    dataDpzFlag_2=1
+# Not necessary:	    
+# 	    dataDpzHeaderLineNumber_2=lines+1   
+#             print 'dataDpzHeaderLineNumber_2=%d' % dataDpzHeaderLineNumber_2
+	 else:
+            for m in range(nWords):
+               wordCrrnt=words[m].split(",")
+#	        print 'wordCrrnt: ', wordCrrnt
+ 	       indxBrsktOpn=wordCrrnt[0].find('(')
+ 	       if indxBrsktOpn > 0:
+ 	          indxBrsktCls=wordCrrnt[0].find(')')
+# Nonrepeated zero values:
+ 	       if indxBrsktOpn < 0:
+# 	          print 'nonZero value=%e' % float(wordCrrnt[0])
+                  dataDpz_2[mA,mB]=float(wordCrrnt[0])
+                  total_mAmB += 1
+                  mA += 1
+	          if mA  == entriesA:
+	             mA=0
+		     mB += 1
+ 	       else:
+		  wordHelp=wordCrrnt[0]
+ 	          nZero=int(wordHelp[indxBrsktOpn+1:indxBrsktCls])
+# 	           print 'Number of zero=%d' % nZero
+                  for nZ in range(nZero):
+		     dataDpz_2[mA,mB]=0.
+                     total_mAmB += 1
+                     mA += 1
+	             if mA  == entriesA:
+	                mA=0
+		        mB += 1
+         if dataDpzFlag_2 == 1:
+            print 'dataDpz_2(%d x %d entries) already read (total %d)' % (entriesA,entriesB,total_mAmB) 
+	    break 
+   
+inpfile.close()
+print 'Close input file "%s"' % inputFile
+
+#
+# Comparison written and readed data for checking writing/reading:
+#
+print 'Comparison written and readed data for checking writing/reading:' 
+nBad=0
+for mA in range(xAentries):
+   if abs(xA_2[mA]-xA_2data[mA]) > 1.e-6:
+      nBad += 1
+      print 'Something wrong with xA data for %d: xA=%16.10e, xAdata=%16.10e' % (mA,xA[mA],xAdata[mA])
+if nBad == 0:
+   print 'Everything is OK for xA data' 
+   
+nBad=0
+for mB in range(yBentries):
+   if abs(yB_2[mA]-yB_2data[mA]) > 1.e-6:
+      nBad += 1
+      print 'Something wrong with yB data for %d: yB=%16.10e, yBdata=%16.10e' % (mB,yB[mB],yBdata[mB])
+if nBad == 0:
+   print 'Everything is OK for yB data' 
+   
+nBad=0
+for mB in range(entriesB):
+   for mA in range(entriesA):
+      if abs(zApprch2dpx[mA,mB]-dataDpx_2[mA,mB]) > 1.e-3:
+         nBad += 1
+         print 'Something wrong with zApprch2dpx data for mA=%d and mB=%d: zApprch2dpx=%16.10e, dataDpx_2=%16.10e' % \
+	       (mA,mB,zApprch2dpx[mA,mB],dataDpx_2[mA,mB])
+if nBad == 0:
+   print 'Everything is OK for zApprch2dpx data' 
+	 
+nBad=0
+for mB in range(entriesB):
+   for mA in range(entriesA):
+      if abs(zApprch2dpy[mA,mB]-dataDpy_2[mA,mB]) > 1.e-3:
+         nBad += 1
+         print 'Something wrong with zApprch2dpy data for mA=%d and mB=%d: zApprch2dpy=%16.10e, dataDpy_2=%16.10e' % \
+	       (mA,mB,zApprch2dpy[mA,mB],dataDpy_2[mA,mB])
+if nBad == 0:
+   print 'Everything is OK for zApprch2dpy data' 
+	 
+nBad=0
+for mB in range(entriesB):
+   for mA in range(entriesA):
+      if abs(zApprch2dpz[mA,mB]-dataDpz_2[mA,mB]) > 1.e-3:
+         nBad += 1
+         print 'Something wrong with zApprch2dpz data for mA=%d and mB=%d: zApprch2dpz=%16.10e, dataDpz_2=%16.10e' % \
+	       (mA,mB,zApprch2dpz[mA,mB],dataDpz_2[mA,mB])
+if nBad == 0:
+   print 'Everything is OK for zApprch2dpz data' 
+
 sys.exit()
 

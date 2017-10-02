@@ -408,6 +408,315 @@ print 'Maximum dpyData=%e (point mA=%d, mB=%d)' % (dpyDataMax,indxAdpyDataMax,in
 print 'Maximum dpzData=%e (point mA=%d, mB=%d)' % (dpzDataMax,indxAdpzDataMax,indxBdpzDataMax)
 
 #
+# Opening the input file 'dpApprch2.dat': 
+#
+inputFile='dpApprch2.dat'
+print 'Open input file "%s"...' % inputFile
+inpfileFlag=0
+try:
+   inpfile = open(inputFile,'r')
+   inpfileFlag=1
+except:
+   print 'Problem to open input file "%s"' % inputFile
+
+#
+# Reading the results from input file: 
+#
+xA_2headerLineNumber=0                                             # Serial number of line with header for xA_2data
+yB_2headerLineNumber=0                                             # Serial number of line with header for yB_2data
+dataDpxHeaderLineNumber_2=0                                        # Serial number of line with header for dataDpx_2
+dataDpyHeaderLineNumber_2=0                                        # Serial number of line with header for dataDpy_2
+dataDpzHeaderLineNumber_2=0                                        # Serial number of line with header for dataDpz_2
+lastLineNumber_2=0                                                 # Number of the last line 
+xA_2dataFlag=0                                                     # =1 when xA_2data already read
+yB_2dataFlag=0                                                     # =1 when yB_2data already read 
+dataDpxFlag_2=0                                                    # =1 when dataDpx_2 already read
+dataDpyFlag_2=0                                                    # =1 when dataDpy_2 already read
+dataDpzFlag_2=0                                                    # =1 when dataDpz_2 already read
+xA_2data=[]                                                        # Array of xA_2data
+yB_2data=[]                                                        # Array of yB_2data
+dataDpx_2=[]                                                       # Array of dataDpx_2
+dataDpy_2=[]                                                       # Array of dataDpy_2
+dataDpz_2=[]                                                       # Array of dataDpz_2
+
+dpxDataMax_2=0                                                     # maximum for array of dpxData_2
+indxAdpxDataMax_2=0                                                # index A of the maximum for array of dpxData_2
+indxBdpxDataMax_2=0                                                # index B of the maximum for array of dpxData_2
+dpyDataMax_2=0                                                     # maximum for array of dpyData_2
+indxAdpyDataMax_2=0                                                # index A of the maximum for array of dpyData_2
+indxBdpyDataMax_2=0                                                # index B of the maximum for array of dpyData_2
+dpzDataMax_2=0                                                     # maximum for array of dpzData_2
+indxAdpzDataMax_2=0                                                # index A of the maximum for array of dpzData_2
+indxBdpzDataMax_2=0                                                # index B of the maximum for array of dpzData_2
+
+lines=0                                                            # Number of current line from input file   
+linesFull=0                                                        # Number of fully filled rows with each type of data
+dataNumber=0                                                       # Number of current value of any types of Data
+while True:
+   lineData=inpfile.readline()
+#    print 'line=%d: %s' % (lines,lineData)
+   if not lineData:
+      break
+   lines += 1
+   if lines == 2:
+      words=lineData.split()
+      indx1=words.index('Tracks:')
+      lastTrackNumber=int(words[indx1+1])
+      indx2=words.index('Factor:')
+      normFactor=float(words[indx2+1])
+      print 'lastTrackNumber=%d, normFactor=%e' % (lastTrackNumber,normFactor)   
+# Header for xA-Data:
+   if lines == 4: 
+      words=lineData.split()
+      indx1=words.index('Entries:')
+      xAentries=int(words[indx1+1])
+      indx2=words.index('with')
+      perLine=int(words[indx2+1])
+#       print 'xAdata-Header from %d: words =%s, index1=%d, entries=%d, index2=%d, perLine=%d' % (lines,words,indx1,xAentries,indx2,perLine)
+      xA_2data=np.zeros(xAentries)
+      linesFull=xAentries//perLine
+      entriesRem=xAentries-perLine*linesFull
+      yB_2headerLineNumber=linesFull+7
+      if entriesRem > 0:
+         yB_2headerLineNumber += 1
+      print 'yB_2headerLineNumber=%d' % yB_2headerLineNumber
+   if xA_2dataFlag == 0:
+# xA_2data:
+      if lines > 5 and lines <= yB_2headerLineNumber-2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'xA_2data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+         for m in range(nWords):
+            wordCrrnt=words[m].split(",")
+            xA_2data[dataNumber]=float(wordCrrnt[0])
+	    dataNumber += 1
+      if lines == yB_2headerLineNumber-2:
+         xA_2dataFlag=1   
+         print 'xA_2data(%d entries) already read' % xAentries 
+# Header for yB_2data:
+   if lines == yBheaderLineNumber:
+      words=lineData.split()
+      indx1=words.index('Entries:')
+      yBentries=int(words[indx1+1])
+      indx2=words.index('with')
+      perLine=int(words[indx2+1])
+#       print 'yB_2data-Header from %d: words =%s, index1=%d, entries=%d, index2=%d, perLine=%d' % (lines,words,indx1,yBentries,indx2,perLine)
+      yB_2data=np.zeros(yBentries)
+      linesFull=yBentries//perLine
+      entriesRem=yBentries-perLine*linesFull
+      dataDpxHeaderLineNumber_2=yB_2headerLineNumber+linesFull+3
+      if entriesRem > 0:
+         dataDpxHeaderLineNumber_2 += 1
+#      print 'dataDpxHeaderLineNumber_2=%d' % dataDpxHeaderLineNumber_2
+      dataNumber=0
+   if xA_2dataFlag == 1 and yB_2dataFlag == 0:
+# yB-Data:
+      if lines >  yB_2headerLineNumber+1 and lines <= dataDpxHeaderLineNumber_2-2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'yB-Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+         for m in range(nWords):
+            wordCrrnt=words[m].split(",")
+            yB_2data[dataNumber]=float(wordCrrnt[0])
+	    dataNumber += 1
+      if lines == dataDpxHeaderLineNumber_2-2:
+         yB_2dataFlag=1   
+         print 'yB_2data(%d entries) already read' % yBentries  
+# Header for dataDpx_2:
+   if lines == dataDpxHeaderLineNumber_2:
+      words=lineData.split()
+      indx1=words.index('Entries:')
+      entriesA=int(words[indx1+1])
+      indx2=words.index('x')
+      entriesB=int(words[indx2+1])
+      indx3=words.index('with')
+      perLine=int(words[indx3+1])
+#       print 'dataDpx_2-Header from %d: words =%s, index1=%d, entriesA=%d, index2=%d, entriesB=%d, index3=%d, perLine=%d' % \
+#             (lines,words,indx1,entriesA,indx2,entriesB,indx3,perLine)
+      dataDpx_2=np.zeros((entriesA,entriesB))
+# If data are written without skiping of the repeated zero values:      
+#       linesFull=entriesA*entriesB//perLine
+#       entriesRem=entriesA*entriesB-perLine*linesFull
+      mA=0
+      mB=0
+      total_mAmB=0
+   if yB_2dataFlag == 1 and dataDpxFlag_2 == 0:    
+# dataDpx: (Format: at the begining, the index mA for "xA-direction" increases and only after that index mB for "yB-direction")
+      if lines >  dataDpxHeaderLineNumber_2+2:
+#            print 'line %d: "%s' % (lines,lineData)
+         words=lineData.split()
+         nWords=len(words)
+#          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+	 if nWords == 0:
+	    dataDpxFlag_2=1
+	    dataDpyHeaderLineNumber_2=lines+1   
+#             print 'dataDpyHeaderLineNumber_2=%d' % dataDpyHeaderLineNumber_2
+	 else:
+            for m in range(nWords):
+               wordCrrnt=words[m].split(",")
+#	        print 'wordCrrnt: ', wordCrrnt
+ 	       indxBrsktOpn=wordCrrnt[0].find('(')
+ 	       if indxBrsktOpn > 0:
+ 	          indxBrsktCls=wordCrrnt[0].find(')')
+# Nonrepeated zero values:
+ 	       if indxBrsktOpn < 0:
+# 	          print 'nonZero value=%e' % float(wordCrrnt[0])
+                  dataDpx_2[mA,mB]=normFactor*float(wordCrrnt[0])
+		  if dpxDataMax_2 < dataDpx_2[mA,mB]:
+		     dpxDataMax_2=dataDpx_2[mA,mB]
+		     indxAdpxDataMax_2=mA
+		     indxBdpxDataMax_2=mB
+                  total_mAmB += 1
+                  mA += 1
+	          if mA  == entriesA:
+	             mA=0
+		     mB += 1
+ 	       else:
+		  wordHelp=wordCrrnt[0]
+ 	          nZero=int(wordHelp[indxBrsktOpn+1:indxBrsktCls])
+# 	           print 'Number of zero=%d' % nZero
+                  for nZ in range(nZero):
+		     dataDpx_2[mA,mB]=0.
+                     total_mAmB += 1
+                     mA += 1
+	             if mA  == entriesA:
+	                mA=0
+		        mB += 1
+         if dataDpxFlag_2 == 1:
+            print 'dataDpx_2(%d x %d entries) already read (total %d)' % (entriesA,entriesB,total_mAmB) 
+# Header for dataDpy_2:
+   if lines == dataDpyHeaderLineNumber_2:
+      words=lineData.split()
+      indx1=words.index('Entries:')
+      entriesA=int(words[indx1+1])
+      indx2=words.index('x')
+      entriesB=int(words[indx2+1])
+      indx3=words.index('with')
+      perLine=int(words[indx3+1])
+#       print 'dataDpy_2-Header from %d: words =%s, index1=%d, entriesA=%d, index2=%d, entriesB=%d, index3=%d, perLine=%d' % \
+#             (lines,words,indx1,entriesA,indx2,entriesB,indx3,perLine)
+      dataDpy_2=np.zeros((entriesA,entriesB))
+# If data are written without skiping of the repeated zero values:      
+#       linesFull=entriesA*entriesB//perLine
+#       entriesRem=entriesA*entriesB-perLine*linesFull
+      mA=0
+      mB=0
+      total_mAmB=0
+   if dataDpxFlag_2 == 1 and dataDpyFlag_2 == 0:    
+# dataDpy: (Format: at the begining, the index mA for "xA-direction" increases and only after that index mB for "yB-direction")
+      if lines >  dataDpyHeaderLineNumber_2+2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+	 if nWords == 0:
+	    dataDpyFlag_2=1
+	    dataDpzHeaderLineNumber_2=lines+1   
+#             print 'dataDpzHeaderLineNumber_2=%d' % dataDpzHeaderLineNumber_2
+	 else:
+            for m in range(nWords):
+               wordCrrnt=words[m].split(",")
+#	        print 'wordCrrnt: ', wordCrrnt
+ 	       indxBrsktOpn=wordCrrnt[0].find('(')
+ 	       if indxBrsktOpn > 0:
+ 	          indxBrsktCls=wordCrrnt[0].find(')')
+# Nonrepeated zero values:
+ 	       if indxBrsktOpn < 0:
+# 	          print 'nonZero value=%e' % float(wordCrrnt[0])
+                  dataDpy_2[mA,mB]=normFactor*float(wordCrrnt[0])
+		  if dpyDataMax_2 < dataDpy_2[mA,mB]:
+		     dpyDataMax_2=dataDpy_2[mA,mB]
+		     indxAdpyDataMax_2=mA
+		     indxBdpyDataMax_2=mB
+                  total_mAmB += 1
+                  mA += 1
+	          if mA  == entriesA:
+	             mA=0
+		     mB += 1
+ 	       else:
+		  wordHelp=wordCrrnt[0]
+ 	          nZero=int(wordHelp[indxBrsktOpn+1:indxBrsktCls])
+# 	           print 'Number of zero=%d' % nZero
+                  for nZ in range(nZero):
+		     dataDpy_2[mA,mB]=0.
+                     total_mAmB += 1
+                     mA += 1
+	             if mA  == entriesA:
+	                mA=0
+		        mB += 1
+         if dataDpyFlag_2 == 1:
+            print 'dataDpy_2(%d x %d entries) already read (total %d)' % (entriesA,entriesB,total_mAmB) 
+# Header for dataDpz_2:
+   if lines == dataDpzHeaderLineNumber_2:
+      words=lineData.split()
+      indx1=words.index('Entries:')
+      entriesA=int(words[indx1+1])
+      indx2=words.index('x')
+      entriesB=int(words[indx2+1])
+      indx3=words.index('with')
+      perLine=int(words[indx3+1])
+#       print 'dataDpz-Header from %d: words =%s, index1=%d, entriesA=%d, index2=%d, entriesB=%d, index3=%d, perLine=%d' % \
+#             (lines,words,indx1,entriesA,indx2,entriesB,indx3,perLine)
+      dataDpz_2=np.zeros((entriesA,entriesB))
+# If data are written without skiping of the repeated zero values:      
+#       linesFull=entriesA*entriesB//perLine
+#       entriesRem=entriesA*entriesB-perLine*linesFull
+      mA=0
+      mB=0
+      total_mAmB=0
+   if dataDpyFlag_2 == 1 and dataDpzFlag_2 == 0:    
+# dataDpz: (Format: at the begining, the index mA for "xA-direction" increases and only after that index mB for "yB-direction")
+      if lines >  dataDpzHeaderLineNumber_2+2:
+         words=lineData.split()
+         nWords=len(words)
+#          print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
+	 if nWords == 0:
+	    dataDpzFlag_2=1
+# Not necessary:	    
+# 	    dataDpzHeaderLineNumber_2=lines+1   
+#             print 'dataDpzHeaderLineNumber_2=%d' % dataDpzHeaderLineNumber_2
+	 else:
+            for m in range(nWords):
+               wordCrrnt=words[m].split(",")
+#	        print 'wordCrrnt: ', wordCrrnt
+ 	       indxBrsktOpn=wordCrrnt[0].find('(')
+ 	       if indxBrsktOpn > 0:
+ 	          indxBrsktCls=wordCrrnt[0].find(')')
+# Nonrepeated zero values:
+ 	       if indxBrsktOpn < 0:
+# 	          print 'nonZero value=%e' % float(wordCrrnt[0])
+                  dataDpz_2[mA,mB]=normFactor*float(wordCrrnt[0])
+		  if dpzDataMax_2 < dataDpz_2[mA,mB]:
+		     dpzDataMax_2=dataDpz_2[mA,mB]
+		     indxAdpzDataMax_2=mA
+		     indxBdpzDataMax_2=mB
+                  total_mAmB += 1
+                  mA += 1
+	          if mA  == entriesA:
+	             mA=0
+		     mB += 1
+ 	       else:
+		  wordHelp=wordCrrnt[0]
+ 	          nZero=int(wordHelp[indxBrsktOpn+1:indxBrsktCls])
+# 	           print 'Number of zero=%d' % nZero
+                  for nZ in range(nZero):
+		     dataDpz_2[mA,mB]=0.
+                     total_mAmB += 1
+                     mA += 1
+	             if mA  == entriesA:
+	                mA=0
+		        mB += 1
+         if dataDpzFlag_2 == 1:
+            print 'dataDpz_2(%d x %d entries) already read (total %d)' % (entriesA,entriesB,total_mAmB) 
+	    break 
+   
+inpfile.close()
+print 'Close input file "%s"' % inputFile
+
+print 'Maximum dpxData_2=%e (point mA=%d, mB=%d)' % (dpxDataMax_2,indxAdpxDataMax_2,indxBdpxDataMax_2)
+print 'Maximum dpyData_2=%e (point mA=%d, mB=%d)' % (dpyDataMax_2,indxAdpyDataMax_2,indxBdpyDataMax_2)
+print 'Maximum dpzData_2=%e (point mA=%d, mB=%d)' % (dpzDataMax_2,indxAdpzDataMax_2,indxBdpzDataMax_2)
+
+#
 # Visualization of results
 #
 
@@ -415,83 +724,13 @@ X,Y=np.meshgrid(xAdata,yBdata)
 
 fig70=plt.figure(70)
 ax70=fig70.gca(projection='3d')
-# surf=ax70.plot_surface(X,Y,dpxData,cmap=cm.coolwarm,linewidth=0,antialiased=False)
+# surf=ax70.plot_surface(X,Y,zApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 surf=ax70.plot_surface(X,Y,dpxData,cmap=cm.jet,linewidth=0,antialiased=False)
 plt.title(('Approach-1: Transfered Momentum $dP_x$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
            (lastTrackNumber,dpxDataMax)), color='m',fontsize=16)
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax70.set_zlabel('$dP_x \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
-cb = fig70.colorbar(surf)
-plt.grid(True)
-
-# X,Y=np.meshgrid(xA,yB) 
-
-fig75=plt.figure(75)
-ax=fig75.add_subplot(111)                                          # for contours poltting
-# mapDpx=ax.contourf(X,Y,dpxData)   
-mapDpx=ax.contourf(X,Y,dpxData)   
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-plt.title(('Approach-1: Transfered Momentum $dP_x$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$)' % \
-           (lastTrackNumber,dpxDataMax)), color='m',fontsize=14)
-fig75.colorbar(mapDpx)
-
-fig80=plt.figure(80)
-ax80=fig80.gca(projection='3d')
-# surf=ax80.plot_surface(X,Y,dpyData,cmap=cm.coolwarm,linewidth=0,antialiased=False)
-surf=ax80.plot_surface(X,Y,dpyData,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title(('Approach-1: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
-           (lastTrackNumber,dpyDataMax)), color='m',fontsize=16)
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax80.set_zlabel('$dP_y \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
-cb = fig80.colorbar(surf)
-plt.grid(True)
-
-fig85=plt.figure(85)
-ax=fig85.add_subplot(111)                                          # for contours poltting
-# mapDpx=ax.contourf(X,Y,dpyData)   
-mapDpx=ax.contourf(X,Y,dpyData)   
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-plt.title(('Approach-1: Transfered Momentum $dP_y$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$)' % \
-           (lastTrackNumber,dpyDataMax)), color='m',fontsize=14)
-fig85.colorbar(mapDpx)
-
-fig90=plt.figure(90)
-ax90=fig90.gca(projection='3d')
-# surf=ax90.plot_surface(X,Y,dpzData,cmap=cm.coolwarm,linewidth=0,antialiased=False)
-surf=ax90.plot_surface(X,Y,dpzData,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title(('Approach-1: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
-           (lastTrackNumber,dpzDataMax)), color='m',fontsize=16)
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax90.set_zlabel('$dP_z \cdot 10^{24}$; $g \cdot cm/sec$',color='m',fontsize=16)
-cb = fig90.colorbar(surf)
-plt.grid(True)
-
-fig95=plt.figure(95)
-ax=fig95.add_subplot(111)                                          # for contours poltting
-# mapDpx=ax.contourf(X,Y,dpzData)   
-mapDpx=ax.contourf(X,Y,dpzData)   
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-plt.title(('Approach-1: Transfered Momentum $dP_z$ $(\cdot 10^{24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$)' % \
-           (lastTrackNumber,dpzDataMax)), color='m',fontsize=14)
-fig95.colorbar(mapDpx)
-
-'''
-X,Y=np.meshgrid(xAdata,yBdata) 
-
-fig70=plt.figure(70)
-ax70=fig70.gca(projection='3d')
-# surf=ax70.plot_surface(X,Y,zApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
-surf=ax70.plot_surface(X,Y,dpxData,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title('Transfered Momentum $dP_x$:\n$dP_x=q_e^2/b \cdot C_x$', color='m',fontsize=20)
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
-ax70.set_zlabel('$C_x$, $cm^{-2}$',color='m',fontsize=16)
+ax70.set_zlabel('$dP_x \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig70.colorbar(surf)
 # cbar=fig70.colorbar(surf,ticks=[0,1000,2000,3000,4000,5000,6000,7000])  # Next 2 commands not work
 # cbar.ax.set_yticklabels(['0','1000','2000','3000','4000','5000','6000','7000'])
@@ -506,7 +745,6 @@ plt.grid(True)
 
 fig75=plt.figure(75)
 ax=fig75.add_subplot(111)         # for contours poltting
-# X,Y=np.meshgrid(xAdata,yBdata) 
 mapDpx=ax.contourf(X,Y,dpxData)   
 # mapDpx=ax.contourf(X,Y,dpxApprch_1,levels)   
 # Contourrange=[int(NlarmCutofDown+1)]
@@ -514,7 +752,8 @@ mapDpx=ax.contourf(X,Y,dpxData)
 # plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
-plt.title('$C_x (cm^{-2})$ for Transf. Momntm. $dP_x$: $dP_x=q_e^2/b\cdot C_x$', color='m',fontsize=20)
+plt.title(('Approach-1: Transfered Momentum $dP_x$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpxDataMax)), color='m',fontsize=16)
 fig75.colorbar(mapDpx)
 
 # X,Y=np.meshgrid(xAdata,yBdata) 
@@ -522,10 +761,11 @@ fig80=plt.figure(80)
 ax80=fig80.gca(projection='3d')
 # surf=ax80.plot_surface(X,Y,zApprch1dpy,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 surf=ax80.plot_surface(X,Y,dpyData,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title('Transfered Momentum $dP_y$:\n$dP_y=q_e^2/b \cdot C_y$', color='m',fontsize=20)
+plt.title(('Approach-1: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpyDataMax)), color='m',fontsize=16)
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
-ax80.set_zlabel('$C_y$, $cm^{-2}$',color='m',fontsize=16)
+ax80.set_zlabel('$dP_y \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig80.colorbar(surf)
 # cbar=fig80.colorbar(surf,ticks=[0,1000,2000,3000,4000,5000,6000,7000])  # Next 2 commands not work
 # cbar.ax.set_yticklabels(['0','1000','2000','3000','4000','5000','6000','7000'])
@@ -540,7 +780,6 @@ plt.grid(True)
 
 fig85=plt.figure(85)
 ax=fig85.add_subplot(111)         # for contours poltting
-X,Y=np.meshgrid(xAdata,yBdata) 
 mapDpy=ax.contourf(X,Y,dpyData)   
 # mapDpy=ax.contourf(X,Y,dpyApprch_1,levels)   
 # Contourrange=[int(NlarmCutofDown+1)]
@@ -548,18 +787,19 @@ mapDpy=ax.contourf(X,Y,dpyData)
 # plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
-plt.title('$C_y (cm^{-2})$ for Transf. Momntm. $dP_y$: $dP_y=q_e^2/b\cdot C_y$', color='m',fontsize=20)
+plt.title(('Approach-1: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpyDataMax)), color='m',fontsize=16)
 fig85.colorbar(mapDpy)
 
-X,Y=np.meshgrid(xAdata,yBdata) 
 fig90=plt.figure(90)
 ax90=fig90.gca(projection='3d')
 # surf=ax90.plot_surface(X,Y,zApprch1dpy,cmap=cm.coolwarm,linewidth=0,antialiased=False)
 surf=ax90.plot_surface(X,Y,dpzData,cmap=cm.jet,linewidth=0,antialiased=False)
-plt.title('Transfered Momentum $dP_z$:\n$dP_z=q_e^2/b \cdot C_z$', color='m',fontsize=20)
+plt.title(('Approach-1: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpzDataMax)), color='m',fontsize=16)
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
-ax80.set_zlabel('$C_z$, $cm^{-2}$',color='m',fontsize=16)
+ax90.set_zlabel('$dP_z \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
 cb = fig90.colorbar(surf)
 # cbar=fig90.colorbar(surf,ticks=[0,1000,2000,3000,4000,5000,6000,7000])  # Next 2 commands not work
 # cbar.ax.set_yticklabels(['0','1000','2000','3000','4000','5000','6000','7000'])
@@ -574,7 +814,6 @@ plt.grid(True)
 
 fig95=plt.figure(95)
 ax=fig95.add_subplot(111)         # for contours poltting
-X,Y=np.meshgrid(xAdata,yBdata) 
 mapDpz=ax.contourf(X,Y,dpzData)   
 # mapDpz=ax.contourf(X,Y,dpzApprch_1,levels)   
 # Contourrange=[int(NlarmCutofDown+1)]
@@ -582,9 +821,114 @@ mapDpz=ax.contourf(X,Y,dpzData)
 # plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
-plt.title('$C_z (cm^{-2})$ for Transf. Momntm. $dP_z$: $dP_z=q_e^2/b\cdot C_z$', color='m',fontsize=20)
+plt.title(('Approach-1: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpzDataMax)), color='m',fontsize=16)
 fig95.colorbar(mapDpz)
-'''
+
+X2,Y2=np.meshgrid(xA_2data,yB_2data) 
+
+fig170=plt.figure(170)
+ax170=fig170.gca(projection='3d')
+# surf=ax170.plot_surface(X,Y,zApprch2dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
+surf=ax170.plot_surface(X2,Y2,dataDpx_2,cmap=cm.jet,linewidth=0,antialiased=False)
+plt.title(('Approach-2: Transfered Momentum $dP_x$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpxDataMax_2)), color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
+ax170.set_zlabel('$dP_x \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+cb = fig170.colorbar(surf)
+# cbar=fig170.colorbar(surf,ticks=[0,1000,2000,3000,4000,5000,6000,7000])  # Next 2 commands not work
+# cbar.ax.set_yticklabels(['0','1000','2000','3000','4000','5000','6000','7000'])
+# labels=np.arange(0,8000,1000)               # Next 4 commands not work
+# location=labels
+# cb.set_ticks(location)
+# cb.set_ticklabels(labels)
+# tick_locator = ticker.MaxNLocator(nbins=10) # Next 3 commands not work
+# cb.locator = tick_locator
+# cb.update_ticks()
+plt.grid(True)
+
+fig175=plt.figure(175)
+ax=fig175.add_subplot(111)         # for contours poltting
+mapDpx=ax.contourf(X2,Y2,dataDpx_2)   
+# mapDpx=ax.contourf(X2,Y2,dpxApprch_2,levels)   
+# Contourrange=[int(NlarmCutofDown+1)]
+# mapTurnCutoff=ax.contour(X,Y,Nlarm,Contourrange,format='%d',colors=('w'),linewidths=(2)) 
+# plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.title(('Approach-2: Transfered Momentum $dP_x$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpxDataMax_2)), color='m',fontsize=16)
+fig175.colorbar(mapDpx)
+
+fig180=plt.figure(180)
+ax180=fig180.gca(projection='3d')
+# surf=ax180.plot_surface(X2,Y2,zApprch2dpy,cmap=cm.coolwarm,linewidth=0,antialiased=False)
+surf=ax180.plot_surface(X2,Y2,dataDpy_2,cmap=cm.jet,linewidth=0,antialiased=False)
+plt.title(('Approach-2: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpyDataMax_2)), color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
+ax180.set_zlabel('$dP_y \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+cb = fig180.colorbar(surf)
+# cbar=fig180.colorbar(surf,ticks=[0,1000,2000,3000,4000,5000,6000,7000])  # Next 2 commands not work
+# cbar.ax.set_yticklabels(['0','1000','2000','3000','4000','5000','6000','7000'])
+# labels=np.arange(0,8000,1000)               # Next 4 commands not work
+# location=labels
+# cb.set_ticks(location)
+# cb.set_ticklabels(labels)
+# tick_locator = ticker.MaxNLocator(nbins=10) # Next 3 commands not work
+# cb.locator = tick_locator
+# cb.update_ticks()
+plt.grid(True)
+
+fig185=plt.figure(185)
+ax=fig185.add_subplot(111)         # for contours poltting
+mapDpy=ax.contourf(X2,Y2,dataDpy_2)   
+# mapDpy=ax.contourf(X2,Y2,dpyApprch_2,levels)   
+# Contourrange=[int(NlarmCutofDown+1)]
+# mapTurnCutoff=ax.contour(X,Y,Nlarm,Contourrange,format='%d',colors=('w'),linewidths=(2)) 
+# plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.title(('Approach-2: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpyDataMax_2)), color='m',fontsize=16)
+fig185.colorbar(mapDpy)
+
+fig190=plt.figure(190)
+ax190=fig190.gca(projection='3d')
+# surf=ax190.plot_surface(X2,Y2,zApprch2dpy,cmap=cm.coolwarm,linewidth=0,antialiased=False)
+surf=ax190.plot_surface(X2,Y2,dataDpz_2,cmap=cm.jet,linewidth=0,antialiased=False)
+plt.title(('Approach-2: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpzDataMax_2)), color='m',fontsize=16)
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
+ax190.set_zlabel('$dP_z \cdot 10^{-24}$; $g \cdot cm/sec$',color='m',fontsize=16)
+cb = fig190.colorbar(surf)
+# cbar=fig190.colorbar(surf,ticks=[0,1000,2000,3000,4000,5000,6000,7000])  # Next 2 commands not work
+# cbar.ax.set_yticklabels(['0','1000','2000','3000','4000','5000','6000','7000'])
+# labels=np.arange(0,8000,1000)               # Next 4 commands not work
+# location=labels
+# cb.set_ticks(location)
+# cb.set_ticklabels(labels)
+# tick_locator = ticker.MaxNLocator(nbins=10) # Next 3 commands not work
+# cb.locator = tick_locator
+# cb.update_ticks()
+plt.grid(True)
+
+fig195=plt.figure(195)
+ax=fig195.add_subplot(111)         # for contours poltting
+mapDpz=ax.contourf(X2,Y2,dataDpz_2)   
+# mapDpz=ax.contourf(X2,Y2,dpzApprch_2,levels)   
+# Contourrange=[int(NlarmCutofDown+1)]
+# mapTurnCutoff=ax.contour(X,Y,Nlarm,Contourrange,format='%d',colors=('w'),linewidths=(2)) 
+# plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_L/b)$',color='m',fontsize=16)
+plt.title(('Approach-2: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$ $g \cdot cm/sec$)' % \
+           (lastTrackNumber,dpzDataMax_2)), color='m',fontsize=16)
+fig195.colorbar(mapDpz)
+
 
 plt.show()   
 
