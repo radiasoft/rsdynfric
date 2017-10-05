@@ -593,19 +593,25 @@ print 'First track lengthes: for b %d, for b_2 %d' % (bLenFirstTrack,b_2LenFirst
 
 
 diff_b=np.zeros(b_2LenFirstTrack)
-nLeft=np.zeros(b_2LenFirstTrack)
 
+#
+# Calculation of the difference for distance beteween electron and ion for both approaches:
+#
 k=0
 nStart=0
 for m in range(b_2LenFirstTrack): 
    for n in range(nStart,bLenFirstTrack):
-      if bArray[n] < b_2Array[m]:
+      if prtclCoor[4,n] == prtclCoor_2[4,m]:
+	    diff_b[m]=bArray[n]-b_2Array[m]
+            nStart=n-1
+            break	 
+      if prtclCoor[4,n] > prtclCoor_2[4,m]:
 	 if n == 0:
 	    diff_b[m]=bArray[n]-b_2Array[m]
 	 else:
-            diff_b[m]=.5*(bArray[n]+bArray[n-1])-b_2Array[m]
-	 nLeft[m]=n
-         nStart=n
+	    bCurrent=bArray[n-1]+(bArray[n]-bArray[n-1])*(prtclCoor_2[4,m]-prtclCoor[4,n-1])/(prtclCoor[4,n]-prtclCoor[4,n-1])
+            diff_b[m]=bCurrent-b_2Array[m]
+         nStart=n-1
          break	 
 
 # sys.exit()
@@ -883,7 +889,7 @@ plt.xlabel('z, $\mu m$',color='m',fontsize=16)
 plt.ylabel('$\Delta b=b_{Apprch-1}-b_{Apprch-2}$, $\mu m$',color='m',fontsize=16)
 plt.title('First Trajectory: $\Delta b$ (Difference for Distances $b$ between Particles)',color='m',fontsize=16)
 plt.xlim([1.e+4*prtclCoor_2[4,0]-50,1.e+4*prtclCoor_2[4,b_2LenFirstTrack-1]+50])
-plt.ylim([-.3,.3])
+plt.ylim([-.5,.5])
 plt.grid(True)
 
 '''
@@ -966,7 +972,7 @@ plt.grid(True)
 # X,Y=np.meshgrid(xA,yB) 
 
 fig75=plt.figure(75)
-ax=fig75.add_subplot(111)                                          # for contours poltting
+ax=fig75.add_subplot(111)                                          # for contours plotting
 # mapDpx=ax.contourf(X,Y,zApprch1dpx)   
 mapDpx=ax.contourf(X,Y,visPrezApprch1dpx)   
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
@@ -988,7 +994,7 @@ cb = fig80.colorbar(surf)
 plt.grid(True)
 
 fig85=plt.figure(85)
-ax=fig85.add_subplot(111)                                          # for contours poltting
+ax=fig85.add_subplot(111)                                          # for contours plotting
 # mapDpx=ax.contourf(X,Y,zApprch1dpx)   
 mapDpx=ax.contourf(X,Y,visPrezApprch1dpy)   
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
@@ -1010,7 +1016,7 @@ cb = fig90.colorbar(surf)
 plt.grid(True)
 
 fig95=plt.figure(95)
-ax=fig95.add_subplot(111)                                          # for contours poltting
+ax=fig95.add_subplot(111)                                          # for contours plotting
 # mapDpx=ax.contourf(X,Y,zApprch1dpx)   
 mapDpx=ax.contourf(X,Y,visPrezApprch1dpz)   
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
@@ -1183,7 +1189,7 @@ cb = fig170.colorbar(surf)
 plt.grid(True)
 
 fig175=plt.figure(175)
-ax=fig175.add_subplot(111)                                          # for contours poltting
+ax=fig175.add_subplot(111)                                          # for contours plotting
 # mapDpx=ax.contourf(X2,Y2,zApprch1dpx)   
 mapDpx=ax.contourf(X2,Y2,visPrezApprch2dpx)   
 # mapDpx=ax.contourf(X,Y,dpxApprch_2,levels)                        # Next 4 commands not work  
@@ -1218,7 +1224,7 @@ cb = fig180.colorbar(surf)
 plt.grid(True)
 
 fig185=plt.figure(185)
-ax=fig185.add_subplot(111)                                          # for contours poltting
+ax=fig185.add_subplot(111)                                          # for contours plotting
 # mapDpx=ax.contourf(X2,Y2,zApprch1dpy)   
 mapDpy=ax.contourf(X2,Y2,visPrezApprch2dpy)   
 # mapDpx=ax.contourf(X,Y,dpxApprch_2,levels)                        # Next 4 commands not work  
@@ -1244,7 +1250,7 @@ cb = fig190.colorbar(surf)
 plt.grid(True)
 
 fig195=plt.figure(195)
-ax=fig195.add_subplot(111)                                          # for contours poltting
+ax=fig195.add_subplot(111)                                          # for contours plotting
 # mapDpx=ax.contourf(X2,Y2,zApprch1dpz)   
 mapDpz=ax.contourf(X2,Y2,visPrezApprch2dpz)   
 # mapDpx=ax.contourf(X,Y,dpxApprch_2,levels)                        # Next 4 commands not work  
