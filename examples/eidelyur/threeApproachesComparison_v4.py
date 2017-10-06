@@ -154,16 +154,17 @@ def guidingCenter_Matrix(deltaT):
     return gcMtrx
 
 #
-# Matrix describes the electron - collision during time interval 'deltaT'
+# Description of the collision during time interval 'deltaT'
 # in the system coordinates of "guiding center" of electron
 # input - 6-vectors for electron and ion before collision and time step deltaT; 
-# output - transferes momenta to ion: 
+# output - transfered momenta to ion and electron: 
 #
 def guidingCenterCollision(vectrElec_gc,vectrIon,deltaT):
 
 #    print 'Ion: x=%e, y=%e, z=%e' % (vectrIon[0],vectrIon[2],vectrIon[4])
 #    print 'Electron: x=%e, y=%e, z=%e' % (vectrElec_gc[0],vectrElec_gc[4],vectrElec_gc[4])
    dpIon=np.zeros(3)
+   dpElec=np.zeros(3)
    mOmegaLarm=m_elec*omega_L                                       # g/sec
    dpFactor_gc=q_elec**2*deltaT                                    # g*cm^3/sec
    rhoLarm_gc=np.sqrt(2.*vectrElec_gc[1]/mOmegaLarm)               # cm
@@ -180,8 +181,10 @@ def guidingCenterCollision(vectrElec_gc,vectrIon,deltaT):
    dpIon[0]=-dpFactor*(vectrIon[0]-vectrElec_gc[3]/mOmegaLarm)/b_gc**3           # g*cm/sec
    dpIon[1]=-dpFactor*(vectrIon[2]-vectrElec_gc[2])/b_gc**3                      # g*cm/sec
    dpIon[2]=-dpFactor*(vectrIon[4]-vectrElec_gc[4])/b_gc**3                      # g*cm/sec
+   dpElec[1]=-dpIon[1]                                                           # g*cm/sec
+   dpElec[2]=-dpIon[2]                                                           # g*cm/sec
 #    print 'dpIon[0]=%e, dpIon[1]=%e, dpIon[2]=%e' % (dpIon[0],dpIon[1],dpIon[2])
-   return dpIon                                      
+   return dpIon,dpElec                                      
 
 z_elecCrrnt=np.zeros(6)                                            # 6-vector for electron (for Approach_1)
 z_ionCrrnt=np.zeros(6)                                             # 6-vector for ion (for Approach_1)
@@ -242,7 +245,7 @@ print 'rhoCrit(mkm)=%f, alpha=%f' % (1.e+4*rhoCrit, alpha)
 #
 # Array A=log10(Upot/Ekin): 
 #
-nA=5
+nA=45
 crrntA=np.zeros(nA)
 minA=-5.
 maxA=0.
@@ -251,7 +254,7 @@ stepA=(maxA-minA)/(nA-1)
 #
 # Array B=log10(R_larm/b): 
 #
-nB=5
+nB=45
 crrntB=np.zeros(nB)
 minB=-3.
 maxB=-.5
@@ -493,13 +496,14 @@ for iA in range(nA):
  	    z_elecCrrnt_gc=np.dot(matr_elec_2,z_elecCrrnt_gc)      # electron's dragging for first nhalf timeStep
  	    z_ionCrrnt_2=np.dot(matr_ion_2,z_ionCrrnt_2)           # ion's dragging for first half timeStep
 # gragging both paticles through interaction point:
-	    dpIon=guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt_2,timeStep_2) 
+	    dpIon,dpElec=guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt_2,timeStep_2) 
+#	    if trackNumb_2 == 0:
+#	       print 'point %d: dpgcElec=%e, dpzElec=%e' % (pointTrack_2[0],dpElec[1],dpElec[2])
 	    for ic in range(3):
 	       z_ionCrrnt_2[2*ic+1] += dpIon[ic]   
+	       z_elecCrrnt_2[2*ic+1] += dpElec[ic]   
 # Current values to calculate deltaPapprch_2:  
 	       dpApprch_2Crrnt[ic,k]=dpIon[ic]                    # g*cm/sec 
-#	       z_elecCrrnt_2[2*ic+1] -= dpIon[ic]   
-	    z_elecCrrnt_2[Ipz] -= dpIon[2]   
 # 	    z_elecCrrnt_gc=matr_elec_2.dot(z_elecCrrnt_gc)         # electron's dragging for second half timeStep
 # 	    z_ionCrrnt_2=matr_ion_2.dot(z_ionCrrnt_2)              # ion's dragging for second half timeStep
  	    z_elecCrrnt_gc=np.dot(matr_elec_2,z_elecCrrnt_gc)      # electron's dragging for first nhalf timeStep
@@ -829,7 +833,9 @@ plt.ylabel('y, $nm$',color='m',fontsize=16)
 ax15.set_zlabel('z, $nm$',color='m',fontsize=16)
 plt.title('Approach-1: First Ion Trajectory (Start)',color='m',fontsize=16)
 '''
+
 pBeg=pointsEndLarmor-pointsTurns
+
 '''
 fig20=plt.figure(20)
 ax20=fig20.gca(projection='3d')
@@ -881,7 +887,7 @@ plt.xlabel('x, $nm$',color='m',fontsize=16)
 plt.ylabel('y, $nm$',color='m',fontsize=16)
 ax225.set_zlabel('z, $nm$',color='m',fontsize=16)
 plt.title('Approach-2: First Ion Trajectory (End)',color='m',fontsize=16)
-'''
+
 
 fig325=plt.figure(325)
 plt.plot(1.e+4*prtclCoor_2[4,0:b_2LenFirstTrack],1.e+4*diff_b[0:b_2LenFirstTrack],'.r',linewidth=2)
@@ -892,7 +898,7 @@ plt.xlim([1.e+4*prtclCoor_2[4,0]-50,1.e+4*prtclCoor_2[4,b_2LenFirstTrack-1]+50])
 plt.ylim([-.5,.5])
 plt.grid(True)
 
-'''
+
 plt.figure(30)
 plt.plot(range(int(pointsEndLarmor)),1.e4*prtclCoor[4,0:pointsEndLarmor],'-r',linewidth=2)
 plt.xlabel('Points',color='m',fontsize=16)
@@ -908,6 +914,7 @@ plt.ylabel('Distance Between Particles, $\mu$m',color='m',fontsize=16)
 plt.title(('Approach-1: First Trajectory ($N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' % \
            (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
 plt.grid(True)
+'''
 
 plt.figure(55)
 plt.plot(uPot_enrgKin,larmR_b,'.r')
@@ -915,9 +922,9 @@ plt.xlim([minUpot_enrgKin_1-.1,maxUpot_enrgKin_1+.1])
 plt.ylim([minLarmR_b_1-.1,maxLarmR_b_1+.1])
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-plt.title('Approach-1: Map for Transfered Momenta Calculations', color='m',fontsize=16)
+plt.title(('Approach-1: Map for Transfered Momenta Calculations\nTracks: %d' % lastTrackNumber), color='m',fontsize=16)
 plt.grid(True)
-'''
+
 #
 # Normalization of the arrays zApprch1dpx,zApprch1dpy,zApprch1dpz
 # to improve visual presentation of the results:
@@ -1049,7 +1056,7 @@ ax110.set_zlabel('z, $\mu m$',color='m',fontsize=16)
 plt.title(('First Trajectory (Start; $N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' \
            % (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
 ax110.text(0.,0.,-5425.,'Blue is Trajectory in the System of "Guiding Center"',color='b',fontsize=16)
-'''
+
 
 # for m in range(pointsEndLarmor-50,pointsEndLarmor):
 #    print 'Electron: z(%d)=%e' % (m,1.e+4*prtclCoor[4,m])
@@ -1059,7 +1066,7 @@ ax110.text(0.,0.,-5425.,'Blue is Trajectory in the System of "Guiding Center"',c
 print 'Last point of the first track: z(%d)=%e mkm, z_gc(%d)=%e mkm' % \
       (pointsEndLarmor,1.e+4*prtclCoor[4,pointsEndLarmor-1],pointsGCtot,1.e+4*prtclCoor_2[4,pointsGCtot-1])
 
-'''
+
 fig120=plt.figure(120) 
 ax120=fig120.gca(projection='3d')
 ax120.plot(1.e+4*prtclCoor[0,pBeg:pointsEndLarmor], \
@@ -1108,7 +1115,7 @@ pointCoor_2=np.zeros(pointsGCtot)
 zCoor_2=np.zeros(pointsGCtot)
 stepNzCoor=50
 
-'''
+
 k=0
 for m in range(0,pointsGCtot,stepNzCoor):
    pointCoor_2[k]=k*stepNzCoor*stepsNumberOnGyro
@@ -1133,9 +1140,9 @@ plt.xlim([minUpot_enrgKin_2-.1,maxUpot_enrgKin_2+.1])
 plt.ylim([minLarmR_b_2-.1,maxLarmR_b_2+.1])
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
 plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-plt.title('Approach-2: Map for Transfered Momenta Calculations', color='m',fontsize=16)
+plt.title(('Approach-2: Map for Transfered Momenta Calculations\nTracks: %d' % lastTrackNumber), color='m',fontsize=16)
 plt.grid(True)
-'''
+
 
 #
 # Normalization of the arrays zApprch1dpx,zApprch1dpy,zApprch1dpz
@@ -1202,6 +1209,7 @@ plt.title(('Approach-2: Transfered Momentum $dP_x$ $(\cdot 10^{-24}$; $g \cdot c
            (lastTrackNumber,dpxDataMax_2)), color='m',fontsize=14)
 fig175.colorbar(mapDpx)
 
+'''
 fig180=plt.figure(180)
 ax180=fig180.gca(projection='3d')
 # surf=ax180.plot_surface(X2,Y2,visPrezApprch2dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
@@ -1236,6 +1244,7 @@ plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
 plt.title(('Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
            (lastTrackNumber,dpyDataMax_2)), color='m',fontsize=14)
 fig185.colorbar(mapDpy)
+'''
 
 fig190=plt.figure(190)
 ax190=fig190.gca(projection='3d')
@@ -1264,6 +1273,8 @@ plt.title(('Approach-2: Transfered Momentum $dP_z$ $(\cdot 10^{-24}$; $g \cdot c
 fig195.colorbar(mapDpz)
 
 plt.show()   
+
+sys.exit()
 
 ###########################################################
 #
