@@ -166,23 +166,23 @@ def guidingCenterCollision(vectrElec_gc,vectrIon,deltaT):
    dpIon=np.zeros(3)
    dpElec=np.zeros(3)
    mOmegaLarm=m_elec*omega_L                                       # g/sec
-   dpFactor_gc=q_elec**2*deltaT                                    # g*cm^3/sec
+   dpFactor_gc=q_elec**2                                           # g*cm^3/sec^2
    rhoLarm_gc=np.sqrt(2.*vectrElec_gc[1]/mOmegaLarm)               # cm
    sinOmega_gc=math.sin(vectrElec_gc[0])
    cosOmega_gc=math.cos(vectrElec_gc[0])
    numer=(vectrIon[0]-vectrElec_gc[3]/mOmegaLarm)*cosOmega_gc- \
          (vectrIon[2]-vectrElec_gc[2])*sinOmega_gc
    denom=((vectrIon[0]-vectrElec_gc[3]/mOmegaLarm)**2+(vectrIon[2]-vectrElec_gc[2])**2+ \
-          (vectrIon[4]-vectrElec_gc[4])**2+rhoLarm_gc**2)**(3/2)                # cm^3
-   action=vectrElec_gc[1]+dpFactor*rhoLarm_gc/(omega_L*denom)                   # g*cm^2/sec
+          (vectrIon[4]-vectrElec_gc[4])**2+rhoLarm_gc**2)**(3/2)                           # cm^3
+   action=vectrElec_gc[1]+dpFactor_gc*numer*rhoLarm_gc/(omega_L*denom)                     # g*cm^2/sec
    b_gc=np.sqrt((vectrIon[0]-vectrElec_gc[3]/mOmegaLarm)**2+ \
                 (vectrIon[2]-vectrElec_gc[2])**2+ \
-                (vectrIon[4]-vectrElec_gc[4])**2+2.*action/mOmegaLarm)          # cm
-   dpIon[0]=-dpFactor*(vectrIon[0]-vectrElec_gc[3]/mOmegaLarm)/b_gc**3           # g*cm/sec
-   dpIon[1]=-dpFactor*(vectrIon[2]-vectrElec_gc[2])/b_gc**3                      # g*cm/sec
-   dpIon[2]=-dpFactor*(vectrIon[4]-vectrElec_gc[4])/b_gc**3                      # g*cm/sec
-   dpElec[1]=-dpIon[1]                                                           # g*cm/sec
-   dpElec[2]=-dpIon[2]                                                           # g*cm/sec
+                (vectrIon[4]-vectrElec_gc[4])**2+2.*action/mOmegaLarm)                     # cm
+   dpIon[0]=-dpFactor_gc*deltaT*(vectrIon[0]-vectrElec_gc[3]/mOmegaLarm)/b_gc**3           # g*cm/sec
+   dpIon[1]=-dpFactor_gc*deltaT*(vectrIon[2]-vectrElec_gc[2])/b_gc**3                      # g*cm/sec
+   dpIon[2]=-dpFactor_gc*deltaT*(vectrIon[4]-vectrElec_gc[4])/b_gc**3                      # g*cm/sec
+   dpElec[1]=-dpIon[1]                                             # g*cm/sec
+   dpElec[2]=-dpIon[2]                                             # g*cm/sec
 #    print 'dpIon[0]=%e, dpIon[1]=%e, dpIon[2]=%e' % (dpIon[0],dpIon[1],dpIon[2])
    return dpIon,dpElec                                      
 
@@ -245,7 +245,7 @@ print 'rhoCrit(mkm)=%f, alpha=%f' % (1.e+4*rhoCrit, alpha)
 #
 # Array A=log10(Upot/Ekin): 
 #
-nA=45
+nA=5
 crrntA=np.zeros(nA)
 minA=-5.
 maxA=0.
@@ -254,7 +254,7 @@ stepA=(maxA-minA)/(nA-1)
 #
 # Array B=log10(R_larm/b): 
 #
-nB=45
+nB=5
 crrntB=np.zeros(nB)
 minB=-3.
 maxB=-.5
