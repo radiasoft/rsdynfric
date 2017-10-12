@@ -184,7 +184,7 @@ def guidingCenterCollision(vectrElec_gc,vectrIon,deltaT):
    dpElec[1]=-dpIon[1]                                             # g*cm/sec
    dpElec[2]=-dpIon[2]                                             # g*cm/sec
 #    print 'dpIon[0]=%e, dpIon[1]=%e, dpIon[2]=%e' % (dpIon[0],dpIon[1],dpIon[2])
-   return dpIon,dpElec                                      
+   return dpIon,dpElec,action                                      
 
 z_elecCrrnt=np.zeros(6)                                            # 6-vector for electron (for Approach_1)
 z_ionCrrnt=np.zeros(6)                                             # 6-vector for ion (for Approach_1)
@@ -463,7 +463,7 @@ for iA in range(nA):
 	    rhoLarmorFirstTurn=rho_larm
 # 6-vectors for ion and electron and distance 'b' between them for the first trajectories 
 # (for checking only; indices 0-5 for electron, indices 6-11 for ion and index=12 for 'b'):
-            prtclCoor_2=np.zeros((13,timePoints_2[trackNumb_2]))                    
+            prtclCoor_2=np.zeros((14,timePoints_2[trackNumb_2]))                    
 # Current distance from origin of the coordinate system to electron along the trajectory; cm
          bCrrnt_2=np.zeros(timePoints_2[trackNumb_2])                           # cm
 # Current log10 of two important ratios; dimensionless:
@@ -496,12 +496,12 @@ for iA in range(nA):
  	    z_elecCrrnt_gc=np.dot(matr_elec_2,z_elecCrrnt_gc)      # electron's dragging for first nhalf timeStep
  	    z_ionCrrnt_2=np.dot(matr_ion_2,z_ionCrrnt_2)           # ion's dragging for first half timeStep
 # gragging both paticles through interaction point:
-	    dpIon,dpElec=guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt_2,timeStep_2) 
+	    dpIon,dpElec,action=guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt_2,timeStep_2) 
 #	    if trackNumb_2 == 0:
 #	       print 'point %d: dpgcElec=%e, dpzElec=%e' % (pointTrack_2[0],dpElec[1],dpElec[2])
 	    for ic in range(3):
 	       z_ionCrrnt_2[2*ic+1] += dpIon[ic]   
-	       z_elecCrrnt_2[2*ic+1] += dpElec[ic]   
+	       z_elecCrrnt_gc[2*ic+1] += dpElec[ic]   
 # Current values to calculate deltaPapprch_2:  
 	       dpApprch_2Crrnt[ic,k]=dpIon[ic]                    # g*cm/sec 
 # 	    z_elecCrrnt_gc=matr_elec_2.dot(z_elecCrrnt_gc)         # electron's dragging for second half timeStep
@@ -533,6 +533,7 @@ for iA in range(nA):
                   prtclCoor_2[ic,pointTrack_2[trackNumb_2]]=z_elecCrrnt_2[ic]        # 6-vector for electron
                   prtclCoor_2[6+ic,pointTrack_2[trackNumb_2]]=z_ionCrrnt_2[ic]       # 6-vector for ion 
 	       prtclCoor_2[12,pointTrack_2[trackNumb_2]]=bCrrnt_2[k]                 # cm
+	       prtclCoor_2[13,pointTrack_2[trackNumb_2]]=action                      # g*cm^2/sec
 #	       crrntPoint=pointTrack_2[trackNumb_2]
 #	       if crrntPoint < 100 or crrntPoint > 1700:
 #                  print 'Point %d: x=%e, y=%e, z=%e' % \
@@ -595,7 +596,9 @@ bLenFirstTrack=int(timePoints[0])
 b_2LenFirstTrack=int(timePoints_2[0])
 print 'First track lengthes: for b %d, for b_2 %d' % (bLenFirstTrack,b_2LenFirstTrack)
 
-
+# for i in range(b_2LenFirstTrack):
+#    print 'action(%d)=%e' % (i,prtclCoor_2[13,i])
+   
 diff_b=np.zeros(b_2LenFirstTrack)
 
 #

@@ -185,13 +185,13 @@ def guidingCenterCollision(vectrElec_gc,vectrIon,deltaT):
    dpElec[1]=-dpIon[1]                                                          # g*cm/sec
    dpElec[2]=-dpIon[2]                                                          # g*cm/sec
 #    print 'dpIon[0]=%e, dpIon[1]=%e, dpIon[2]=%e' % (dpIon[0],dpIon[1],dpIon[2])
-   return dpIon,dpElec                                      
+   return dpIon,dpElec,action                                      
 
 #
 # "Magnus expansion" description of the collision during time interval 'deltaT'
 # in the system coordinates of "guiding center" of electron
 # input - 6-vectors for electron and ion before collision and time step deltaT; 
-# output - transfered momenta to ion and electron: 
+# output - transfered momenta to ion and electron and electron y_gc coordinate: 
 #
 def MagnusExpansionCollision(vectrElec_gc,vectrIon,deltaT):
 
@@ -200,10 +200,36 @@ def MagnusExpansionCollision(vectrElec_gc,vectrIon,deltaT):
    dpIon=np.zeros(3)
    dpElec=np.zeros(3)
    mOmegaLarm=m_elec*omega_L                                       # g/sec
-   dpFactor_gc=q_elec**2*deltaT                                    # g*cm^3/sec
+   dpFactor_gc=q_elec**2                                           # g*cm^3/sec^2
    rhoLarm_gc=np.sqrt(2.*vectrElec_gc[1]/mOmegaLarm)               # cm
+   sinOmega_gc=math.sin(vectrElec_gc[0])
+   cosOmega_gc=math.cos(vectrElec_gc[0])
+   x_gc=vectrElec_gc[3]/mOmegaLarm                                 # cm
+   numer=(vectrIon[0]-x_gc)*cosOmega_gc- \
+         (vectrIon[2]-vectrElec_gc[2])*sinOmega_gc                 # cm
+   denom=((vectrIon[0]-x_gc)**2+(vectrIon[2]-vectrElec_gc[2])**2+ \
+          (vectrIon[4]-vectrElec_gc[4])**2+rhoLarm_gc**2)**(3/2)                # cm^3
+   action=vectrElec_gc[1]+dpFactor_gc*numer*rhoLarm_gc/(omega_L*denom)          # g*cm^2/sec
+   C1=np.sqrt((vectrIon[0]-x_gc)**2+ \
+              (vectrIon[2]-vectrElec_gc[2])**2+ \
+              (vectrIon[4]-vectrElec_gc[4])**2+2.*action/mOmegaLarm)            # cm^2
+   C2=2.*((vectrIon[0]-x_gc)*vectrIon[1]/M_ion+(vectrIon[2]-vectrElec_gc[2])*vectrIon[3]/M_ion+ \
+          (vectrIon[4]-vectrElec_gc[4])*(vectrIon[5]/M_ion-vectrElec_gc[5]/m_elec))               # cm^2/sec
+   C3=(vectrIon[1]/M_ion)**2+(vectrIon[3]/M_ion)**2+ \
+      (vectrIon[5]/M_ion-vectrElec_gc[5]/m_elec)**2                # cm^2/sec^2
+   b=np.sqrt(C1+C2*deltaT+C3*deltaT**2)                            # cm
+   D1=(2.*C3*deltaT+C2)/b-C2/np.sqrt(C1)                           # cm/sec
+   D2=(C2*deltaT+2.*C1)/b-np.sqrt(C1)                              # cm
+   q=4.*C1*C3-C2**2                                                # cm^4/sec^2
+   dpIon[0]=-2.*dpFactor_gc/q*((vectrIon[0]-x_gc)*D1-vectrIon[1]/M_ion*D2)                # g*cm/sec
+   dpIon[1]=-2.*dpFactor_gc/q*((vectrIon[2]-vectrElec_gc[2])*D1-vectrIon[3]/M_ion*D2)     # g*cm/sec
+   dpIon[2]=-2.*dpFactor_gc/q*((vectrIon[4]-vectrElec_gc[4])*D1- \
+                                (vectrIon[5]/M_ion-vectrElec_gc[5]/m_elec)*D2)            # g*cm/sec
+   dpElec[1]=-dpIon[1]                                             # g*cm/sec
+   dpElec[2]=-dpIon[2]                                             # g*cm/sec
+   dy_gc=dpIon[0]/mOmegaLarm                                       # cm
 #    print 'dpIon[0]=%e, dpIon[1]=%e, dpIon[2]=%e' % (dpIon[0],dpIon[1],dpIon[2])
-   return dpIon,dpElec                                      
+   return dpIon,dpElec,dy_gc                                      
 
 z_elecCrrnt=np.zeros(6)                                            # 6-vector for electron (for Approach_1)
 z_ionCrrnt=np.zeros(6)                                             # 6-vector for ion (for Approach_1)
@@ -344,8 +370,8 @@ maxUpot_enrgKin_3=-1.e8                                            # dimensionle
 print 'timeStep=%e, timeStep_2=%e, timeStep_3=%e' % (timeStep,timeStep_2,timeStep_3)
 
 runFlagApproach_1=0                                                # run approach1 if = 1, otherwize don't run
-runFlagApproach_2=1                                                # run approach2 if = 1, otherwize don't run
-runFlagApproach_3=0                                                # run approach3 if = 1, otherwize don't run
+runFlagApproach_2=0                                                # run approach2 if = 1, otherwize don't run
+runFlagApproach_3=1                                                # run approach3 if = 1, otherwize don't run
 maxYcoorElec=0.
 maxYcoorIon=0.
 cpuTimeTotal=0
@@ -471,7 +497,7 @@ for iA in range(nA):
             if trackNumb == 0: 
 # First definition of the total distance from origin of the coordinate system to electron along the trajectory; cm:
  	       b=bCrrnt                                            # cm
-# First definition of the total log10 of two important ratios; dimensionless:  
+# First definition of the log10 of two important ratios; dimensionless:  
 	       larmR_b=larmR_bCrrnt                                # dimensionless 
 	       uPot_enrgKin=uPot_enrgKinCrrnt                      # dimensionless 
 # First definition of the values to calculate deltaPapprch_1:
@@ -516,8 +542,8 @@ for iA in range(nA):
 	       rhoFirstTurn=rhoCrrnt
 	       rhoLarmorFirstTurn=rho_larm
 # 6-vectors for ion and electron and distance 'b' between them for the first trajectories 
-# (for checking only; indices 0-5 for electron, indices 6-11 for ion and index=12 for 'b'):
-               prtclCoor_2=np.zeros((13,timePoints_2[trackNumb_2]))                    
+# (for checking only; indices 0-5 for electron, indices 6-11 for ion, index=12 for 'b' and index=13 for action):
+               prtclCoor_2=np.zeros((14,timePoints_2[trackNumb_2]))                    
 # Current distance from origin of the coordinate system to electron along the trajectory; cm
             bCrrnt_2=np.zeros(timePoints_2[trackNumb_2])           # cm
 # Current log10 of two important ratios; dimensionless:
@@ -549,12 +575,12 @@ for iA in range(nA):
  	       z_elecCrrnt_gc=np.dot(matr_elec_2,z_elecCrrnt_gc)   # electron's dragging for first nhalf timeStep
  	       z_ionCrrnt_2=np.dot(matr_ion_2,z_ionCrrnt_2)        # ion's dragging for first half timeStep
 # dragging both paticles through interaction point:
-	       dpIon,dpElec=guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt_2,timeStep_2) 
+	       dpIon,dpElec,action=guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt_2,timeStep_2) 
 #	       if trackNumb_2 == 0:
 #	          print 'point %d: dpgcElec=%e, dpzElec=%e' % (pointTrack_2[0],dpElec[1],dpElec[2])
 	       for ic in range(3):
 	          z_ionCrrnt_2[2*ic+1] += dpIon[ic]   
-	          z_elecCrrnt_2[2*ic+1] += dpElec[ic]   
+	          z_elecCrrnt_gc[2*ic+1] += dpElec[ic]   
 # Current values to calculate deltaPapprch_2:  
 	          dpApprch_2Crrnt[ic,k]=dpIon[ic]                  # g*cm/sec 
 # 	       z_elecCrrnt_gc=matr_elec_2.dot(z_elecCrrnt_gc)      # electron's dragging for second half timeStep
@@ -586,6 +612,7 @@ for iA in range(nA):
                      prtclCoor_2[ic,pointTrack_2[trackNumb_2]]=z_elecCrrnt_2[ic]     # 6-vector for electron
                      prtclCoor_2[6+ic,pointTrack_2[trackNumb_2]]=z_ionCrrnt_2[ic]    # 6-vector for ion 
 	          prtclCoor_2[12,pointTrack_2[trackNumb_2]]=bCrrnt_2[k]              # cm
+	          prtclCoor_2[13,pointTrack_2[trackNumb_2]]=action                   # g*cm^2/sec
 #	          crrntPoint=pointTrack_2[trackNumb_2]
 #	          if crrntPoint < 100 or crrntPoint > 1700:
 #                     print 'Point %d: x=%e, y=%e, z=%e' % \
@@ -597,11 +624,11 @@ for iA in range(nA):
 #-----------------------------------------------
 #
             if trackNumb_2 == 0: 
-# First definition of the total distance from origin of the coordinate system to electron along the trajectory; cm:
+# First definition of the total distance from origin of the coordinate system to electron along the trajectory:
  	       b_2=bCrrnt_2                                        # cm 
-### # First definition of the total log10 of two important ratios; dimensionless:  
-	       larmR_b_2=larmR_bCrrnt_2                            # dimensionless 
-	       uPot_enrgKin_2=uPot_enrgKinCrrnt_2                  # dimensionless 
+# First definition of the log10 of two important ratios; dimensionless:  
+	       larmR_b_2=larmR_bCrrnt_2                            
+	       uPot_enrgKin_2=uPot_enrgKinCrrnt_2                 
 # First definition of the values deltaPapprch_2:
                dpxApprch_2=dpApprch_2Crrnt[0,:]                    # g*cm/sec  
                dpyApprch_2=dpApprch_2Crrnt[1,:]                    # g*cm/sec  
@@ -652,7 +679,7 @@ for iA in range(nA):
 # Current log10 of two important ratios; dimensionless:
             larmR_bCrrnt_3=np.zeros(timePoints_3[trackNumb_3])     # ratio R_larmor/b; dimensionless
             uPot_enrgKinCrrnt_3=np.zeros(timePoints_3[trackNumb_3])       # ratio potential_energy/kinetic_energy; dimensionless
-            dpApprch_3Crrnt=np.zeros((3,timePoints_3[trackNumb_3]))                # g*cm/sec
+            dpApprch_3Crrnt=np.zeros((3,timePoints_3[trackNumb_3]))       # g*cm/sec
             for m in range(6): 
                z_ionCrrnt_3[m]=0.                                  # Current initial zero-vector for ion
                z_elecCrrnt_3[m]=0.                                 # Zeroing out of vector for electron
@@ -678,15 +705,16 @@ for iA in range(nA):
  	       z_elecCrrnt_gc=np.dot(matr_elec_3,z_elecCrrnt_gc)   # electron's dragging for first nhalf timeStep
  	       z_ionCrrnt_3=np.dot(matr_ion_3,z_ionCrrnt_3)        # ion's dragging for first half timeStep
 # dragging both paticles through interaction point:
-#	       dpIon,dpElec=guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt_3,timeStep_3) 
-	       dpIon,dpElec=MagnusExpansionCollision(z_elecCrrnt_gc,z_ionCrrnt_3,timeStep_3) 
+	       dpIon,dpElec,dy_gc=MagnusExpansionCollision(z_elecCrrnt_gc,z_ionCrrnt_3,timeStep_3) 
 #	       if trackNumb_3 == 0:
-#	          print 'point %d: dpgcElec=%e, dpzElec=%e' % (pointTrack_3[0],dpElec[1],dpElec[2])
+#	          print 'point %d: dpxIon=%e, dpyIon=%e, dpzIon=%e, dy_gc=%e' % \
+#		        (pointTrack_3[0],dpIon[0],dpIon[1],dpElec[2],dy_gc)
 	       for ic in range(3):
 	          z_ionCrrnt_3[2*ic+1] += dpIon[ic]   
-	          z_elecCrrnt_3[2*ic+1] += dpElec[ic]   
+	          z_elecCrrnt_gc[2*ic+1] += dpElec[ic]   
 # Current values to calculate deltaPapprch_3:  
 	          dpApprch_3Crrnt[ic,k]=dpIon[ic]                  # g*cm/sec 
+	       z_elecCrrnt_gc[2] += dy_gc                          # cm   
 # 	       z_elecCrrnt_gc=matr_elec_2.dot(z_elecCrrnt_gc)      # electron's dragging for second half timeStep
 # 	       z_ionCrrnt_2=matr_ion_2.dot(z_ionCrrnt_2)           # ion's dragging for second half timeStep
  	       z_elecCrrnt_gc=np.dot(matr_elec_3,z_elecCrrnt_gc)   # electron's dragging for first nhalf timeStep
@@ -727,11 +755,11 @@ for iA in range(nA):
 #-----------------------------------------------
 #
             if trackNumb_3 == 0: 
-# First definition of the total distance from origin of the coordinate system to electron along the trajectory; cm:
+# First definition of the total distance from origin of the coordinate system to electron along the trajectory:
  	       b_3=bCrrnt_3                                        # cm 
-### # First definition of the total log10 of two important ratios; dimensionless:  
-	       larmR_b_3=larmR_bCrrnt_3                            # dimensionless 
-	       uPot_enrgKin_3=uPot_enrgKinCrrnt_3                  # dimensionless 
+# First definition of the log10 of two important ratios; dimensionless:  
+	       larmR_b_3=larmR_bCrrnt_3                             
+	       uPot_enrgKin_3=uPot_enrgKinCrrnt_3                   
 # First definition of the values deltaPapprch_3:
                dpxApprch_3=dpApprch_3Crrnt[0,:]                    # g*cm/sec  
                dpyApprch_3=dpApprch_3Crrnt[1,:]                    # g*cm/sec  
@@ -755,6 +783,9 @@ for iA in range(nA):
             timeEnd=os.times()
 	    cpuTime_3[trackNumb_3]=1.e+6*(float(timeEnd[0])-float(timeStart[0]))     # CPU time , mks
             cpuTimeTotal += cpuTime_3[trackNumb_3] 
+# for k in range (int(pointTrack_3[0])):
+#   print 'Point %d: dpxIon=%e, dpyIon=%e, dpzIon=%e' % \
+#		     (k,dpxApprch_3[k],dpyApprch_3[k],dpzApprch_3[k])
 #
 #------- End of calculations for approach_3 --------------
 #
@@ -764,6 +795,8 @@ if runFlagApproach_1 == 1:
    print 'Approach_1: for %d tracks number of points is %d' % (lastTrackNumber,sumPoints)
 if runFlagApproach_2 == 1:
    print 'Approach_2: for %d tracks number of points is %d' % (lastTrackNumber_2,sumPoints_2)
+#   for i in range(b_2LenFirstTrack):
+#      print 'action(%d)=%e' % (i,prtclCoor_2[13,i])
 if runFlagApproach_3 == 1:
    print 'Approach_3: for %d tracks number of points is %d' % (lastTrackNumber_3,sumPoints_3)
 
@@ -1076,6 +1109,7 @@ if runFlagApproach_3 == 1:
          (zApprch3dpy[iA,iB]*zApprch3dpNumb[iA,iB]+dpyApprch_3[nPoint])/(zApprch3dpNumb[iA,iB]+1)  # averaging inside rectangle iA,iB
          zApprch3dpz[iA,iB]= \
          (zApprch3dpz[iA,iB]*zApprch3dpNumb[iA,iB]+dpzApprch_3[nPoint])/(zApprch3dpNumb[iA,iB]+1)  # averaging inside rectangle iA,iB
+#	 print 'nPoint=%d: dpzApprch_3(%d,%d)=%e --> zApprch3dpz=%e' % (nPoint,iA,iB,dpzApprch_3[nPoint],zApprch3dpz[iA,iB])
       zApprch3dpNumb[iA,iB] += 1
 
 # Some checkings:
@@ -1237,13 +1271,14 @@ if runFlagApproach_1 == 1:
    visPrezApprch1dpx=np.zeros((nBins,nBins))
    visPrezApprch1dpy=np.zeros((nBins,nBins))
    visPrezApprch1dpz=np.zeros((nBins,nBins))
-   dpxDataMax=0                                                    # maximum for array of zApprch1dpx
+
+   dpxDataMax=-1.e24                                               # maximum for array of zApprch1dpx
    indxAdpxDataMax=0                                               # index A of the maximum for array of zApprch1dpx
    indxBdpxDataMax=0                                               # index B of the maximum for array of zApprch1dpx
-   dpyDataMax=0                                                    # maximum for array of zApprch1dpx
+   dpyDataMax=-1.e24                                               # maximum for array of zApprch1dpx
    indxAdpyDataMax=0                                               # index A of the maximum for array of zApprch1dpx
    indxBdpyDataMax=0                                               # index B of the maximum for array of zApprch1dpx
-   dpzDataMax=0                                                    # maximum for array of zApprch1dpx
+   dpzDataMax=-1.e24                                               # maximum for array of zApprch1dpx
    indxAdpzDataMax=0                                               # index A of the maximum for array of zApprch1dpx
    indxBdpzDataMax=0                                               # index B of the maximum for array of zApprch1dpx
 
@@ -1254,18 +1289,20 @@ if runFlagApproach_1 == 1:
          visPrezApprch1dpx[iA,iB]=normFactor*zApprch1dpx[iA,iB]
          visPrezApprch1dpy[iA,iB]=normFactor*zApprch1dpy[iA,iB]
          visPrezApprch1dpz[iA,iB]=normFactor*zApprch1dpz[iA,iB]
-         if dpxDataMax < normFactor*zApprch1dpx[iA,iB]:
-            dpxDataMax=normFactor*zApprch1dpx[iA,iB]
+         if dpxDataMax < abs(normFactor*zApprch1dpx[iA,iB]):
+            dpxDataMax=abs(normFactor*zApprch1dpx[iA,iB])
             indxAdpxDataMax=iA
             indxBdpxDataMax=iB
-         if dpyDataMax < normFactor*zApprch1dpy[iA,iB]:
-            dpyDataMax=normFactor*zApprch1dpy[iA,iB]
+         if dpyDataMax < abs(normFactor*zApprch1dpy[iA,iB]):
+            dpyDataMax=abs(normFactor*zApprch1dpy[iA,iB])
             indxAdpyDataMax=iA
             indxBdpyDataMax=iB
-         if dpzDataMax < normFactor*zApprch1dpz[iA,iB]:
-            dpzDataMax=normFactor*zApprch1dpz[iA,iB]
+         if dpzDataMax < abs(normFactor*zApprch1dpz[iA,iB]):
+            dpzDataMax=abs(normFactor*zApprch1dpz[iA,iB])
             indxAdpzDataMax=iA
             indxBdpzDataMax=iB
+
+   print '|Maximum| (approach-1): dpx=%e,  dpy=%e,  dpz=%e' % (dpxDataMax,dpyDataMax,dpzDataMax)
 
    X,Y=np.meshgrid(xA,yB) 
 
@@ -1273,7 +1310,7 @@ if runFlagApproach_1 == 1:
    ax70=fig70.gca(projection='3d')
 #    surf=ax70.plot_surface(X,Y,visPrezApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
    surf=ax70.plot_surface(X,Y,visPrezApprch1dpx,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.title(('Approach-1: Transfered Momentum $dP_x$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+   plt.title(('Approach-1: Transfered Momentum $dP_x$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
               (lastTrackNumber,dpxDataMax)), color='m',fontsize=16)
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
@@ -1288,7 +1325,7 @@ if runFlagApproach_1 == 1:
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
    plt.title( \
-      ('Approach-1: Transfered Momentum $dP_x$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+      ('Approach-1: Transfered Momentum $dP_x$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-24}$)' % \
           (lastTrackNumber,dpxDataMax)), color='m',fontsize=14)
    fig75.colorbar(mapDpx)
 
@@ -1296,7 +1333,7 @@ if runFlagApproach_1 == 1:
    ax80=fig80.gca(projection='3d')
 #    surf=ax80.plot_surface(X,Y,visPrezApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
    surf=ax80.plot_surface(X,Y,visPrezApprch1dpy,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.title(('Approach-1: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+   plt.title(('Approach-1: Transfered Momentum $dP_y$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
               (lastTrackNumber,dpyDataMax)), color='m',fontsize=16)
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
@@ -1311,7 +1348,7 @@ if runFlagApproach_1 == 1:
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
    plt.title( \
-      ('Approach-1: Transfered Momentum $dP_y$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+      ('Approach-1: Transfered Momentum $dP_y$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-24}$)' % \
         (lastTrackNumber,dpyDataMax)), color='m',fontsize=14)
    fig85.colorbar(mapDpx)
 
@@ -1320,7 +1357,7 @@ if runFlagApproach_1 == 1:
 #    surf=ax90.plot_surface(X,Y,visPrezApprch1dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
    surf=ax90.plot_surface(X,Y,visPrezApprch1dpz,cmap=cm.jet,linewidth=0,antialiased=False)
    plt.title( \
-      ('Approach-1: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+      ('Approach-1: Transfered Momentum $dP_z$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
        (lastTrackNumber,dpzDataMax)), color='m',fontsize=16)
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
@@ -1335,7 +1372,7 @@ if runFlagApproach_1 == 1:
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
    plt.title( \
-      ('Approach-1: Transfered Momentum $dP_z$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+      ('Approach-1: Transfered Momentum $dP_z$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-24}$)' % \
        (lastTrackNumber,dpzDataMax)), color='m',fontsize=14)
    fig95.colorbar(mapDpx)
 
@@ -1498,13 +1535,13 @@ if runFlagApproach_2 == 1:
    visPrezApprch2dpy=np.zeros((nBins,nBins))
    visPrezApprch2dpz=np.zeros((nBins,nBins))
 
-   dpxDataMax_2=0.                                                 # maximum for array of zApprch2dpx
+   dpxDataMax_2=-1.e24                                             # maximum for array of zApprch2dpx
    indxAdpxDataMax_2=0                                             # index A_2 of the maximum for array of zApprch2dpx
    indxBdpxDataMax_2=0                                             # index B_2 of the maximum for array of zApprch2dpx
-   dpyDataMax_2=0.                                                 # maximum for array of zApprch2dpx
+   dpyDataMax_2=-1.e24                                             # maximum for array of zApprch2dpx
    indxAdpyDataMax_2=0                                             # index A_2 of the maximum for array of zApprch2dpx
    indxBdpyDataMax_2=0                                             # index B_2 of the maximum for array of zApprch2dpx
-   dpzDataMax_2=0.                                                 # maximum for array of zApprch2dpx
+   dpzDataMax_2=-1.e24                                             # maximum for array of zApprch2dpx
    indxAdpzDataMax_2=0                                             # index A_2 of the maximum for array of zApprch2dpx
    indxBdpzDataMax_2=0                                             # index B_2 of the maximum for array of zApprch2dpx
 
@@ -1514,18 +1551,20 @@ if runFlagApproach_2 == 1:
          visPrezApprch2dpx[iA,iB]=normFactor*zApprch2dpx[iA,iB]
          visPrezApprch2dpy[iA,iB]=normFactor*zApprch2dpy[iA,iB]
          visPrezApprch2dpz[iA,iB]=normFactor*zApprch2dpz[iA,iB]
-         if dpxDataMax_2 < normFactor*zApprch2dpx[iA,iB]:
-            dpxDataMax_2=normFactor*zApprch2dpx[iA,iB]
+         if dpxDataMax_2 < abs(normFactor*zApprch2dpx[iA,iB]):
+            dpxDataMax_2=abs(normFactor*zApprch2dpx[iA,iB])
             indxAdpxDataMax_2=iA
             indxBdpxDataMax_2=iB
-         if dpyDataMax_2 < normFactor*zApprch2dpy[iA,iB]:
-            dpyDataMax_2=normFactor*zApprch2dpy[iA,iB]
+         if dpyDataMax_2 < abs(normFactor*zApprch2dpy[iA,iB]):
+            dpyDataMax_2=abs(normFactor*zApprch2dpy[iA,iB])
             indxAdpyDataMax_2=iA
             indxBdpyDataMax_2=iB
-         if dpzDataMax_2 < normFactor*zApprch2dpz[iA,iB]:
-            dpzDataMax_2=normFactor*zApprch2dpz[iA,iB]
+         if dpzDataMax_2 < abs(normFactor*zApprch2dpz[iA,iB]):
+            dpzDataMax_2=abs(normFactor*zApprch2dpz[iA,iB])
             indxAdpzDataMax_2=iA
             indxBdpzDataMax_2=iB
+
+   print '|Maximum| (approach-2): dpx=%e,  dpy=%e,  dpz=%e' % (dpxDataMax_2,dpyDataMax_2,dpzDataMax_2)
 
    X2,Y2=np.meshgrid(xA_2,yB_2) 
 
@@ -1533,7 +1572,7 @@ if runFlagApproach_2 == 1:
    ax170=fig170.gca(projection='3d')
 #    surf=ax170.plot_surface(X2,Y2,zApprch2dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
    surf=ax170.plot_surface(X2,Y2,visPrezApprch2dpx,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.title(('Approach-2: Transfered Momentum $dP_x$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+   plt.title(('Approach-2: Transfered Momentum $dP_x$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
               (lastTrackNumber_2,dpxDataMax_2)), color='m',fontsize=16)
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
@@ -1551,7 +1590,7 @@ if runFlagApproach_2 == 1:
 #    plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   plt.title(('Approach-2: Transfered Momentum $dP_x$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+   plt.title(('Approach-2: Transfered Momentum $dP_x$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-24}$)' % \
               (lastTrackNumber_2,dpxDataMax_2)), color='m',fontsize=14)
    fig175.colorbar(mapDpx)
 
@@ -1560,7 +1599,7 @@ if runFlagApproach_2 == 1:
    ax180=fig180.gca(projection='3d')
 #    surf=ax180.plot_surface(X2,Y2,visPrezApprch2dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
    surf=ax180.plot_surface(X2,Y2,visPrezApprch2dpy,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.title(('Approach-2: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+   plt.title(('Approach-2: Transfered Momentum $dP_y$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
               (lastTrackNumber_2,dpyDataMax_2)), color='m',fontsize=16)
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
@@ -1587,7 +1626,7 @@ if runFlagApproach_2 == 1:
 #    plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   plt.title(('Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+   plt.title(('Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-24}$)' % \
               (lastTrackNumber_2,dpyDataMax_2)), color='m',fontsize=14)
    cb = fig185.colorbar(mapDpy)
 
@@ -1596,7 +1635,7 @@ if runFlagApproach_2 == 1:
    ax190=fig190.gca(projection='3d')
 #    surf=ax190.plot_surface(X2,Y2,visPrezApprch2dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
    surf=ax190.plot_surface(X2,Y2,visPrezApprch2dpz,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.title(('Approach-2: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+   plt.title(('Approach-2: Transfered Momentum $dP_z$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
               (lastTrackNumber_2,dpzDataMax_2)), color='m',fontsize=16)
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
@@ -1614,7 +1653,7 @@ if runFlagApproach_2 == 1:
 #    plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   plt.title(('Approach-2: Transfered Momentum $dP_z$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+   plt.title(('Approach-2: Transfered Momentum $dP_z$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-24}$)' % \
               (lastTrackNumber_2,dpzDataMax_2)), color='m',fontsize=14)
    fig195.colorbar(mapDpz)
 
@@ -1751,13 +1790,13 @@ if runFlagApproach_3 == 1:
    visPrezApprch3dpy=np.zeros((nBins,nBins))
    visPrezApprch3dpz=np.zeros((nBins,nBins))
 
-   dpxDataMax_3=0                                                  # maximum for array of zApprch3dpx
+   dpxDataMax_3=-1.e24                                             # maximum for array of zApprch3dpx
    indxAdpxDataMax_3=0                                             # index A_3 of the maximum for array of zApprch3dpx
    indxBdpxDataMax_3=0                                             # index B_3 of the maximum for array of zApprch3dpx
-   dpyDataMax_3=0                                                  # maximum for array of zApprch3dpx
+   dpyDataMax_3=-1.e24                                             # maximum for array of zApprch3dpx
    indxAdpyDataMax_3=0                                             # index A_3 of the maximum for array of zApprch3dpx
    indxBdpyDataMax_3=0                                             # index B_3 of the maximum for array of zApprch3dpx
-   dpzDataMax_3=0                                                  # maximum for array of zApprch3dpx
+   dpzDataMax_3=-1.e24                                             # maximum for array of zApprch3dpx
    indxAdpzDataMax_3=0                                             # index A_3 of the maximum for array of zApprch3dpx
    indxBdpzDataMax_3=0                                             # index B_3 of the maximum for array of zApprch3dpx
 
@@ -1767,18 +1806,21 @@ if runFlagApproach_3 == 1:
          visPrezApprch3dpx[iA,iB]=normFactor*zApprch3dpx[iA,iB]
          visPrezApprch3dpy[iA,iB]=normFactor*zApprch3dpy[iA,iB]
          visPrezApprch3dpz[iA,iB]=normFactor*zApprch3dpz[iA,iB]
-         if dpxDataMax_3 < normFactor*zApprch3dpx[iA,iB]:
-            dpxDataMax_3=normFactor*zApprch3dpx[iA,iB]
+         if dpxDataMax_3 < abs(normFactor*zApprch3dpx[iA,iB]):
+            dpxDataMax_3=abs(normFactor*zApprch3dpx[iA,iB])
             indxAdpxDataMax_3=iA
             indxBdpxDataMax_3=iB
-         if dpyDataMax_3 < normFactor*zApprch3dpy[iA,iB]:
-            dpyDataMax_3=normFactor*zApprch3dpy[iA,iB]
+         if dpyDataMax_3 < abs(normFactor*zApprch3dpy[iA,iB]):
+            dpyDataMax_3=abs(normFactor*zApprch3dpy[iA,iB])
             indxAdpyDataMax_3=iA
             indxBdpyDataMax_3=iB
-         if dpzDataMax_3 < normFactor*zApprch3dpz[iA,iB]:
-            dpzDataMax_3=normFactor*zApprch3dpz[iA,iB]
+#	 print 'zApprch3dpz[%d,%d]=%e, max=%e' % (iA,iB,normFactor*zApprch3dpz[iA,iB],dpzDataMax_3)   
+         if dpzDataMax_3 < abs(normFactor*zApprch3dpz[iA,iB]):
+            dpzDataMax_3=abs(normFactor*zApprch3dpz[iA,iB])
             indxAdpzDataMax_3=iA
             indxBdpzDataMax_3=iB
+   print '|Maximum| (approach-3): dpx=%e,  dpy=%e,  dpz=%e' % (dpxDataMax_3,dpyDataMax_3,dpzDataMax_3)
+
 
    X3,Y3=np.meshgrid(xA_3,yB_3) 
 
@@ -1786,7 +1828,7 @@ if runFlagApproach_3 == 1:
    ax270=fig270.gca(projection='3d')
 #    surf=ax270.plot_surface(X3,Y3,zApprch2dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
    surf=ax270.plot_surface(X3,Y3,visPrezApprch3dpx,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.title(('Approach-3: Transfered Momentum $dP_x$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+   plt.title(('Approach-3: Transfered Momentum $dP_x$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
               (lastTrackNumber_3,dpxDataMax_3)), color='m',fontsize=16)
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
@@ -1804,7 +1846,7 @@ if runFlagApproach_3 == 1:
 #    plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   plt.title(('Approach-3: Transfered Momentum $dP_x$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+   plt.title(('Approach-3: Transfered Momentum $dP_x$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-24}$)' % \
               (lastTrackNumber_3,dpxDataMax_3)), color='m',fontsize=14)
    fig275.colorbar(mapDpx)
 
@@ -1813,7 +1855,7 @@ if runFlagApproach_3 == 1:
    ax280=fig280.gca(projection='3d')
 #    surf=ax280.plot_surface(X3,Y3,visPrezApprch3dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
    surf=ax280.plot_surface(X3,Y3,visPrezApprch3dpy,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.title(('Approach-3: Transfered Momentum $dP_y$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+   plt.title(('Approach-3: Transfered Momentum $dP_y$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
               (lastTrackNumber_3,dpyDataMax_3)), color='m',fontsize=16)
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
@@ -1840,7 +1882,7 @@ if runFlagApproach_3 == 1:
 #    plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   plt.title(('Approach-3: Transfered Momentum $dP_y$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+   plt.title(('Approach-3: Transfered Momentum $dP_y$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-24}$)' % \
               (lastTrackNumber_3,dpyDataMax_3)), color='m',fontsize=14)
    fig285.colorbar(mapDpy)
 
@@ -1849,7 +1891,7 @@ if runFlagApproach_3 == 1:
    ax290=fig290.gca(projection='3d')
 #    surf=ax290.plot_surface(X3,Y3,visPrezApprch3dpx,cmap=cm.coolwarm,linewidth=0,antialiased=False)
    surf=ax290.plot_surface(X3,Y3,visPrezApprch3dpz,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.title(('Approach-3: Transfered Momentum $dP_z$\nTracks: %d (Maximum = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
+   plt.title(('Approach-3: Transfered Momentum $dP_z$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
               (lastTrackNumber_3,dpzDataMax_3)), color='m',fontsize=16)
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
@@ -1867,7 +1909,7 @@ if runFlagApproach_3 == 1:
 #    plt.clabel(mapTurnCutoff,inline=1,fontsize=14,manual=[(-3,-1.5)])  
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   plt.title(('Approach-3: Transfered Momentum $dP_z$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (Maximum = %5.1f $\cdot 10^{-24}$)' % \
+   plt.title(('Approach-3: Transfered Momentum $dP_z$ $(\cdot 10^{-24}$; $g \cdot cm/sec)$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-24}$)' % \
               (lastTrackNumber_3,dpzDataMax_3)), color='m',fontsize=14)
    fig295.colorbar(mapDpz)
 
