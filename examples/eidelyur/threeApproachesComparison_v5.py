@@ -354,6 +354,12 @@ nLarmorAvrgng=1                                                    # number of a
 timeStep_2=nLarmorAvrgng*stepsNumberOnGyro*timeStep                # time step for approach_2
 matr_elec_2=guidingCenter_Matrix(.5*timeStep_2)                    # matrix for electron for timeStep_2/2 
 matr_ion_2=drift_Matrix(M_ion,.5*timeStep_2)                       # matrix for ion (with mass M_ion) for timeStep_2/2
+trackNumb_2=-1                                                     # Tracks will be enumerated from 0!
+dpFactor_2=q_elec**2*timeStep_2                                    # g*cm^3/sec
+minLarmR_b_2=1.e8                                                  # dimensionless     
+maxLarmR_b_2=-1.e8                                                 # dimensionless
+minUpot_enrgKin_2=1.e8                                             # dimensionless      
+maxUpot_enrgKin_2=-1.e8                                            # dimensionless      
 
 # 
 # For approach_3 (with averaging over nLarmorAvrgng larmor rotation +
@@ -363,14 +369,6 @@ nLarmorAvrgng=1                                                    # number of a
 timeStep_3=nLarmorAvrgng*stepsNumberOnGyro*timeStep                # time step for approach_3
 matr_elec_3=guidingCenter_Matrix(.5*timeStep_3)                    # matrix for electron for timeStep_3/2 
 matr_ion_3=drift_Matrix(M_ion,.5*timeStep_3)                       # matrix for ion (with mass M_ion) for timeStep_3/2
-
-trackNumb_2=-1                                                     # Tracks will be enumerated from 0!
-dpFactor_2=q_elec**2*timeStep_2                                    # g*cm^3/sec
-minLarmR_b_2=1.e8                                                  # dimensionless     
-maxLarmR_b_2=-1.e8                                                 # dimensionless
-minUpot_enrgKin_2=1.e8                                             # dimensionless      
-maxUpot_enrgKin_2=-1.e8                                            # dimensionless      
-
 trackNumb_3=-1                                                     # Tracks will be enumerated from 0!
 dpFactor_3=q_elec**2*timeStep_3                                    # g*cm^3/sec
 minLarmR_b_3=1.e8                                                  # dimensionless     
@@ -403,9 +401,9 @@ trackNumbMaxAbsDpxApprch=0
 trackNumbMaxAbsDpxApprch_2=0
 trackNumbMaxAbsDpxApprch_3=0
 
-runFlagApproach_1=0                                                # run approach1 if = 1, otherwise don't run
+runFlagApproach_1=1                                                # run approach1 if = 1, otherwise don't run
 runFlagApproach_2=1                                                # run approach2 if = 1, otherwise don't run
-runFlagApproach_3=0                                                # run approach3 if = 1, otherwise don't run
+runFlagApproach_3=1                                                # run approach3 if = 1, otherwise don't run
 
 plotFlagWorkingArrays=1                                            # Plot working arrays if = 1, orherwise don't plot
 plotFlagTracks=1                                                   # Plot everything about tracks if = 1, orherwise don't plot
@@ -433,13 +431,13 @@ for iA in range(nA):
          root += deltaRoot
          leftPart=root**3+root+q  
 	 m += 1
-      evTran[iA,iB]=eVrmsLong*root                                        # cm/sec
-      rho_larm[iA,iB]=evTran[iA,iB]/omega_L                                      # cm
-      kinEnergy[iA,iB]=m_elec*(evTran[iA,iB]**2+eVrmsLong**2)/2.                 # erg
-      rhoCrrnt[iA,iB]=rhoCrit+rho_larm[iA,iB]                                    # cm
-      halfLintr[iA,iB]=rho_larm[iA,iB]/math.pow(10.,crrntB[iB])                  # cm
-      timePath[iA,iB]=halfLintr[iA,iB]/eVrmsLong                                 # sec
-      numbLarmor[iA,iB]=int(timePath[iA,iB]/T_larm)                              # dimensionless
+      evTran[iA,iB]=eVrmsLong*root                                 # cm/sec
+      rho_larm[iA,iB]=evTran[iA,iB]/omega_L                        # cm
+      kinEnergy[iA,iB]=m_elec*(evTran[iA,iB]**2+eVrmsLong**2)/2.   # erg
+      rhoCrrnt[iA,iB]=rhoCrit+rho_larm[iA,iB]                      # cm
+      halfLintr[iA,iB]=rho_larm[iA,iB]/math.pow(10.,crrntB[iB])    # cm
+      timePath[iA,iB]=halfLintr[iA,iB]/eVrmsLong                   # sec
+      numbLarmor[iA,iB]=int(timePath[iA,iB]/T_larm)                # dimensionless
       print 'iA=%d, iB=%d, trackNumber=%d, numbLarmor[iA,iB]=%d: Lintr(mkm)=%e, rhoLarm(mkm)=%e' % \
 	    (iA,iB,trackNumb,numbLarmor[iA,iB],1.e4*halfLintr[iA,iB],1.e4*rho_larm[iA,iB])   
       if numbLarmor[iA,iB] >= 40:
@@ -483,9 +481,9 @@ for iA in range(nA):
                z_ionCrrnt[m]=0.                                    # Current initial zero-vector for ion
                z_elecCrrnt[m]=0.                                   # Zeroing out of vector for electron
 # Current initial vector for electron:
-            z_elecCrrnt[Ix]=rhoCrrnt[iA,iB]                               # x, cm
-            z_elecCrrnt[Iz]=-halfLintr[iA,iB]                             # z, cm
-            z_elecCrrnt[Ipy]=m_elec*evTran[iA,iB]                         # py, g*cm/sec
+            z_elecCrrnt[Ix]=rhoCrrnt[iA,iB]                        # x, cm
+            z_elecCrrnt[Iz]=-halfLintr[iA,iB]                      # z, cm
+            z_elecCrrnt[Ipy]=m_elec*evTran[iA,iB]                  # py, g*cm/sec
             z_elecCrrnt[Ipz]=m_elec*eVrmsLong                      # pz, g*cm/sec
 #-----------------------------------------------
 # Main action - dragging of the current trajectories (for given i and j)
@@ -583,7 +581,7 @@ for iA in range(nA):
 	             (indxAmaxAbsDpxApprch,indxBmaxAbsDpxApprch,trackNumbMaxAbsDpxApprch,pointTrack[trackNumbMaxAbsDpxApprch]) 
 	       print 'timePoints.shape: ', (prtclCoorMaxAbsDpx.shape[0],prtclCoorMaxAbsDpx.shape[1])                                            
 # End of all calculations for approach_1
-            lastTrackNumber=trackNumb+1                               # quantity of tracks = trackNumb + 1!     
+            lastTrackNumber=trackNumb+1                            # quantity of tracks = trackNumb + 1!     
             sumPoints += pointTrack[trackNumb]
             timeEnd=os.times()
 	    cpuTime[trackNumb]=1.e+6*(float(timeEnd[0])-float(timeStart[0]))         # CPU time , mks
@@ -613,7 +611,7 @@ for iA in range(nA):
 # 6-vectors for ion and electron and distance 'b' between them for the first trajectories 
 # (for checking only; indices 0-5 for electron, indices 6-11 for ion, index=12 for 'b' and index=13 for action):
                prtclCoor_2=np.zeros((14,timePoints_2[trackNumb_2]))                    
-               prtclCoorCrrnt_2=np.zeros((14,timePoints_2[trackNumb_2]))              # current trajectory                
+               prtclCoorCrrnt_2=np.zeros((14,timePoints_2[trackNumb_2]))             # current trajectory                
                prtclCoorMaxAbsDp_2=np.zeros((14,timePoints_2[trackNumb_2]))          # trajectory TMTdpx                    
 # Current distance from origin of the coordinate system to electron along the trajectory; cm
             bCrrnt_2=np.zeros(timePoints_2[trackNumb_2])           # cm
@@ -769,8 +767,11 @@ for iA in range(nA):
 	       rhoFirstTurn=rhoCrrnt[iA,iB]
 	       rhoLarmorFirstTurn=rho_larm[iA,iB]
 # 6-vectors for ion and electron and distance 'b' between them for the first trajectories 
-# (for checking only; indices 0-5 for electron, indices 6-11 for ion, index=12 for 'b', index=13 for action and index=14 for dy_gc):
+# (for checking only; indices 0-5 for electron, indices 6-11 for ion, index=12 for 'b', 
+#                     index=13 for action and index=14 for dy_gc):
                prtclCoor_3=np.zeros((15,timePoints_3[trackNumb_3]))                    
+               prtclCoorCrrnt_3=np.zeros((15,timePoints_3[trackNumb_3]))             # current trajectory                
+               prtclCoorMaxAbsDp_3=np.zeros((15,timePoints_3[trackNumb_3]))          # trajectory TMTdpx                    
 # Current distance from origin of the coordinate system to electron along the trajectory; cm
             bCrrnt_3=np.zeros(timePoints_3[trackNumb_3])           # cm
 # Current log10 of two important ratios; dimensionless:
@@ -835,6 +836,13 @@ for iA in range(nA):
 	          maxUpot_enrgKin_3=uPot_enrgKinCrrnt_3[k]
 	       if minUpot_enrgKin_3 > uPot_enrgKinCrrnt_3[k]:
 	          minUpot_enrgKin_3=uPot_enrgKinCrrnt_3[k]
+# To draw future TMTdpx trajectory (for checking only):
+               for ic in range(6):
+                  prtclCoorCrrnt_3[ic,pointTrack_3[trackNumb_3]]=z_elecCrrnt_3[ic]   # 6-vector for electron
+                  prtclCoorCrrnt_3[6+ic,pointTrack_3[trackNumb_3]]=z_ionCrrnt_3[ic]  # 6-vector for ion 
+	          prtclCoorCrrnt_3[12,pointTrack_3[trackNumb_3]]=bCrrnt_3[k]         # cm
+		  prtclCoorCrrnt_3[13,pointTrack_3[trackNumb_3]]=action              # g*cm^2/sec
+		  prtclCoorCrrnt_3[14,pointTrack_3[trackNumb_3]]=dy_gc               # cm
 # To draw only first trajectory (for checking only):
                if trackNumb_3 == 0:
                   for ic in range(6):
@@ -850,8 +858,14 @@ for iA in range(nA):
 #		                       1.e+7*prtclCoor_3[10,crrntPoint])
 	       
                pointTrack_3[trackNumb_3] += 1
+#
+# Total transferred dpx  for current track:
+#
+	       totAbsDpxApprch_3 += abs(dpFactor*dpApprch_3Crrnt[0,k])
 # End of dragging of the current trajectory	  
 #-----------------------------------------------
+#
+# Accumulate transferred momenta and other data: 
 #
             if trackNumb_3 == 0: 
 # First definition of the total distance from origin of the coordinate system to electron along the trajectory:
@@ -876,7 +890,21 @@ for iA in range(nA):
 #             print 'trackNumb_3:%d: shapes: b=%d, larmR_b_3=%d, uPot=%d, dpx=%d, dpy=%d, dpz=%d' % \
 # 	            (trackNumb_3,b.shape[0],larmR_b_3.shape[0],uPot_enrgKin_3.shape[0], \
 # 		     dpxApprch_3.shape[0],dpyApprch_3.shape[0],dpzApprch_3.shape[0])  
+# 
+# To draw TMTdpx trajectory (for checking only):
 #
+            if maxAbsDpxApprch_3 < totAbsDpxApprch_3:
+	       maxAbsDpxApprch_3=totAbsDpxApprch_3
+	       indxAmaxAbsDpxApprch_3=iA
+	       indxBmaxAbsDpxApprch_3=iB
+	       trackNumbMaxAbsDpxApprch_3=trackNumb
+	       prtclCoorMaxAbsDpx_3=prtclCoorCrrnt_3.copy()   
+	       rhoMaxAbsDpxTurn_3=rhoCrrnt[iA,iB]
+	       rhoLarmorMaxAbsDpxTurn_3=rho_larm[iA,iB]
+	       print 'iA=%d, iB=%d: track %d, points %d' % (indxAmaxAbsDpxApprch_3,\
+	             indxBmaxAbsDpxApprch_3,trackNumbMaxAbsDpxApprch_3,pointTrack[trackNumbMaxAbsDpxApprch_3]) 
+	       print 'timePoints.shape: ', (prtclCoorMaxAbsDpx_3.shape[0],prtclCoorMaxAbsDpx_3.shape[1])                                            
+# End of all calculations for approach_3
             lastTrackNumber_3=trackNumb_3+1                           # quantity of tracks = trackNumb_2 + 1!     
             sumPoints_3 += pointTrack_3[trackNumb_3]
             timeEnd=os.times()
@@ -886,7 +914,7 @@ for iA in range(nA):
 #   print 'Point %d: dpxIon=%e, dpyIon=%e, dpzIon=%e' % \
 #		     (k,dpxApprch_3[k],dpyApprch_3[k],dpzApprch_3[k])
 #
-#------- End of calculations for approach_3 --------------
+#------- End of approach_3 --------------
 #
 
 if runFlagApproach_1 == 1:
@@ -929,6 +957,7 @@ if runFlagApproach_3 == 1:
 if runFlagApproach_1 == 1 and runFlagApproach_2 == 1:
 
    diff_b2=np.zeros(b_2LenFirstTrack)
+   print 'b_2LenFirstTrack=%d' % b_2LenFirstTrack
 
    k=0
    nStart=0
@@ -946,14 +975,13 @@ if runFlagApproach_1 == 1 and runFlagApproach_2 == 1:
                diff_b2[m]=bCurrent-b_2Array[m]
             nStart=n-1
             break	 
-
 #
 # First track: to compare distances between particles for approach_1 and approach_3 (figure 335):
 #
 if runFlagApproach_1 == 1 and runFlagApproach_3 == 1:
 
    diff_b3=np.zeros(b_3LenFirstTrack)
-
+   print 'b_3LenFirstTrack=%d' % b_3LenFirstTrack
 #
 # Calculation of the difference for distance beteween electron and ion for approach_1 and approach_3:
 #
@@ -1380,16 +1408,6 @@ if runFlagApproach_1 == 1 and runFlagApproach_2 == 1 and plotFlagTracks == 1:
    plt.ylim([-.5,.5])
    plt.grid(True)
 
-if runFlagApproach_1 == 1 and runFlagApproach_2 == 1 and plotFlagTracks == 1:
-   fig326=plt.figure(326)
-   plt.plot(1.e+4*prtclCoor_2[4,0:b_2LenFirstTrack],1.e+4*diff_b2[0:b_2LenFirstTrack],'.r',linewidth=2)
-   plt.xlabel('z, $\mu m$',color='m',fontsize=16)
-   plt.ylabel('$\Delta b=b_{Apprch-1}-b_{Apprch-2}$, $\mu m$',color='m',fontsize=16)
-   plt.title('First Trajectory: $\Delta b$ (Difference for Distances $b$ between Particles)',color='m',fontsize=16)
-   plt.xlim([1.e+4*prtclCoor_2[4,0]-50,1.e+4*prtclCoor_2[4,b_2LenFirstTrack-1]+50])
-#   plt.ylim([-.5,.5])
-   plt.grid(True)
-
 if plotFlagWorkingArrays == 1:
 
    fig1000=plt.figure(1000)
@@ -1400,8 +1418,9 @@ if plotFlagWorkingArrays == 1:
    plt.plot(range(nB),1.e+4*halfLintr[4,:],'-xk',linewidth=2)
 #   plt.title(('Approach-1: TransferedMomentum $dP_x$\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{24}$ $g \cdot cm/sec$)' % \
 #              (lastTrackNumber,dpxDataMax)), color='m',fontsize=16)
-   plt.xlabel('iB$',color='m',fontsize=16)
-   plt.ylabel('Length of Half Trajectory, $\mu$m',color='m',fontsize=16)
+   plt.xlabel('$iB$',color='m',fontsize=16)
+   plt.ylabel('Half Length of Trajectory, $\mu$m',color='m',fontsize=16)
+   plt.legend(['$iA=0$','$iA=1$','$iA=2$','$iA=3$','$iA=4$'],loc='upper right',fontsize=16)
    plt.grid(True)
 #
 # Normalization of the arrays zApprch1dpx,zApprch1dpy,zApprch1dpz
@@ -1520,7 +1539,7 @@ if runFlagApproach_2 == 1 and plotFlagTracks == 1:
 
    pointsDraw=int(pointTrack_2[trackNumbMaxAbsDpxApprch_2])           # Number of points for drawing
 
-   plt.figure(1030)
+   plt.figure(1130)
    plt.plot(range(int(pointsDraw)),1.e4*prtclCoorMaxAbsDpx_2[4,0:pointsDraw],'-xr',linewidth=2)
    plt.xlabel('Points',color='m',fontsize=16)
    plt.ylabel('z, $\mu$m',color='m',fontsize=16)
@@ -1648,8 +1667,48 @@ if runFlagApproach_3 == 1:
       k += 1
       NzCoor_3=k
 
+if runFlagApproach_3 == 1 and plotFlagTracks == 1:
+   pointsGCturns=turns                                             # Number of points for drawing ("GC")
+   pointsDraw=int(pointTrack_3[0])                                 # Number of points for drawing
+
+   plt.figure(230)
+   plt.plot(range(int(pointsDraw)),1.e4*prtclCoor_3[4,0:pointsDraw],'-xr',linewidth=2)
+   plt.xlabel('Points',color='m',fontsize=16)
+   plt.ylabel('z, $\mu$m',color='m',fontsize=16)
+   plt.title(('Approach-3: First Electron Trajectory ($N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' % \
+              (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
+   plt.grid(True)
+
+   plt.figure(240)
+   plt.plot(1.e4*prtclCoor_3[4,0:pointsDraw],1.e4*prtclCoor_3[12,0:pointsDraw],'-xr',linewidth=2)
+   plt.xlabel('z, $\mu$m',color='m',fontsize=16)
+   plt.ylabel('Distance Between Particles, $\mu$m',color='m',fontsize=16)
+   plt.title(('Approach-3: First Electron Trajectory ($N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' % \
+              (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
+   plt.grid(True)
+
+   pointsDraw=int(pointTrack_3[trackNumbMaxAbsDpxApprch_3])        # Number of points for drawing
+
+   plt.figure(1230)
+   plt.plot(range(int(pointsDraw)),1.e4*prtclCoorMaxAbsDpx_3[4,0:pointsDraw],'-xr',linewidth=2)
+   plt.xlabel('Points',color='m',fontsize=16)
+   plt.ylabel('z, $\mu$m',color='m',fontsize=16)
+   plt.title(('Approach-3: Electron Track %d ($N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' % \
+              (trackNumbMaxAbsDpxApprch_3,larmorNumber[trackNumbMaxAbsDpxApprch_3],1.e+4*rhoMaxAbsDpxTurn_3, \
+	       1.e+4*rhoLarmorMaxAbsDpxTurn_3)),color='m',fontsize=16)
+   plt.grid(True)
+
+   plt.figure(1240)
+   plt.plot(1.e4*prtclCoorMaxAbsDpx_3[4,0:pointsDraw],1.e4*prtclCoorMaxAbsDpx_3[12,0:pointsDraw],'-xr',linewidth=2)
+   plt.xlabel('z, $\mu$m',color='m',fontsize=16)
+   plt.ylabel('Distance Between Particles, $\mu$m',color='m',fontsize=16)
+   plt.title(('Approach-3: Track %d ($N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' % \
+              (trackNumbMaxAbsDpxApprch_3,larmorNumber[trackNumbMaxAbsDpxApprch_3],\
+	       1.e+4*rhoMaxAbsDpxTurn_3,1.e+4*rhoLarmorMaxAbsDpxTurn_3)), color='m',fontsize=16)
+   plt.grid(True)
+
 if runFlagApproach_1 == 1 and runFlagApproach_2 == 1 and plotFlagTracks == 1:
-   plt.figure(130)
+   plt.figure(135)
    plt.plot(range(int(pointsEndLarmor)),1.e4*prtclCoor[4,0:pointsEndLarmor],'-r',linewidth=2)
    plt.plot(pointCoor_2[0:NzCoor_2],zCoor_2[0:NzCoor_2],'xb',markersize=10)
    plt.xlim([-100,pointsEndLarmor+100])
@@ -1662,7 +1721,7 @@ if runFlagApproach_1 == 1 and runFlagApproach_2 == 1 and plotFlagTracks == 1:
    plt.grid(True)
 
 if runFlagApproach_1 == 1 and runFlagApproach_3 == 1 and plotFlagTracks == 1:
-   plt.figure(230)
+   plt.figure(235)
    plt.plot(range(int(pointsEndLarmor)),1.e4*prtclCoor[4,0:pointsEndLarmor],'-r',linewidth=2)
    plt.plot(pointCoor_3[0:NzCoor_3],zCoor_3[0:NzCoor_3],'xb',markersize=10)
 #   plt.xlim([-100,pointsEndLarmor+100])
@@ -1672,6 +1731,61 @@ if runFlagApproach_1 == 1 and runFlagApproach_3 == 1 and plotFlagTracks == 1:
    plt.title(('First Electron Trajectory ($N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' % \
            (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
    plt.text(1000,-300,'Blue is Trajectory in the System of "Guiding Center"',color='b',fontsize=16)
+   plt.grid(True)
+
+if runFlagApproach_1 == 1 and runFlagApproach_2 == 1 and runFlagApproach_3 == 1 and plotFlagTracks == 1:
+
+   pointsDraw_1=int(pointTrack[0])                                 # Number of points for drawing (approach-1)
+   pointsDraw_2=int(pointTrack_2[0])                               # Number of points for drawing (approach-2)
+   pointsDraw_3=int(pointTrack_3[0])                               # Number of points for drawing (approach-3)
+
+# First trajectory:
+
+   plt.figure(2000)
+   plt.plot(range(pointsDraw_1),1.e4*prtclCoor[4,0:pointsDraw_1],'-r',linewidth=2)
+   plt.plot(pointCoor_2,zCoor_2,'xk',markersize=10)
+   plt.plot(pointCoor_3,zCoor_3,'xm',markersize=10)
+   plt.xlabel('Points',color='m',fontsize=16)
+   plt.ylabel('z, $\mu$m',color='m',fontsize=16)
+   plt.title(('First Electron Trajectory ($N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' % \
+              (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)),color='m',fontsize=16)
+   plt.legend(['Approach-1','Approach-2','Approach-3'],loc='upper left',fontsize=16)
+   plt.grid(True)
+
+   pointsDraw_1max=int(pointTrack[trackNumbMaxAbsDpxApprch])       # Number of points for drawing
+   pointsDraw_2max=int(pointTrack_2[trackNumbMaxAbsDpxApprch_2])   # Number of points for drawing
+   pointsDraw_3max=int(pointTrack_3[trackNumbMaxAbsDpxApprch_3])   # Number of points for drawing
+ 
+   print 'pointsDraw_1max=%d, pointsDraw_2max=%d, pointsDraw_3max=%d' % (pointsDraw_1max,pointsDraw_2max,pointsDraw_3max)  
+   pointCoor_2max=np.zeros(pointsDraw_2max)
+   for k in range(pointsDraw_2max):
+      pointCoor_2max[k]=stepsNumberOnGyro*k
+      
+   pointCoor_3max=np.zeros(pointsDraw_3max)
+   for k in range(pointsDraw_3max):
+      pointCoor_3max[k]=stepsNumberOnGyro*k
+      
+   plt.figure(2100)
+   plt.plot(range(pointsDraw_1max),1.e4*prtclCoorMaxAbsDpx[4,0:pointsDraw_1max],'-xr',linewidth=2)
+   plt.plot(pointCoor_2max,1.e4*prtclCoorMaxAbsDpx_2[4,0:pointsDraw_2max],'xk',markersize=10)
+   plt.plot(pointCoor_3max,1.e4*prtclCoorMaxAbsDpx_3[4,0:pointsDraw_3max],'xm',markersize=10)
+   plt.xlabel('Points',color='m',fontsize=16)
+   plt.ylabel('z, $\mu$m',color='m',fontsize=16)
+   plt.title(('Electron Track %d ($N_{Larm}=$%d):\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m' % \
+              (trackNumbMaxAbsDpxApprch_3,larmorNumber[trackNumbMaxAbsDpxApprch_3],1.e+4*rhoMaxAbsDpxTurn_3, \
+	       1.e+4*rhoLarmorMaxAbsDpxTurn_3)),color='m',fontsize=16)
+   plt.legend(['Approach-1','Approach-2','Approach-3'],loc='upper left',fontsize=16)
+   plt.grid(True)
+
+   fig3000=plt.figure(3000)
+   plt.plot(1.e+4*prtclCoor_2[4,0:b_2LenFirstTrack],1.e+4*diff_b2[0:b_2LenFirstTrack],'.r',linewidth=2)
+   plt.plot(1.e+4*prtclCoor_3[4,0:b_3LenFirstTrack],1.e+4*diff_b3[0:b_3LenFirstTrack],'.b',linewidth=2)
+   plt.xlabel('z, $\mu m$',color='m',fontsize=16)
+   plt.ylabel('$\Delta b$, $\mu m$',color='m',fontsize=16)
+   plt.title('First Trajectory: $\Delta b$ (Difference for Distances $b$ between Particles)',color='m',fontsize=16)
+   plt.legend(['$b_{Apprch-1}-b_{Apprch-2}$','$b_{Apprch-1}-b_{Apprch-3}$'],loc='upper left',fontsize=16)
+#   plt.xlim([1.e+4*prtclCoor_3[4,0]-50,1.e+4*prtclCoor_3[4,b_3LenFirstTrack-1]+50])
+   plt.ylim([-.5,.5])
    plt.grid(True)
 
 #
@@ -1924,16 +2038,6 @@ if runFlagApproach_1 == 1 and runFlagApproach_3 == 1 and plotFlagTracks == 1:
    plt.title('First Trajectory: $\Delta b$ (Difference for Distances $b$ between Particles)',color='m',fontsize=16)
    plt.xlim([1.e+4*prtclCoor_3[4,0]-50,1.e+4*prtclCoor_3[4,b_3LenFirstTrack-1]+50])
    plt.ylim([-.5,.5])
-   plt.grid(True)
-
-if runFlagApproach_1 == 1 and runFlagApproach_3 == 1 and plotFlagTracks == 1:
-   fig426=plt.figure(426)
-   plt.plot(1.e+4*prtclCoor_3[4,0:b_3LenFirstTrack],1.e+4*diff_b3[0:b_3LenFirstTrack],'.r',linewidth=2)
-   plt.xlabel('z, $\mu m$',color='m',fontsize=16)
-   plt.ylabel('$\Delta b=b_{Apprch-1}-b_{Apprch-3}$, $\mu m$',color='m',fontsize=16)
-   plt.title('First Trajectory: $\Delta b$ (Difference for Distances $b$ between Particles)',color='m',fontsize=16)
-#   plt.xlim([1.e+4*prtclCoor_3[4,0]-50,1.e+4*prtclCoor_3[4,b_3LenFirstTrack-1]+50])
-#   plt.ylim([-.5,.5])
    plt.grid(True)
 
 if runFlagApproach_2 == 1 and runFlagApproach_3 == 1 and plotFlagTracks == 1:
