@@ -397,59 +397,68 @@ print 'rhoCrrntMax=%e for iA=%e, iB=%e' % (1.e4*rhoCrrntMax,rhoCrrntMax_A,rhoCrr
 # Plotting of working arrays:
 #
 #-----------------------------------------
+
+plotFlagWorkingArrays=0         # Plot working arrays if = 1, orherwise don't plot
+
+if plotFlagWorkingArrays ==1:
+
 #
 # Area of initial impact parameter:
 #
-plt.figure (10)
-plt.plot(mapAimpctParmtr[0,0:trackNumb],mapBimpctParmtr[0,0:trackNumb],'.r',markersize=10)
-plt.plot(mapAimpctParmtr[1,0:track_1],mapBimpctParmtr[1,0:track_1],'.b',markersize=10)
-plt.plot(mapAimpctParmtr[2,0:track_2],mapBimpctParmtr[2,0:track_2],'.m',markersize=10)
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-Rshield_mkm=1.e4*Rshield[0]
-Rshield_150_mkm=1.e4*Rshield[1]
-Rshield_200_mkm=1.e4*Rshield[2]
-plt.title(('Area of Initial Impact Parameter $b$ (%d Tracks)' % lastTrackNumber), \
-          color='m',fontsize=16)
-plt.xlim([minA,maxA])
-plt.ylim([minB,maxB])
-plt.legend([('$b$ < %6.1f $\mu$m' % Rshield_mkm), \
-            ('%6.1f $\mu$m < $b$ < %6.1f $\mu$m' % (Rshield_mkm,Rshield_150_mkm)), \
-	    ('%6.1f $\mu$m < $b$ < %6.1f $\mu$m' % (Rshield_150_mkm,Rshield_200_mkm))], \
-	   loc='lower left',fontsize=16)
-plt.grid(True)
+   plt.figure (10)
+   plt.plot(mapAimpctParmtr[0,0:trackNumb],mapBimpctParmtr[0,0:trackNumb],'.r',markersize=10)
+   plt.plot(mapAimpctParmtr[1,0:track_1],mapBimpctParmtr[1,0:track_1],'.b',markersize=10)
+   plt.plot(mapAimpctParmtr[2,0:track_2],mapBimpctParmtr[2,0:track_2],'.m',markersize=10)
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   Rshield_mkm=1.e4*Rshield[0]
+   Rshield_150_mkm=1.e4*Rshield[1]
+   Rshield_200_mkm=1.e4*Rshield[2]
+   plt.title(('Area of Initial Impact Parameter $b$ (%d Tracks)' % lastTrackNumber), \
+             color='m',fontsize=16)
+   plt.xlim([minA,maxA])
+   plt.ylim([minB,maxB])
+   plt.legend([('$b$ < %6.1f $\mu$m' % Rshield_mkm), \
+               ('%6.1f $\mu$m < $b$ < %6.1f $\mu$m' % (Rshield_mkm,Rshield_150_mkm)), \
+      	       ('%6.1f $\mu$m < $b$ < %6.1f $\mu$m' % (Rshield_150_mkm,Rshield_200_mkm))], \
+   	      loc='lower left',fontsize=16)
+   plt.grid(True)
 
-X,Y=np.meshgrid(crrntA,crrntB)      
+   X,Y=np.meshgrid(crrntA,crrntB)      
 
 #
 # Half length of interaction:
 #
-fig20=plt.figure(20)
-ax20=fig20.gca(projection='3d')
-surf=ax20.plot_surface(X,Y,1.e+4*halfLintr,cmap=cm.coolwarm,linewidth=0,antialiased=False)
-plt.title('Half Length of Interaction $L_{interaction}$, $\mu$m', color='m',fontsize=16)
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax20.set_zlabel('$1/2 \cdot L_{interaction}$',color='m',fontsize=16)
-fig20.colorbar(surf, shrink=1., aspect=10)
-plt.grid(True)
-
+   fig20=plt.figure(20)
+   ax20=fig20.gca(projection='3d')
+   surf=ax20.plot_surface(X,Y,1.e+4*halfLintr,cmap=cm.coolwarm,linewidth=0,antialiased=False)
+   plt.title('Half Length of Interaction $L_{interaction}$, $\mu$m', color='m',fontsize=16)
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   ax20.set_zlabel('$1/2 \cdot L_{interaction}$',color='m',fontsize=16)
+   fig20.colorbar(surf, shrink=1., aspect=10)
+   plt.grid(True)
 
 #
 # Number of Larmor turns:
 #
-fig30=plt.figure(30)
-ax30=fig30.gca(projection='3d')
-surf=ax30.plot_surface(X,Y,numbLarmor,cmap=cm.coolwarm,linewidth=0,antialiased=False)
-plt.title('Number of Larmor Turns $N_{Larmor}$', color='m',fontsize=16)
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-ax30.set_zlabel('$N_{Larmor}$',color='m',fontsize=16)
-fig30.colorbar(surf, shrink=1., aspect=10)
-plt.grid(True)
+   fig30=plt.figure(30)
+   ax30=fig30.gca(projection='3d')
+   surf=ax30.plot_surface(X,Y,numbLarmor,cmap=cm.coolwarm,linewidth=0,antialiased=False)
+   plt.title('Number of Larmor Turns $N_{Larmor}$', color='m',fontsize=16)
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   ax30.set_zlabel('$N_{Larmor}$',color='m',fontsize=16)
+   fig30.colorbar(surf, shrink=1., aspect=10)
+   plt.grid(True)
 
 # plt.show()
 
+#-----------------------------------------
+#
+# Definitions:
+#
+#-----------------------------------------
 larmorNumber=np.zeros(lastTrackNumber+1)
 larmorRadius=np.zeros(lastTrackNumber+1)                           # cm
 
@@ -573,9 +582,8 @@ runFlagApproach_1=1             # run approach1 if = 1, otherwise don't run
 runFlagApproach_2=1             # run approach2 if = 1, otherwise don't run
 runFlagApproach_3=0             # run approach3 if = 1, otherwise don't run
 
-plotFlagWorkingArrays=0         # Plot working arrays if = 1, orherwise don't plot
-plotFlagTracks=1                # Plot everything about tracks if = 1, orherwise don't plot
-plotFlagDpTransf=0              # Plot everything about dp transf. if = 1, orherwise don't plot
+plotFlagTracks=0                # Plot everything about tracks if = 1, orherwise don't plot
+plotFlagDpTransf=1              # Plot everything about dp transf. if = 1, orherwise don't plot
 
 print 'nA=%d, nB=%d' % (nA,nB)
 
@@ -694,8 +702,8 @@ for iA in range(nA):
 	          minUpot_enrgKin_1=uPot_enrgKinCrrnt_1[k]
 # Current values to calculate deltaPapprch_1=dpFactor*dpApprch_1Crrnt; dpFactor=q_e^2*timeStep:  
                for ic in range(3):
-	          dpApprch_1Crrnt[ic,k]= abs(z_ionCrrnt_1[2*ic]-z_elecCrrnt_1[2*ic])/ \
-		                             bCrrnt_1[k]**3        # 1/cm^2;  
+	          dpApprch_1Crrnt[ic,k]=-(z_ionCrrnt_1[2*ic]-z_elecCrrnt_1[2*ic])/ \
+		                         bCrrnt_1[k]**3        # 1/cm^2;  
 # To be prepared to draw future TMTdpx trajectory (for checking only):
                for ic in range(6):
                   prtclCoorCrrnt_1[ic,pointTrack_1[trackNumb_1]]=z_elecCrrnt_1[ic]  # 6-vector for electron
@@ -1164,6 +1172,7 @@ if runFlagApproach_1 == 1 and plotFlagTracks == 1:
 #   arrayRatioA=np.asarray(uPot_enrgKin_1)
 #   print ('Length(arrayRatioA)=%d' % len(arrayRatioA))
 
+if plotFlagWorkingArrays ==1:
 #
 # Area of impact parameter:
 #
@@ -1177,6 +1186,7 @@ if runFlagApproach_1 == 1 and plotFlagTracks == 1:
 # plt.ylim([minB,maxB])
    plt.grid(True)
 
+if runFlagApproach_1 == 1 and plotFlagDpTransf == 1:              
    specFctr=1.e22                                                  # Use it in titles!
    X,Y=np.meshgrid(crrntA,crrntB) 
 #
@@ -1201,7 +1211,6 @@ if runFlagApproach_1 == 1 and plotFlagTracks == 1:
 #
    fig245=plt.figure(245)
    ax=fig245.add_subplot(111)                                       # for contours plotting
-#    mapDpx=ax.contourf(X,Y,specFctr*dpxTotal_1)   
    mapDpx=ax.contourf(X,Y,specFctr*dpxTotal_1)   
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
@@ -1209,6 +1218,66 @@ if runFlagApproach_1 == 1 and plotFlagTracks == 1:
    titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
    plt.title((titleHeader % (lastTrackNumber,specFctr*dpxTotalMax_1)), color='m',fontsize=14)
    fig245.colorbar(mapDpx)
+
+#
+# Transfered momentum py (surface):
+#
+   fig250=plt.figure(250)
+   ax250=fig250.gca(projection='3d')
+#    surf=ax250.plot_surface(X,Y,specFctr*dpyTotal_1,cmap=cm.coolwarm, \
+#                            linewidth=0,antialiased=False)
+   surf=ax250.plot_surface(X,Y,specFctr*dpyTotal_1,cmap=cm.jet,linewidth=0,antialiased=False)
+   titleHeader='Approach-1: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr*dpyTotalMax_1)), color='m',fontsize=16)
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   ax250.set_zlabel('$dP_y \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
+   cb = fig250.colorbar(surf)
+   plt.grid(True)
+
+#
+# Transfered momentum py (map):
+#
+   fig255=plt.figure(255)
+   ax=fig255.add_subplot(111)                                       # for contours plotting
+   mapDpx=ax.contourf(X,Y,specFctr*dpyTotal_1)   
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   titleHeader='Approach-1: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr*dpyTotalMax_1)), color='m',fontsize=14)
+   fig255.colorbar(mapDpx)
+
+#
+# Transfered momentum pz (surface):
+#
+   fig260=plt.figure(260)
+   ax260=fig260.gca(projection='3d')
+#    surf=ax260.plot_surface(X,Y,specFctr*dpzTotal_1,cmap=cm.coolwarm, \
+#                            linewidth=0,antialiased=False)
+   surf=ax260.plot_surface(X,Y,specFctr*dpzTotal_1,cmap=cm.jet,linewidth=0,antialiased=False)
+   titleHeader='Approach-1: Transfered Momentum $dP_z$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr*dpzTotalMax_1)), color='m',fontsize=16)
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   ax260.set_zlabel('$dP_z \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
+   cb = fig260.colorbar(surf)
+   plt.grid(True)
+
+#
+# Transfered momentum pz (map):
+#
+   fig265=plt.figure(265)
+   ax=fig265.add_subplot(111)                                       # for contours plotting
+   mapDpx=ax.contourf(X,Y,specFctr*dpzTotal_1)   
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   titleHeader='Approach-1: Transfered Momentum $dP_z$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr*dpzTotalMax_1)), color='m',fontsize=14)
+   fig265.colorbar(mapDpx)
 
 if runFlagApproach_2 == 1 and plotFlagTracks == 1:
    pointsEndLarmor=int(larmorNumber[0])*stepsNumberOnGyro          # Number of points for drawing
@@ -1260,9 +1329,8 @@ if runFlagApproach_2 == 1 and plotFlagTracks == 1:
    titleHeader += '\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m, $N_{Larm}=$%d'
    plt.title((titleHeader % (1.e+4*rhoMaxAbsDpxTurn_2,1.e+4*rhoLarmorMaxAbsDpxTurn_2,turns)), \
              color='m',fontsize=16)
-
 #
-# First electron's trajectory (distance to ion):
+# First electron's trajectory (distances to ion - in lab.system and from "guidingCenterCollision"):
 #
    pointsTurns=pointTrack_2[0]
 
@@ -1274,10 +1342,25 @@ if runFlagApproach_2 == 1 and plotFlagTracks == 1:
    plt.title("Approach-2: First Electron's Track", color='m',fontsize=16)
    plt.legend(['With Larmor Rotation','Averaging of Rotation'],loc='best',fontsize=16)
    plt.grid(True)
+#
+# First electron's trajectory (action):
+#
+   specFctr=1.e31                                                  #       Use it in titles!
+   specShift=5.86748911                                            # x e8! Use it in titles!                                                 
+
+   plt.figure (160)
+   plt.plot(1.e+4*prtclCoorFirst_2[4,0:pointsTurns], \
+            specFctr*prtclCoorFirst_2[13,0:pointsTurns]-1.e8*specShift,'-xr',linewidth=2)
+   plt.xlabel('z, $\mu$m',color='m',fontsize=16)
+   plt.ylabel(('Action $10^{31}\cdot J$ $-$ %5.3f$\cdot10^8$, g$\cdot$cm$^2$/sec' % specShift), \
+              color='m',fontsize=16)
+   plt.title("Approach-2: First Electron's Track", color='m',fontsize=16)
+   plt.grid(True)
+
+if runFlagApproach_2 == 1 and plotFlagDpTransf == 1:              
 
    specFctr=1.e22                                                  # Use it in titles!
    X,Y=np.meshgrid(crrntA,crrntB) 
-
 #
 # Transfered momentum px (surface):
 #
@@ -1286,12 +1369,12 @@ if runFlagApproach_2 == 1 and plotFlagTracks == 1:
 #    surf=ax340.plot_surface(X,Y,specFctr*dpxTotal_2,cmap=cm.coolwarm, \
 #                            linewidth=0,antialiased=False)
    surf=ax340.plot_surface(X,Y,specFctr*dpxTotal_2,cmap=cm.jet,linewidth=0,antialiased=False)
-   titleHeader='Approach-2: Transfered Momentum $dP_x$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
-   plt.title((titleHeader % (lastTrackNumber,specFctr*dpxTotalMax_2)), color='m',fontsize=16)
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
    ax340.set_zlabel('$dP_x \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
+   titleHeader='Approach-2: Transfered Momentum $dP_x$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr*dpxTotalMax_2)), color='m',fontsize=16)
    cb = fig340.colorbar(surf)
    plt.grid(True)
 
@@ -1307,6 +1390,66 @@ if runFlagApproach_2 == 1 and plotFlagTracks == 1:
    titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
    plt.title((titleHeader % (lastTrackNumber,specFctr*dpxTotalMax_2)), color='m',fontsize=14)
    fig345.colorbar(mapDpx)
+
+#
+# Transfered momentum py (surface):
+#
+###   fig350=plt.figure(350)
+###   ax350=fig350.gca(projection='3d')
+####    surf=ax350.plot_surface(X,Y,specFctr*dpyTotal_2,cmap=cm.coolwarm, \
+####                            linewidth=0,antialiased=False)
+###   surf=ax350.plot_surface(X,Y,specFctr*dpyTotal_2,cmap=cm.jet,linewidth=0,antialiased=False)
+###   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+###   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+###   ax350.set_zlabel('$dP_y \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
+###   titleHeader='Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+###   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
+###   plt.title((titleHeader % (lastTrackNumber,specFctr*dpyTotalMax_2)), color='m',fontsize=16)
+###   cb = fig350.colorbar(surf)
+###   plt.grid(True)
+
+#
+# Transfered momentum py (map):
+#
+###   fig355=plt.figure(355)
+###   ax=fig355.add_subplot(111)                                       # for contours plotting
+###   mapDpx=ax.contourf(X,Y,specFctr*dpyTotal_2)   
+###   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+###   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+###   titleHeader='Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+###   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
+###   plt.title((titleHeader % (lastTrackNumber,specFctr*dpyTotalMax_2)), color='m',fontsize=14)
+###   fig355.colorbar(mapDpx)
+
+#
+# Transfered momentum pz (surface):
+#
+   fig360=plt.figure(360)
+   ax360=fig360.gca(projection='3d')
+#    surf=ax360.plot_surface(X,Y,specFctr*dpzTotal_2,cmap=cm.coolwarm, \
+#                            linewidth=0,antialiased=False)
+   surf=ax360.plot_surface(X,Y,specFctr*dpzTotal_2,cmap=cm.jet,linewidth=0,antialiased=False)
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   ax360.set_zlabel('$dP_z \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
+   titleHeader='Approach-2: Transfered Momentum $dP_z$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr*dpzTotalMax_2)), color='m',fontsize=16)
+   cb = fig360.colorbar(surf)
+   plt.grid(True)
+
+#
+# Transfered momentum pz (map):
+#
+   fig365=plt.figure(365)
+   ax=fig365.add_subplot(111)                                       # for contours plotting
+   mapDpx=ax.contourf(X,Y,specFctr*dpzTotal_2)   
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   titleHeader='Approach-2: Transfered Momentum $dP_z$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr*dpzTotalMax_2)), color='m',fontsize=14)
+   fig365.colorbar(mapDpx)
 
 if runFlagApproach_1 == 1 and runFlagApproach_2 == 1 and plotFlagTracks == 1:
    pointsEndLarmor=int(larmorNumber[0])*stepsNumberOnGyro          # Number of points for drawing
@@ -1400,24 +1543,44 @@ if runFlagApproach_1 == 1 and runFlagApproach_2 == 1 and plotFlagTracks == 1:
    plt.legend(['With Larmor Rotation','Averaging of Rotation'],loc='lower center',fontsize=16)
    plt.grid(True)
 
+if runFlagApproach_1 == 1 and runFlagApproach_2 == 1 and plotFlagDpTransf == 1:
 #
 # Difference of transfered momentum px (map):
 #
-   diff_A2minusA1=np.zeros((nA,nB))
+   diffDpx_A2minusA1=np.zeros((nA,nB))
    for iA in range(nA):
       for iB in range(nB):
          if dpxTotal_1[iA,iB] !=0.:
-            diff_A2minusA1[iA,iB]=100.*(1.-dpxTotal_2[iA,iB]/dpxTotal_1[iA,iB])
+            diffDpx_A2minusA1[iA,iB]=100.*(1.-dpxTotal_2[iA,iB]/dpxTotal_1[iA,iB])
 
    fig545=plt.figure(545)
    ax=fig545.add_subplot(111)                                       # for contours plotting
-   mapDpx=ax.contourf(X,Y,diff_A2minusA1)   
+   mapDpx=ax.contourf(X,Y,diffDpx_A2minusA1)   
    plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
    plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
    titleHeader='Difference of Transfered Momentum $dP_x$: 1-$Apprch_2$/$Apprch_1$ (%%)'
    titleHeader +='\nTracks: %d'
    plt.title((titleHeader % lastTrackNumber), color='m',fontsize=14)
    fig545.colorbar(mapDpx)
+
+#
+# Difference of transfered momentum pz (map):
+#
+   diffDpz_A2minusA1=np.zeros((nA,nB))
+   for iA in range(nA):
+      for iB in range(nB):
+         if dpzTotal_1[iA,iB] !=0.:
+            diffDpz_A2minusA1[iA,iB]=100.*(1.-dpzTotal_2[iA,iB]/dpzTotal_1[iA,iB])
+
+   fig555=plt.figure(555)
+   ax=fig555.add_subplot(111)                                       # for contours plotting
+   mapDpx=ax.contourf(X,Y,diffDpz_A2minusA1)   
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   titleHeader='Difference of Transfered Momentum $dP_z$: 1-$Apprch_2$/$Apprch_1$ (%%)'
+   titleHeader +='\nTracks: %d'
+   plt.title((titleHeader % lastTrackNumber), color='m',fontsize=14)
+   fig555.colorbar(mapDpx)
 
 plt.show()
 
