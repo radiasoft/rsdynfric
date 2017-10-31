@@ -401,11 +401,11 @@ trackNumbMaxAbsDpxApprch=0
 trackNumbMaxAbsDpxApprch_2=0
 trackNumbMaxAbsDpxApprch_3=0
 
-runFlagApproach_1=1                                                # run approach1 if = 1, otherwise don't run
+runFlagApproach_1=0                                                # run approach1 if = 1, otherwise don't run
 runFlagApproach_2=1                                                # run approach2 if = 1, otherwise don't run
-runFlagApproach_3=1                                                # run approach3 if = 1, otherwise don't run
+runFlagApproach_3=0                                                # run approach3 if = 1, otherwise don't run
 
-plotFlagWorkingArrays=1                                            # Plot working arrays if = 1, orherwise don't plot
+plotFlagWorkingArrays=0                                            # Plot working arrays if = 1, orherwise don't plot
 plotFlagTracks=1                                                   # Plot everything about tracks if = 1, orherwise don't plot
 plotFlagDpTransf=0                                                 # Plot everything about dp transf. if = 1, orherwise don't plot
 
@@ -646,7 +646,7 @@ for iA in range(nA):
 # dragging both paticles through interaction point:
 	       dpIon,dpElec,action=guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt_2,timeStep_2) 
 #	       if trackNumb_2 == 0:
-#	          print 'point %d: dpgcElec=%e, dpzElec=%e' % (pointTrack_2[0],dpElec[1],dpElec[2])
+#	          print 'point %d: dpxIo=%endpIondpIon' % (pointTrack_2[0],dpElec[1],dpElec[2])
 	       for ic in range(3):
 	          z_ionCrrnt_2[2*ic+1] += dpIon[ic]   
 	          z_elecCrrnt_gc[2*ic+1] += dpElec[ic]   
@@ -720,10 +720,10 @@ for iA in range(nA):
 # Total log10 of two important ratios; dimensionless :  
 	       larmR_b_2=np.concatenate((larmR_b_2,larmR_bCrrnt_2),axis=0)                  
 	       uPot_enrgKin_2=np.concatenate((uPot_enrgKin_2,uPot_enrgKinCrrnt_2),axis=0)        
-# Total values deltaPapprch_2:
-               dpxApprch_2=np.concatenate((dpxApprch_2,dpApprch_2Crrnt[0,:]),axis=0)                   # g*cm/sec  
-               dpyApprch_2=np.concatenate((dpyApprch_2,dpApprch_2Crrnt[1,:]),axis=0)                   # g*cm/sec
-               dpzApprch_2=np.concatenate((dpzApprch_2,dpApprch_2Crrnt[2,:]),axis=0)                   # g*cm/sec 
+# Total values deltaPapprch_2 (g*cm/sec):
+               dpxApprch_2=np.concatenate((dpxApprch_2,dpApprch_2Crrnt[0,:]),axis=0)  
+               dpyApprch_2=np.concatenate((dpyApprch_2,dpApprch_2Crrnt[1,:]),axis=0) 
+               dpzApprch_2=np.concatenate((dpzApprch_2,dpApprch_2Crrnt[2,:]),axis=0)  
 #             print 'trackNumb_2:%d: shapes: b=%d, larmR_b_2=%d, uPot=%d, dpx=%d, dpy=%d, dpz=%d' % \
 # 	            (trackNumb_2,b.shape[0],larmR_b_2.shape[0],uPot_enrgKin_2.shape[0], \
 # 		    dpxApprch_2.shape[0],dpyApprch_2.shape[0],dpzApprch_2.shape[0])  
@@ -739,13 +739,15 @@ for iA in range(nA):
 	       rhoMaxAbsDpxTurn_2=rhoCrrnt[iA,iB]
 	       rhoLarmorMaxAbsDpxTurn_2=rho_larm[iA,iB]
 	       print 'iA=%d, iB=%d: track %d, points %d' % (indxAmaxAbsDpxApprch_2,\
-	             indxBmaxAbsDpxApprch_2,trackNumbMaxAbsDpxApprch_2,pointTrack[trackNumbMaxAbsDpxApprch_2]) 
-	       print 'timePoints.shape: ', (prtclCoorMaxAbsDpx_2.shape[0],prtclCoorMaxAbsDpx_2.shape[1])                                            
+	             indxBmaxAbsDpxApprch_2,trackNumbMaxAbsDpxApprch_2, \
+		     pointTrack[trackNumbMaxAbsDpxApprch_2]) 
+	       print 'timePoints.shape: ', (prtclCoorMaxAbsDpx_2.shape[0], \
+	       .      prtclCoorMaxAbsDpx_2.shape[1])
 # End of all calculations for approach_2
-            lastTrackNumber_2=trackNumb_2+1                        # quantity of tracks = trackNumb_2 + 1!     
+            lastTrackNumber_2=trackNumb_2+1                # quantity of tracks = trackNumb_2 + 1!     
             sumPoints_2 += pointTrack_2[trackNumb_2]
             timeEnd=os.times()
-	    cpuTime_2[trackNumb_2]=1.e+6*(float(timeEnd[0])-float(timeStart[0]))        # CPU time , mks
+	    cpuTime_2[trackNumb_2]=1.e+6*(float(timeEnd[0])-float(timeStart[0]))   # CPU time, mks
             cpuTimeTotal += cpuTime_2[trackNumb_2] 
 #
 #------- End of approach_2 --------------
