@@ -1,7 +1,20 @@
 # -*- coding: utf-8 -*-
-u"""Library of methods to calculate Hamiltonians.
+u"""Library of methods to calculate the two-particle Hamiltonian
+described in the following paper:
 
-:copyright: Copyright (c) 2017 RadiaSoft LLC.  All Rights Reserved.
+D.L. Bruhwiler and S.D. Webb, “New algorithm for dynamical friction
+of ions in a magnetized electron beam,” AIP Conf. Proc. 1812, 050006
+(2017); https://doi.org/10.1063/1.4975867
+
+The Hamiltonian here is from Eqs. (1) and (2) of the paper.
+We assume a magnetized electron, executing fast Larmor oscillations.
+We assume a drifting ion, for which the magnetic field is negligible.
+
+This is the 'original' phase space, where the physcial coordinates
+and momenta are easy to understand. Numerical integration of the
+equations of motion must resolve the Larmor oscillations.
+
+:copyright: Copyright (c) 2018 RadiaSoft LLC.  All Rights Reserved.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function
@@ -30,7 +43,7 @@ def _calc_omega_larmor(b_field, mass_number=1, charge_number=-1):
 
 def _calc_hamiltonian_0(z_i, z_e, ion_mass, b_field):
     """Calculate the Hamiltonian for a drifting ion and a magnetized electron.
-   
+
     Args:
         z_i: 6xN array of ion coördinates and conjugate momenta
         z_e: 6xN array of electron coördinates and conjugate momenta
@@ -50,7 +63,7 @@ def _calc_hamiltonian_0(z_i, z_e, ion_mass, b_field):
 
 def _calc_hamiltonian_c(z_i, z_e, ion_charge):
     """Calculate the Hamiltonian for the Coulomb interaction of each ion-electron pair.
-    
+
     Args:
         z_i: 6xN array of ion coördinates and conjugate momenta
         z_e: 6xN array of electron coördinates and conjugate momenta
