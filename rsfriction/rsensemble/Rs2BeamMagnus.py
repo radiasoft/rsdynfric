@@ -50,6 +50,9 @@ it is required to specify all Twiss parameters. In this class,
 however, we assume the beam is close to a waist, transversely and
 longitudinally, so that all Twiss alpha parameters are zero.
 
+Unfortunately, p0=0 creates a problem for the particle beam classes
+in the 'rsbeams' library, so we specify p0=1. and accommodate.
+
 We also allow the user to specify RMS values of position and
 momentum for the electron beam, and a beam shape, rather than
 having to specify emittances and Twiss beta values.
@@ -62,6 +65,7 @@ of the corresponding coordinate/momentum for the e- distribution.
 :license: http://www.apache.org/licenses/LICENSE-2.0.html
 """
 from __future__ import absolute_import, division, print_function, unicode_literals
+
 import math
 import numpy
 
@@ -71,55 +75,46 @@ from rsbeams.rsptcls import RsPtclBeam6D
 from rsbeams.rsphysics import rsconst
 
 class Rs2BeamMagnus:
-    """Representation of a 6D charged particle distribution."""
+    """6D electron distribution plus a handful of arbitrary ions."""
 
-    def __init__(self, n_, design_p_ev, total_charge_c, mass_ev, dist_type, max_rms_fac, \
-                 alpha_x, beta_x, emit_x, alpha_y, beta_y, emit_y, alpha_z, beta_z, emit_z):
+    def __init__(self, num_elec, charge_ebeam_c, distrib_type, max_rms_fac, \
+                 x_rms_m, vx_rms_mks, y_rms_m, vy_rms_mks, z_rms_m, vz_rms_mks, \
+                 charge_ions_c, mass_ions_c):
+        """Initialize electron beam and ion properties"""
 
-        x = 10.
+        # Define the electron beam (p0=1 with Twiss alpha's set to zero)
+        emit_x = math.sqrt(x_rms_m * vx_rms_mks) # [m-rad]
+        beta_x = x_rms_m * (x_rms_m/emit_x)      # [m/rad]
+        emit_y = math.sqrt(y_rms_m * vy_rms_mks) # [m-rad]
+        beta_y = y_rms_m * (y_rms_m/emit_y)      # [m/rad]
+        emit_z = math.sqrt(z_rms_m * vz_rms_mks) # [m-rad]
+        beta_z = z_rms_m * (z_rms_m/emit_z)      # [m/rad]
 
+        self.num_elec = 1000
+        self.design_p_ev = 0.
+        self.max_rms_fac = max_rms_fac
+        self.mass_elec_ev = rsconst.m_e_EV
+        self.total_charge_c = charge_ebeam_c
 
-    def test_beam_gen():
+        if ( (distrib_type != 'uniform') and
+             (distrib_type != 'gaussian') ):
+            message = '\n\nERROR --'
+            message += '\n    distrib_type is specified as "' + self.distrib_type + '", which is not supported.'
+            message += '\n    Only "uniform" and "gaussian" are allowed.'
+            message += '\n'
+            raise Exception(message)
+        else:
+            self.distrib_type = distrib_type
 
-        # specify physical properties of the beam
-        num_ptcls = 1000
-        design_p_ev = 271e+6
-        total_charge_c = 3.05e-09
-        mass_ev = rsconst.m_e_EV
+        self.e_beam = RsPtclBeam6D.RsPtclBeam6D(self.num_elec, 0., self.total_charge_c, \
+                                             self.mass_elec_ev, self.distrib_type, self.max_rms_fac, \
+                                             0., beta_x, emit_x, \
+                                             0., beta_y, emit_y, \
+                                             0., beta_z, emit_z )
 
-        dist_type = 'gaussian'
-        max_rms_fac = 4.9
-
-        alpha_x = 1.3     # []
-        beta_x = 21.1     # [m/rad]
-        emit_x = 1.7e-06  # [m-rad]
-
-        alpha_y = -3.01   # []
-        beta_y = 9.07     # [m/rad]
-        emit_y = 0.44e-6  # [m-rad]
-
-        alpha_z = 0       # []
-        beta_z =  1.55    # [m/rad]
-        emit_z = 3.1e-05  # [m-rad]
-
-        my_ebeam = RsPtclBeam6D.RsPtclBeam6D(num_ptcls, design_p_ev, \
-                                             total_charge_c, mass_ev, \
-                                             dist_type, max_rms_fac, \
-                                             alpha_x, beta_x, emit_x, \
-                                             alpha_y, beta_y, emit_y, \
-                                             alpha_z, beta_z, emit_z )
-
-        beta_gamma = my_ebeam.get_beta0_gamma0()
-        gamma0 = my_ebeam.get_gamma0()
-        beta0 = my_ebeam.get_beta0()
-
-#        print('beta_gamma = ', beta_gamma)
-#        print('gamma0     = ', gamma0)
-#        print('beta0      = ', beta0)
-
-        my_twiss_x = my_ebeam.get_twiss2d_by_name('twiss_x')
-        my_twiss_y = my_ebeam.get_twiss2d_by_name('twiss_y')
-        my_twiss_z = my_ebeam.get_twiss2d_by_name('twiss_z')
+        my_twiss_x = self.e_beam.get_twiss2d_by_name('twiss_x')
+        my_twiss_y = self.e_beam.get_twiss2d_by_name('twiss_y')
+        my_twiss_z = self.e_beam.get_twiss2d_by_name('twiss_z')
 
 #        print('alpha_x = ', my_twiss_x.get_alpha_rms())
 #        print('beta_x = ', my_twiss_x.get_beta_rms())
