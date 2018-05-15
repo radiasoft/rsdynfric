@@ -166,13 +166,15 @@ title(['R_{Debye} and R_e: V_{e0}=',num2str(mantV0,'%4.2f'), ...
        '\cdot10^{',powV0,'} cm/s'],'Color','m','FontSize',14)
 xlim(xLimit)
 ylim([1.e-3,.5])
-plot([relVeTrnsv,relVeTrnsv],1.e-3*[1.,1.3],'k','LineWidth',1)
-text(2.6e-3,7.e-4,'\DeltaV_{e\perp}/ V_{e0}','Color','k','FontSize',10)
-text(2.e-3,3.e-3,'R_e=(3/n_e)^{1/3}','Color','k','FontSize',13)
-text(2.e-3,3.5e-2,'R_{Debye}=','Color','k','FontSize',14)
-plot([5.e-3,1.6e-2],[3.75e-2,3.75e-2],'Color','k')
-text(5.e-3,5.e-2,'<|V_i-\Delta_{e||}|>','Color','k','FontSize',14)
-text(8.e-3,3.e-2,'\omega_{ep}','Color','k','FontSize',14)
+% plot([relVeTrnsv,relVeTrnsv],1.e-3*[1.,1.3],'m','LineWidth',2)
+plot([relVeTrnsv,relVeTrnsv],ylim,'--m','LineWidth',1)
+% text(2.6e-3,7.e-4,'\DeltaV_{e\perp}/ V_{e0}','Color','k','FontSize',10)
+text(2.e-3,7.e-4,'\DeltaV_{e\perp}/ V_{e0}','Color','m','FontSize',10)
+text(2.e-4,3.e-3,'R_e=(3/n_e)^{1/3}','Color','k','FontSize',13)
+text(2.e-4,2.5e-2,'R_{Debye}=','Color','k','FontSize',13)
+plot([8.e-4,5.e-3],[2.55e-2,2.55e-2],'Color','k')
+text(8.e-4,3.2e-2,'<|V_i-\Delta_{e||}|>','Color','k','FontSize',13)
+text(1.5e-3,2.2e-2,'\omega_{ep}','Color','k','FontSize',13)
 
 figure(207)
 loglog(relVion_l,rhoPass_l,'-b',relVion_h,rhoPass_h,'-m','LineWidth',2)
@@ -184,13 +186,15 @@ title(['V_{e0}=',num2str(mantV0,'%4.2f'), ...
        '\cdot10^{',powV0,'} cm/s, L_{Cool}=',num2str(coolLength,'%4.1f'), ...
        ' cm'],'Color','m','FontSize',14)
 xlim(xLimit)
-ylim([4.e-2,7.0])
-plot([relVeTrnsv,relVeTrnsv],4.e-2*[1.,1.3],'k','LineWidth',1)
-text(2.6e-3,3.e-2,'\DeltaV_{e\perp}/ V_{e0}','Color','k','FontSize',10)
-text(2.e-3,.2,'R_{Pass}=<|V_i-\Delta_{e||}|>\cdot','Color','k','FontSize',14)
-plot([1.4e-2,2.5e-2],[.205,.205],'Color','k')
-text(1.4e-2,.26,'L_{Cool}','Color','k','FontSize',14)
-text(1.5e-2,.16,'V_{e0}','Color','k','FontSize',14)
+ylim([2.e-3,7.0])
+% plot([relVeTrnsv,relVeTrnsv],4.e-2*[1.,1.3],'k','LineWidth',1)
+plot([relVeTrnsv,relVeTrnsv],ylim,'--m','LineWidth',1)
+% text(2.6e-3,3.e-2,'\DeltaV_{e\perp}/ V_{e0}','Color','k','FontSize',10)
+text(2.e-3,1.25e-3,'\DeltaV_{e\perp}/ V_{e0}','Color','m','FontSize',10)
+text(2.e-4,2.e-2,'R_{Pass}=<|V_i-\Delta_{e||}|>\cdot','Color','k','FontSize',14)
+plot([5.e-3,1.25e-2],[2.1e-2,2.1e-2],'Color','k')
+text(5.e-3,3.2e-2,'L_{Cool}','Color','k','FontSize',14)
+text(5.5e-3,1.5e-2,'V_{e0}','Color','k','FontSize',14)
 
 figure(209)
 loglog(relVion_l,debyeR_l,'-b',relVion_h,debyeR_h,'-m', ...
@@ -204,8 +208,10 @@ title(['R_{Debye} & R_{Pass} & R_e: V_{e0}=',num2str(mantV0,'%4.2f'), ...
        '\cdot10^{',powV0,'} cm/s'],'Color','m','FontSize',14)
 xlim(xLimit)
 ylim([1.e-3,10.])
-plot([relVeTrnsv,relVeTrnsv],1.e-3*[1.,1.4],'k','LineWidth',1)
-text(2.6e-3,6.e-4,'\DeltaV_{e\perp}/ V_{e0}','Color','k','FontSize',10)
+% plot([relVeTrnsv,relVeTrnsv],1.e-3*[1.,1.4],'k','LineWidth',1)
+plot([relVeTrnsv,relVeTrnsv],ylim,'--m','LineWidth',1)
+% text(2.6e-3,6.e-4,'\DeltaV_{e\perp}/ V_{e0}','Color','k','FontSize',10)
+text(2.e-3,6.e-4,'\DeltaV_{e\perp}/ V_{e0}','Color','k','FontSize',10)
 text(3.e-3,3.25e-3,'R_e','Color','k','FontSize',14)
 text(3.e-3,.11,'R_{Debye}','Color','k','FontSize',14)
 text(3.e-3,1.1,'R_{Pass}','Color','k','FontSize',14)
@@ -380,7 +386,7 @@ for n=1:nVion_h
     end
 end
 
-figure(3151)
+figure(315)
 loglog(relVion_l,rhoMax_l,'-b',relVion_h,rhoMax_h,'-m', ...
        relVion_l,2.*rhoLarm_l(:,1),'-b',relVion_h,2.*rhoLarm_h(:,1),'-m','LineWidth',2)
 grid on
@@ -406,7 +412,7 @@ text(1.35e-3,8.e-3,'\omega_{Larm}','Color','k','FontSize',13)
 % Figures of Coulomb logarithms:
 %
 %----------------------------------------------
-figure(3201)
+figure(320)
 loglog(relVion_l,CL_l(:,1),'-xb',relVion_h,CL_h(:,1),'-m', 'LineWidth',2)
 hold on
 grid on
@@ -423,26 +429,6 @@ text(1.e-5,3.5,['V_{e0}=',num2str(mantV0,'%4.2f'),'\cdot10^{',powV0,'} cm/s'], .
 text(1.2e-5,4.e-1,['B=',num2str(fieldB(1),'%6.1f'),' Gs'],'Color','k','FontSize',14)
 text(7.e-5,1.2e-1,['B=',num2str(fieldB(2),'%6.1f'),' Gs'],'Color','k','FontSize',14)
 text(3.75e-4,3.e-2,['B=',num2str(fieldB(3),'%6.1f'),' Gs'],'Color','k','FontSize',14)
-
-figure(3201)
-loglog(relVion_s,CL_msb(:,1),'-r',relVion_l,CL_mlb(:,1),'-b', ...
-       relVion_h,CL_mhb(:,1),'-m',relVion_s,CL_msb(:,2),'-r', ...
-       relVion_l,CL_mlb(:,2),'-b',relVion_h,CL_mhb(:,2),'-m', ...
-       relVion_s,CL_msb(:,3),'-r',relVion_l,CL_mlb(:,3),'-b', ...
-       relVion_h,CL_mhb(:,3),'-m', 'LineWidth',2)
-grid on
-hold on
-xlabel('Relative Ion Velocity, V_i/V_{e0}','Color','m','FontSize',16)
-ylabel('CL_{magnetized}','Color','m','FontSize',16)
-title('Coulomb Logarithm CL_{magnetized}=R_{max}/(2\cdot<rho_\perp>)', ...
-      'Color','m','FontSize',13)
-xlim(xLimit)
-ylim([7.e-3,5.])
-text(1.05e-6,3.5,['V_{e0}=',num2str(mantV0,'%4.2f'),'\cdot10^{',powV0,'} cm/s'], ...
-       'Color','m','FontSize',14)
-text(2.e-6,1.5,['B=',num2str(fieldB(1),'%6.1f'),' Gs'],'Color','k','FontSize',14)
-text(2.e-6,0.3,['B=',num2str(fieldB(2),'%6.1f'),' Gs'],'Color','k','FontSize',14)
-text(1.8e-4,0.02,['B=',num2str(fieldB(3),'%6.1f'),' Gs'],'Color','k','FontSize',14)
 
 figure(330)
 loglog(relVion_s,CL_as,'-r',relVion_l,CL_al,'-b','LineWidth',2)
