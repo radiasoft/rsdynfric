@@ -421,15 +421,23 @@ ylabel('CL_{magnetized}','Color','m','FontSize',16)
 title('Coulomb Logarithm CL_{magnetized}=R_{max}/(2\cdot<rho_\perp>)', ...
       'Color','m','FontSize',13)
 xlim(xLimit)
-ylim([2.e-2,5.])
+ylim([.4,6.])
 plot([relVeTrnsv,relVeTrnsv],1.e-3*[1.,1.3],'k','LineWidth',1)
 text(2.6e-3,7.e-4,'\DeltaV_{e\perp}/ V_{e0}','Color','k','FontSize',10)
 text(1.e-5,3.5,['V_{e0}=',num2str(mantV0,'%4.2f'),'\cdot10^{',powV0,'} cm/s'], ...
        'Color','m','FontSize',14)
 text(1.2e-5,4.e-1,['B=',num2str(fieldB(1),'%6.1f'),' Gs'],'Color','k','FontSize',14)
-text(7.e-5,1.2e-1,['B=',num2str(fieldB(2),'%6.1f'),' Gs'],'Color','k','FontSize',14)
-text(3.75e-4,3.e-2,['B=',num2str(fieldB(3),'%6.1f'),' Gs'],'Color','k','FontSize',14)
+% text(7.e-5,1.2e-1,['B=',num2str(fieldB(2),'%6.1f'),' Gs'],'Color','k','FontSize',14)
+% text(3.75e-4,3.e-2,['B=',num2str(fieldB(3),'%6.1f'),' Gs'],'Color','k','FontSize',14)
 
+%===================================================
+%
+% Next block is excluded because  it is part of  the script 
+% frictionForce.m which here is not nececessary now
+%
+%===================================================
+
+%{
 figure(330)
 loglog(relVion_s,CL_as,'-r',relVion_l,CL_al,'-b','LineWidth',2)
 hold on
@@ -507,12 +515,13 @@ plot([1.65e-4,1.65e-4],[4.5,1.25],'Color','b')
 text(1.75e-4,3.85,'\Delta_{e\perp}','Color','b','FontSize',13)
 text(1.75e-4,2.15,'\pi\cdotV_i','Color','b','FontSize',13)
 plot([3.65e-4,3.65e-4],[4.5,1.25],'Color','b')
-
+%}
 %----------------------------------------------
 %
 % Figures of Coulomb logarithms (continuation):
 %
 %----------------------------------------------
+%{
 figure(350)
 loglog(relVion_s,CL_fs(:,1),'-r',relVion_l,CL_fl(:,1),'-b', ...
        relVion_h,CL_fh(:,1),'-m',relVion_s,CL_fs(:,2),'-r', ...
@@ -1704,6 +1713,7 @@ text(1.5e-5,9.5e-4,' Area "Low":          \DeltaV_{e||} < V_i < \DeltaV_{e\perp}
 text(1.5e-5,4.5e-4,'Area "High":         \DeltaV_{e||} < V_i < \DeltaV_{e\perp}', ...
      'Color','m','FontSize',13)
 end
+
 %
 % B=3000 Gs (Three types of interaction; "Betacool" approach):
 %       
@@ -1734,7 +1744,40 @@ text(1.25e-5,5.e-5,' Area "Low":          \DeltaV_{e||} < V_i < \DeltaV_{e\perp}
      'Color','b','FontSize',13)
 text(1.25e-5,2.e-5,'Area "High":         \DeltaV_{e||} < V_i < \DeltaV_{e\perp}', ...
      'Color','m','FontSize',13)
-
+%}
+%
+% B=3000 Gs (Three types of interaction; "Betacool" approach):
+%       
+figure(3901)
+loglog(relVion_l,abs(trnsvFF_l(:,1)),'-.b', ...
+       relVion_h,abs(trnsvFF_h(:,1)),'-.m','LineWidth',2)
+grid on
+hold on
+xlabel('Relative Ion Velocity, V_{i\perp}/V_{e0}','Color','m','FontSize',16)
+ylabel('F_\perp, eV/m','Color','m','FontSize',16)
+title('Transverse Friction Force F_\perp: 3 types of Interaction', ...
+      'Color','m','FontSize',13)
+xlim(xLimit)
+ylim([2.e-4,1.e+2])
+text(2.e-6,4.e+1,['V_{e0}=',num2str(mantV0,'%4.2f'),'\cdot10^{',powV0, ...
+     '} cm/s,  B=',num2str(fieldB(1),'%6.1f'),' Gs'], ...
+       'Color','k','FontSize',16)
+text(1.e-4,6.e-4,'Fast','Color','k','FontSize',16)
+text(3.e-5,2.e-2,'Adiabatic','Color','k','FontSize',16)
+text(1.65e-5,2.e-0,'Magnetized','Color','k','FontSize',16)
+text(1.25e-5,1.5e-4,'Area "Superlow": V_i < \DeltaV_{e||} < \DeltaV_{e\perp}', ...
+     'Color','r','FontSize',13)
+text(1.25e-5,5.e-5,' Area "Low":          \DeltaV_{e||} < V_i < \DeltaV_{e\perp}', ...
+     'Color','b','FontSize',13)
+text(1.25e-5,2.e-5,'Area "High":         \DeltaV_{e||} < V_i < \DeltaV_{e\perp}', ...
+     'Color','m','FontSize',13)
+%===================================================
+%
+% Next block is excluded because  it is part of  the script 
+% frictionForce.m which here is not nececessary now
+%
+%===================================================
+%{
 %
 % For comparison with figure 4 from [3] only: B=1000 Gs ("BETACOOL" approach):
 %
@@ -1992,11 +2035,19 @@ text(1.5e-5,9.5e-4,' Area "Low":          \DeltaV_{e||} < V_i < \DeltaV_{e\perp}
 text(1.5e-5,4.5e-4,'Area "High":         \DeltaV_{e||} < V_i < \DeltaV_{e\perp}', ...
      'Color','m','FontSize',13)
 end
+%}
 %--------------------------------------------------------------
 %
 %  F  i g u r e s   f o r   L o n g i t u d i n a l    F r i c t i o n    F o r c e
 %
 %--------------------------------------------------------------
+%===================================================
+%
+% Next block is excluded because  it is part of  the script 
+% frictionForce.m which here is not nececessary now
+%
+%===================================================
+
 %
 % Longitudinal friction force for B=3000 Gs (Three types of interaction):
 %       
@@ -2379,25 +2430,22 @@ text(6.e-6,1.35e-6,'Area "High":         \DeltaV_{e||} < V_i < \DeltaV_{e\perp}'
 dim=[.5 .6 .2 .124];
 annotation('ellipse',dim,'Color','k');
 text(1.1e-4,2.e-4,'All  Fields','Color','k','FontSize',16)
+%}
 
 %
 % B=3000 Gs (Three types of interaction; "Betacool" approach):
 %       
 figure(4901)
-loglog(relVion_s,abs(longFF_fs(:,1)),'-r',relVion_l,abs(longFF_fl(:,1)),'-b', ...
-       relVion_h,abs(longFF_fh(:,1)),'-m','LineWidth',2)
+loglog(relVion_l,abs(longFF_l(:,1)),'-.b', ...
+       relVion_h,abs(longFF_h(:,1)),'-.m','LineWidth',2)
 grid on
 hold on
-loglog(relVion_s,abs(longFF_as(:,1)),'--r',relVion_l,abs(longFF_al(:,1)),'--b', ...
-       'LineWidth',2)
-loglog(relVion_s,abs(longFF_msb(:,1)),'-.r',relVion_l,abs(longFF_ml(:,1)),'-.b', ...
-       relVion_h,abs(longFF_mh(:,1)),'-.m','LineWidth',2)
 xlabel('Relative Ion Velocity, V_{i||}/V_{e0}','Color','m','FontSize',16)
 ylabel('F_{||}, eV/m','Color','m','FontSize',16)
 title('Longitudinal Friction Force F_{||}: 3 types of Interaction', ...
       'Color','m','FontSize',13)
-plot([relVion_s(nVion_s),relVion_l(1)], ...
-     [abs(longFF_msb(nVion_s,1)),abs(longFF_ml(1))],'-.k','LineWidth',1)   
+% plot([relVion_s(nVion_s),relVion_l(1)], ...
+%      [abs(longFF_msb(nVion_s,1)),abs(longFF_ml(1))],'-.k','LineWidth',1)   
 xlim(xLimit)
 ylim([6.e-4,1.e+2])
 text(2.e-6,5.e+1,['V_{e0}=',num2str(mantV0,'%4.2f'),'\cdot10^{',powV0, ...
@@ -2412,7 +2460,13 @@ text(1.25e-5,1.7e-3,' Area "Low":          \DeltaV_{e||} < V_i < \DeltaV_{e\perp
      'Color','b','FontSize',13)
 text(1.25e-5,8.e-4,'Area "High":         \DeltaV_{e||} < V_i < \DeltaV_{e\perp}', ...
      'Color','m','FontSize',13)
-
+%===================================================
+%
+% Next block is excluded because  it is part of  the script 
+% frictionForce.m which here is not nececessary now
+%
+%===================================================
+%{
 %
 % Magnetized area (three values of magnetic field; "Betacool" approach):
 %       
@@ -2629,7 +2683,7 @@ text(1.5e-5,1.6e-2,'Area "High":         \DeltaV_{e||} < V_i < \DeltaV_{e\perp}'
 dim=[.5 .65 .3 .09];
 annotation('ellipse',dim,'Color','k');
 text(3.e-4,3.e-0,'All Fields','Color','k','FontSize',16)
-
+%}
  %==================================================
  %
  % For fitting attempts

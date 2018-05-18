@@ -303,7 +303,7 @@ for n in range(nVion_h):
 
 xLimit=[.9*minRelVion_l,1.1*maxRelVion_h]
 
-plt.figure(205)
+fig205=plt.figure(205)
 plt.loglog(relVion_l,debyeR_l,'-b',linewidth=2)
 plt.grid(True)
 hold=True
@@ -311,7 +311,7 @@ plt.loglog(relVion_h,debyeR_h,'-m',linewidth=2)
 plt.plot([relVion_l[0],relVion_h[nVion_h-1]],[likeDebyeR,likeDebyeR],'k',linewidth=2)
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 plt.ylabel('$R_{Debye}$ and $R_e$, cm',color='m',fontsize=16)
-titleHeader='$R_{Debye}$ and $R_e$: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
+titleHeader='Magnetized Collision: $R_{Debye}$ and $R_e$: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
 plt.title(titleHeader % (mantV0,powV0),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[1.e-3,.5]
@@ -324,14 +324,14 @@ plt.plot([5.8e-4,2.95e-3],[2.7e-2,2.7e-2],color='k')
 plt.text(5.8e-4,3.2e-2,'$<|V_i-\Delta_{e||}|>$',color='k',fontsize=16)
 plt.text(1.e-3,2.2e-2,'$\omega_{ep}$',color='k',fontsize=16)
 
-plt.figure(207)
+fig207=plt.figure(207)
 plt.loglog(relVion_l,rhoPass_l,'-b',linewidth=2)
 plt.grid(True)
 hold=True
 plt.loglog(relVion_h,rhoPass_h,'-m',linewidth=2)
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 plt.ylabel('$R_{Pass}$, cm',color='m',fontsize=16)
-titleHeader='$V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
 plt.title(titleHeader % (mantV0,powV0),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[2.e-3,7.0]
@@ -343,7 +343,7 @@ plt.plot([6.1e-4,1.15e-3],[1.09,1.09],color='k',linewidth=1)
 plt.text(6.1e-4,1.25,'$L_{Cool}$',color='k',fontsize=16)
 plt.text(7.e-4,.8,'$V_{e0}$',color='k',fontsize=16)
 
-plt.figure(209)
+fig209=plt.figure(209)
 plt.loglog(relVion_l,debyeR_l,'-b',relVion_h,debyeR_h,'-m', \
            relVion_l,rhoPass_l,'-b',relVion_h,rhoPass_h,'-m',linewidth=2)
 plt.grid(True)
@@ -351,7 +351,7 @@ hold=True
 plt.plot ([relVion_l[0],relVion_h[nVion_h-1]],[likeDebyeR,likeDebyeR],color='k',linewidth=2)
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 plt.ylabel('$R_{Debye}$, $R_{Pass}$, $R_e$, cm',color='m',fontsize=16)
-titleHeader='$R_{Debye}$, $R_{Pass}$, $R_e$: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
+titleHeader='Magnetized Collision: $R_{Debye}$, $R_{Pass}$, $R_e$: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
 plt.title(titleHeader % (mantV0,powV0),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[1.e-3,10.]
@@ -362,13 +362,13 @@ plt.text(3.e-5,2.45e-3,'$R_e$',color='k',fontsize=16)
 plt.text(3.e-5,5.e-2,'$R_{Debye}$',color='k',fontsize=16)
 plt.text(3.e-5,1.e-2,'$R_{Pass}$',color='k',fontsize=16)
 
-plt.figure(215)
+fig215=plt.figure(215)
 plt.loglog(relVion_l,rhoMax_l,'-b',relVion_h,rhoMax_h,'-m',linewidth=2)
 plt.grid(True)
 hold=True
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 plt.ylabel('$R_{max}$, cm',color='m',fontsize=16)
-titleHeader='$V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
 plt.title(titleHeader % (mantV0,powV0),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[2.e-3,.5]
@@ -377,14 +377,14 @@ plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
 plt.text(2.e-3,1.5e-3,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
 plt.text(6.e-5,0.2,'$R_{max}=min\{max\{R_{Debye},R_e\},R_{Pass}\}$',color='k',fontsize=16)
 
-plt.figure(305)
+fig305=plt.figure(305)
 plt.loglog(relVion_l,rhoFast_l[:,0],'-b',relVion_h,rhoFast_h[:,0],'-m', \
        relVion_l,rhoCrit_l[:,0],'-b',relVion_h,rhoCrit_h[:,0],'-m',linewidth=2)
 plt.grid(True)
 hold=True
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 plt.ylabel('$R_{Fast}$ and $R_{Crit}$, cm',color='m',fontsize=16)
-titleHeader='$V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
 plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[2.e-6,.01]
@@ -394,13 +394,13 @@ plt.text(2.e-3,1.325e-6,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
 plt.text(1.e-3,1.5e-4,'$R_{Fast}=<|V_i-\Delta V_{e||}|>/\omega_{Larm}$',color='k',fontsize=16)
 plt.text(1.e-3,2.8e-5,'$R_{Crit}=(q_e^2/m_e/\omega_{Larm}^2)^{1/3}$',color='k',fontsize=16)
 
-plt.figure(307)
+fig307=plt.figure(307)
 plt.loglog(relVion_l,rhoMin_l,'-b',relVion_h,rhoMin_h,'-m',linewidth=2)
 plt.grid(True)
 hold=True
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 plt.ylabel('$R_{min}$, cm',color='m',fontsize=16)
-titleHeader='$V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
 plt.title(titleHeader % (mantV0,powV0),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[1.e-9,2.e-7]
@@ -412,7 +412,7 @@ plt.plot([2.4e-4,1.75e-3],[3.2e-8,3.2e-8],color='k')
 plt.text(4.e-4,3.5e-8,'$q_e^2/m_e$',color='k',fontsize=16)
 plt.text(2.4e-4,2.3e-8,'$(<|V_i-V_{e\perp}|>)^2$',color='k',fontsize=16)
 
-plt.figure(315)
+fig315=plt.figure(315)
 plt.loglog(relVion_l,rhoMax_l,'-b',relVion_h,rhoMax_h,'-m', \
        relVion_l,2.*rhoLarm_l[:,0],'-b',relVion_h,2.*rhoLarm_h[:,0],'-m',linewidth=2)
 plt.grid(True)
@@ -420,7 +420,7 @@ hold=True
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 # plt.ylabel('$R_{max}$ and $2\cdot<rho_\perp>$, cm',color='m',fontsize=16)
 plt.ylabel('Impact Parameter, cm',color='m',fontsize=16)
-titleHeader='$V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
 plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
 titleHeader='$V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
 plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
@@ -444,13 +444,13 @@ plt.text(2.8e-5,.2,'Collisions are Sreened',color='r',fontsize=25)
 # Figures of Coulomb logarithms:
 #
 #----------------------------------------------
-plt.figure(320)
+fig320=plt.figure(320)
 plt.loglog(relVion_l,CL_l[:,0],'-b',relVion_h,CL_h[:,0],'-m',linewidth=2)
 plt.grid(True)
 hold=True
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
-plt.ylabel('$CL_{magnetized}$',color='m',fontsize=16)
-titleHeader='Coulomb Logarithm: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
+plt.ylabel('Coulomb Logarithm: $CL_{magnetized}$',color='m',fontsize=16)
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
 plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[.4,6.]
@@ -462,13 +462,13 @@ plt.plot([5.7e-4,2.4e-3],[1.29,1.29],color='k')
 plt.text(8.e-4,1.35,'$R_{max}$',color='k',fontsize=16)
 plt.text(5.7e-4,1.15,'$2\cdot<rho_\perp>$',color='k',fontsize=16)
 
-plt.figure(3201)
+fig3201=plt.figure(3201)
 plt.semilogx(relVion_l,CL_l[:,0],'-b',relVion_h,CL_h[:,0],'-m',linewidth=2)
 plt.grid(True)
 hold=True
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
-plt.ylabel('$CL_{magnetized}$',color='m',fontsize=16)
-titleHeader='Coulomb Logarithm: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
+plt.ylabel('Coulomb Logarithm $CL_{magnetized}$',color='m',fontsize=16)
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
 plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[0,6.]
@@ -483,13 +483,13 @@ plt.text(5.7e-4,4.05,'$2\cdot<rho_\perp>$',color='k',fontsize=16)
 #
 # Friction forces:
 #       
-plt.figure(395)
+fig395=plt.figure(395)
 plt.loglog(relVion_l,abs(trnsvFF_l[:,0]),'-b',relVion_h,abs(trnsvFF_h[:,0]),'-m',linewidth=2)
 plt.grid(True)
 hold=True
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
-plt.ylabel('$F_\perp$, eV/m',color='m',fontsize=16)
-titleHeader='Transverse Friction Force: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
+plt.ylabel('Transverse Friction Force $F_\perp$, eV/m',color='m',fontsize=16)
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
 plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[2.e-4,2.e+2]
@@ -497,20 +497,50 @@ plt.ylim(yLimit)
 plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
 plt.text(2.e-3,1.e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
 
-plt.figure(400)
+fig495=plt.figure(495)
 plt.loglog(relVion_l,abs(longFF_l[:,0]),'-b',relVion_h,abs(longFF_h[:,0]),'-m',linewidth=2)
 plt.grid(True)
 hold=True
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
-plt.ylabel('$F_\perp$, eV/m',color='m',fontsize=16)
-titleHeader='Transverse Friction Force: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
+plt.ylabel('Longitudinal Friction Force $F_{||}$, eV/m',color='m',fontsize=16)
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
 plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
-# plt.xlim(xLimit)
-# yLimit=[2.e-4,2.e+2]
-# plt.ylim(yLimit)
-# plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-# plt.text(2.e-3,1.e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+plt.xlim(xLimit)
+yLimit=[4.e-5,6.e+2]
+plt.ylim(yLimit)
+plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+plt.text(2.e-3,1.75e-5,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+
+fig595=plt.figure(595)
+plt.loglog(relVion_l,abs(longFF_l[:,0]),'-b',relVion_h,abs(longFF_h[:,0]),'-m',linewidth=2)
+plt.grid(True)
+hold=True
+plt.loglog(relVion_l,abs(trnsvFF_l[:,0]),'--b',relVion_h,abs(trnsvFF_h[:,0]),'--m',linewidth=2)
+plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
+plt.ylabel('Friction Forces: $F_{\perp}$ and $F_{||}$, eV/m',color='m',fontsize=16)
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
+plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
+plt.xlim(xLimit)
+yLimit=[4.e-5,6.e+2]
+plt.ylim(yLimit)
+plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+plt.text(2.e-3,1.75e-5,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+plt.text(9.6e-4,.275,'$F_{\perp}$',color='k',fontsize=16)
+plt.text(9.6e-4,4.4e-2,'$F_{||}$',color='k',fontsize=16)
 
 plt.show()
+
+fig205.savefig('picturesCMA/rDebye_rLikeDebye_fig205cma.jpg')    
+fig207.savefig('picturesCMA/rPassrPass_fig207cma.jpg')    
+fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.jpg')    
+fig215.savefig('picturesCMA/rMax_fig215cma.jpg')    
+fig305.savefig('picturesCMA/rFast_rCrit_fig305cma.jpg')    
+fig307.savefig('picturesCMA/rMin_fig307cma.jpg')    
+fig315.savefig('picturesCMA/impctPrmtr_fig315cma.jpg')    
+fig320.savefig('picturesCMA/coulombLgrthm_fig320cma.jpg')    
+fig3201.savefig('picturesCMA/coulombLgrthm_lin_fig3201cma.jpg')    
+fig395.savefig('picturesCMA/trnsvFF_fig395cma.jpg')    
+fig495.savefig('picturesCMA/longFF_fig495cma.jpg')    
+fig595.savefig('picturesCMA/trnsvFF_longFF_fig595cma.jpg')    
 
 sys.exit()
