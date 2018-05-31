@@ -51,7 +51,8 @@ from scipy.constants import Boltzmann as kB
 # [1] I. Meshkov, A. Sidorin, A. Smirnov, G. Trubnikov.
 #    "Physics guide of BETACOOL code. Version 1.1". C-A/AP/#262, November
 #    2006, Brookhaven National Laboratory, Upton, NY 11973.
-# [2] 
+# [2] David L. Bruhwiler, Stephen D Webb. "New Algorithm for Dynamical Friction
+#    of Ions in a Magnetized Electron Beam". AIP Conf. Proc. 1812, 05006 (2017). 
 #
 #========================================================
 
@@ -81,7 +82,7 @@ nField=1                               # number ov values  of the magnetic field
 fieldB=np.zeros(nField)                # 
 fieldB[0]=3.e3                         # magnetic field, Gs
 omega_p=1.0e9                          # plasma frequency, 1/sec
-n_e=omega_p**2*m_e/(4.*pi*q_e**2)        # plasma density, 3.1421e+08 cm-3
+n_e=omega_p**2*m_e/(4.*pi*q_e**2)      # plasma density, 3.1421e+08 cm-3
 
 n_e1=8.e7                              # plasma density, cm-3
 omega_p1=np.sqrt(4.*pi*n_e1*q_e**2/m_e) # plasma frequency, 5.0459e+08 1/s  
@@ -96,11 +97,11 @@ coolLength=150.0        # typical length of the coolong section, cm
 V0=np.sqrt(2.*Ekin*eVtoErg/m_e)                # average velocity, cm/s
 rmsTrnsvVe=np.sqrt(2.*trnsvT*eVtoErg/m_e)      # RMS transversal velocity, cm/s
 rmsLongVe=np.sqrt(2.*longT*eVtoErg/m_e)        # RMS longitudinal velocity, cm/s
-# dens=curBeam*CtoPart/V0                      # density, 1/cm^3
+# dens=curBeam*CtoPart/V0                       # density, 1/cm^3
 # omega=np.sqrt(4.*pi*dens*q_e**2/m_e)          # plasma frequency, 1/s
 cyclFreq=q_e*fieldB/(m_e*cLight)               # cyclotron frequency, 1/s
 rmsRoLarm=rmsTrnsvVe*cyclFreq**(-1)            # RMS Larmor radius, cm
-dens=omega_p**2*m_e/(4.*pi*q_e**2)               # density, 1/cm^3
+dens=omega_p**2*m_e/(4.*pi*q_e**2)             # density, 1/cm^3
 likeDebyeR=(3./dens)**(1./3.)                  # "Debye" sphere with 3 electrons, cm
 
 coolPassTime=coolLength/V0                     # time pass through cooling section, cm
@@ -118,12 +119,18 @@ mantV0=V0/(10**powV0)
 #
 # 1 MeV/m = 1.e6*eVtoErg/100. g*cm/sec**2 = 1.e4*eVtoErg erg/cm
 MeV_mToErg_cm=1.e4*eVtoErg
-ffForm=-.5*omega_p**2*q_e**2/V0**2/MeV_mToErg_cm      # MeV/m
+# ffForm=-.5*omega_p**2*q_e**2/V0**2/MeV_mToErg_cm     # MeV/m
 eV_mToErg_m=100.*eVtoErg
-ffForm=-.5*omega_p**2*q_e**2/V0**2/eV_mToErg_m        # =-6.8226e-12 eV/m
-# eV_mInErg_cm=100.*eVtoErg
+# ffForm=-.5*omega_p**2*q_e**2/V0**2/eV_mToErg_m       # =-6.8226e-12 eV/m
+eV_mInErg_cm=100.*eVtoErg
 ffForm=-.5*omega_p**2*q_e**2/V0**2/eVtoErg            # =-6.8226e-10 eV/cm
-ffForm=100.*ffForm                                 # =-6.8226e-08 eV/m
+ffForm=100.*ffForm                                    # =-6.8226e-08 eV/m
+
+print 'V0=%e cm/s, rmsTrnsvVe=%e cm/s, rmsLongVe=%e cm/s' % (V0,rmsTrnsvVe,rmsLongVe)
+rhoCrit=(m_e*(cLight/fieldB[0])**2)**(1./3)
+print 'rhoCrit=%e cm' % rhoCrit
+
+# sys.exit()
 
 #
 # Relative velocities of electrons:
@@ -221,7 +228,24 @@ for n in range(nVion_h):
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 #
-# Main calculations
+# Main calculations for "classic" approach:
+#
+# FF_trnsv=ffForm*CL/(V_ion/V0)**2,  FF_long=ffForm*2./(V_ion/V0)**2, (*)
+#
+# where ffForm = 2*pi*dens*q_e**4/(m_e*V0**2)=
+#              = 0.5*omega_p**2*q_e**2/V0**2 
+# and Coulomb logarithm CL=log(rho_max/(2*rho_larm)).
+# Values of CL can be different in different areas of ion velocity V_ion 
+# ("low" and "high"). 
+#
+# Formulas (*) for FF_trnsv and FF_long are written for cases with only 
+# transversal and longitudinal ion velocities correspondingly.  In case of 
+# the ion with both projections of it velocity on direction of the particle
+# motion the another expressions for friction forces are valid instead 
+# the formulas (*) :
+#
+# FF_trnsv=ffForm*CL*trnsvVion/absVion**3*(relVeTrnsv**2-2.*relVeLong**2),
+# FF_long=ffForm*longVion/absVion**3*(3*CL*relVeTrnsv**2+2.).
 #
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -300,6 +324,12 @@ for n in range(nVion_h):
 #                      (3*CL_h[n,k]*relVeTrnsv^2**2.);
 
 # sys.exit()
+
+#=====================================================================
+#
+# Plotting of Figures:
+#
+#=====================================================================
 
 xLimit=[.9*minRelVion_l,1.1*maxRelVion_h]
 
@@ -434,10 +464,46 @@ plt.text(7.e-4,5.e-2,'$R_{max}$',color='k',fontsize=16)
 plt.text(4.5e-3,.3*1.e-2,'$<rho_\perp>=$',color='k',fontsize=16)
 plt.plot([2.e-2,4.1e-2],[.3*1.1e-2,.3*1.1e-2],color='k')   
 plt.text(2.e-2,.3*1.25e-2,'$ \Delta V_{e\perp}$',color='k',fontsize=16)
-plt.text(2.e-2,.3*9.e-3,'$\omega_{Larm}$',color='k',fontsize=16)
+plt.text(2.e-2,.3*8.5e-3,'$\omega_{Larm}$',color='k',fontsize=16)
 plt.text(1.5e-4,7.e-3,'Magnetized Collisions',color='r',fontsize=25)
 plt.text(1.5e-4,1.05e-3,'Adiabatic Collisions',color='r',fontsize=25)
-plt.text(2.8e-5,.2,'Collisions are Sreened',color='r',fontsize=25)
+plt.text(2.8e-5,.2,'Collisions are Screened',color='r',fontsize=25)
+
+nVion_h_max=nVion_h;
+for i in range(nVion_h):
+   if (2.*rhoLarm_h[i,0] < rhoFast_h[i,0]) and (nVion_h_max == nVion_h):
+      nVion_h_max=i;
+
+fig3151=plt.figure(3151)
+plt.loglog(relVion_l,rhoMax_l,'-b',relVion_h,rhoMax_h,'-m', \
+       relVion_l,2.*rhoLarm_l[:,0],'-b',relVion_h,2.*rhoLarm_h[:,0],'-m',   \
+       relVion_l,rhoFast_l[:,0],'-b',   \
+       relVion_h[0:nVion_h_max],rhoFast_h[0:nVion_h_max,0],'-m',linewidth=2)
+plt.grid(True)
+hold=True
+plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
+# plt.ylabel('$R_{max}$ and $2\cdot<rho_\perp>$, cm',color='m',fontsize=16)
+plt.ylabel('Impact Parameter, cm',color='m',fontsize=16)
+titleHeader='Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
+plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
+titleHeader='$V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
+plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
+plt.xlim(xLimit)
+yLimit=[5.e-4,.6]
+plt.ylim(yLimit)
+plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+plt.text(2.e-3,3.5e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+plt.text(7.e-4,1.75e-3,'$2\cdot<rho_\perp>$',color='k',fontsize=16)
+plt.text(7.e-4,5.e-2,'$R_{max}$',color='k',fontsize=16)
+plt.text(4.5e-3,.3*1.e-2,'$<rho_\perp>=$',color='k',fontsize=16)
+plt.plot([2.e-2,4.1e-2],[.3*1.1e-2,.3*1.1e-2],color='k')   
+plt.text(2.e-2,.3*1.25e-2,'$ \Delta V_{e\perp}$',color='k',fontsize=16)
+plt.text(2.e-2,.3*9.e-3,'$\omega_{Larm}$',color='k',fontsize=16)
+plt.text(1.5e-4,7.e-3,'Magnetized Collisions',color='r',fontsize=25)
+plt.text(1.e-4,1.e-3,'Adiabatic',color='r',fontsize=25)
+plt.text(1.e-2,1.e-3,'Fast',color='r',fontsize=25)
+plt.text(1.e-3,6.e-4,'Collisions',color='r',fontsize=25)
+plt.text(2.8e-5,.2,'Collisions are Screened',color='r',fontsize=25)
 
 #----------------------------------------------
 #
@@ -530,6 +596,8 @@ plt.text(9.6e-4,4.4e-2,'$F_{||}$',color='k',fontsize=16)
 
 plt.show()
 
+# sys.exit()
+
 fig205.savefig('picturesCMA/rDebye_rLikeDebye_fig205cma.jpg')    
 fig207.savefig('picturesCMA/rPassrPass_fig207cma.jpg')    
 fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.jpg')    
@@ -537,6 +605,7 @@ fig215.savefig('picturesCMA/rMax_fig215cma.jpg')
 fig305.savefig('picturesCMA/rFast_rCrit_fig305cma.jpg')    
 fig307.savefig('picturesCMA/rMin_fig307cma.jpg')    
 fig315.savefig('picturesCMA/impctPrmtr_fig315cma.jpg')    
+fig3151.savefig('picturesCMA/impctPrmtr_fig3151cma.jpg')    
 fig320.savefig('picturesCMA/coulombLgrthm_fig320cma.jpg')    
 fig3201.savefig('picturesCMA/coulombLgrthm_lin_fig3201cma.jpg')    
 fig395.savefig('picturesCMA/trnsvFF_fig395cma.jpg')    
