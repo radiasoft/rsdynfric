@@ -124,6 +124,7 @@ Omega=np.zeros(pointsLog10)
 omega_p=np.zeros(pointsLog10)
 omega_m=np.zeros(pointsLog10)
 relOmegas=np.zeros(pointsLog10)
+
 for i in range(pointsLog10):
    log10Rho[i]=minLogRho+(maxLogRho-minLogRho)/(pointsLog10-1)*i
    rhoCrrnt[i]=rhoCrit*math.pow(10.,log10Rho[i])
@@ -132,8 +133,8 @@ for i in range(pointsLog10):
    relOmegas[i]=omega_z[i]/Omega[i]
    omega_p[i]=.5*(omega_L+Omega[i])
    omega_m[i]=.5*(omega_L-Omega[i])
-
-# print 'rhoCrrnt =', rhoCrrnt
+   
+print 'rhoCrrnt =', rhoCrrnt
 
 '''
 fig10=plt.figure(10)
@@ -214,16 +215,11 @@ fi=np.zeros(pointsPhi)
 
 Omega_omega_L=[np.sqrt(5.),1./0.577,1.2,1.00001]
 
-
 ro=np.zeros(4)
 ampl=np.zeros(4)
 delta_r=np.zeros(4)
 omega_p_omega_L=np.zeros(4)
 omega_m_omega_L=np.zeros(4)
-omega_z_omega_L=np.zeros(4)
-omega_z_Omega=np.zeros(4)
-widthTorus=np.zeros(4)
-ro_roCrit=np.zeros(4)
 
 r=np.zeros((pointsPhi,4))              # dimensionless in unit ro_L
 x=np.zeros((pointsPhi,4))              # dimensionless in unit ro_L
@@ -235,14 +231,11 @@ for j in range(4):
    omega_m_omega_L[j]=.5*(1-Omega_omega_L[j])
    ampl[j]=1.-1./Omega_omega_L[j]**2
    delta_r[j]=1.-np.sqrt(1.-ampl[j])
-   omega_z_omega_L[j]=.5*np.sqrt(Omega_omega_L[j]**2-1.)
-   omega_z_Omega[j]=omega_z_omega_L[j]/Omega_omega_L[j]
-   widthTorus[j]=1.-np.sqrt(1-4.*omega_z_Omega[j]**2)
-   ro_roCrit[j]=(1./(omega_z_Omega[j]*Omega_omega_L[j]))**(2./3.)
-   print 'Omega_omega_L[%d]=%e, delta_r=%e, omega_z_omega_L=%e, omega_z_Omega=%e, width=%e, ro_roCrit=%e' % \
-         (j,Omega_omega_L[j],delta_r[j],omega_z_omega_L[j],omega_z_Omega[j],widthTorus[j],ro_roCrit[j])
+   print 'delta_r[%d]=%e' % (j,delta_r[j])
 
 print 'ro, ro/ro_c: ',  (ro, ro/rhoCrit)
+
+# ampl=4.*omega_z_omegaL**2
 
 stepT=2*pi/omega_L
 
@@ -274,9 +267,8 @@ plt.plot(fi[0:1.5*N_ppt],r[0:1.5*N_ppt,0],'-r',fi[0:1.5*N_ppt],r[0:1.5*N_ppt,1],
          fi[0:1.5*N_ppt],r[0:1.5*N_ppt,2],'-m',linewidth=2) 
 plt.xlabel('$\phi=\omega_L\cdot t$',color='m',fontsize=16)
 plt.ylabel('$r(t)/ro_L$',color='m',fontsize=16)
-plt .ylim([0.,1.])
 plt.title('$r(t)/ro_L=[1-4\omega_z^2/\Omega^2\cdot cos^2(\Omega t/2)]^{1/2}$,  $\Omega=[\omega_L^2+4\cdot\omega_z^2]^{1/2}$',color='m',fontsize=16)
-plt.legend(['$\Omega/\omega_L=2.236$','$\Omega/\omega_L=1.733$','$\Omega/\omega_L=1.200$'],fontsize=16,loc='lower right')
+plt.legend(['$\Omega/\omega_L=2.236$','$\Omega/\omega_L=1.733$','$\Omega/\omega_L=1.200$'],fontsize=16,loc='upper right')
 plt.grid(True)
 
 fig75=plt.figure(75)
@@ -302,12 +294,9 @@ plt.plot(x[7*N_ppt:8*N_ppt+1,0],y[7*N_ppt:8*N_ppt+1,0],'-xm',linewidth=2,markers
 plt.plot(x[8*N_ppt:9*N_ppt+1,0],y[8*N_ppt:9*N_ppt+1,0],'-xg',linewidth=2,markersize=10) 
 plt.xlabel('$x/ro_L$',color='m',fontsize=16)
 plt.ylabel('$y/ro_L$',color='m',fontsize=16)
-# plt.title('First 9 Turns: $\Omega/\omega_L=2.236$, $ro/ro_{crit}=4.9\cdot10^{-4}$',color='m',fontsize=16)
-titleHeader='First 9 Turns: $\Omega/\omega_L=$%5.3f, $ro/ro_{crit}=$%5.3f'
-plt.title(titleHeader % (Omega_omega_L[0],ro_roCrit[0]),color='m',fontsize=16)
+plt.title('First 9 Turns: $\Omega/\omega_L=2.236$, $ro/ro_{crit}=4.9\cdot10^{-4}$',color='m',fontsize=16)
 plt.grid(True)
 plt.axes().set_aspect('equal')
-
    
 fig90=plt.figure(90)
 plt.plot(x[0*N_ppt:1*N_ppt+1,1],y[0*N_ppt:1*N_ppt+1,1],'-r',linewidth=2) 
@@ -322,9 +311,7 @@ plt.plot(x[7*N_ppt:8*N_ppt+1,1],y[7*N_ppt:8*N_ppt+1,1],'-xm',linewidth=2,markers
 plt.plot(x[8*N_ppt:9*N_ppt+1,1],y[8*N_ppt:9*N_ppt+1,1],'-xg',linewidth=2,markersize=10) 
 plt.xlabel('$x/ro_L$',color='m',fontsize=16)
 plt.ylabel('$y/ro_L$',color='m',fontsize=16)
-# plt.title('First 9 Turns: $\Omega/\omega_L=1.733$, $ro/ro_{crit}=6.2\cdot10^{-4}$',color='m',fontsize=16)
-titleHeader='First 9 Turns: $\Omega/\omega_L=$%5.3f, $ro/ro_{crit}=$%5.3f'
-plt.title(titleHeader % (Omega_omega_L[1],ro_roCrit[1]),color='m',fontsize=16)
+plt.title('First 9 Turns: $\Omega/\omega_L=1.733$, $ro/ro_{crit}=6.2\cdot10^{-4}$',color='m',fontsize=16)
 plt.grid(True)
 plt.axes().set_aspect('equal')
  
@@ -342,10 +329,7 @@ plt.plot(x[7*N_ppt:8*N_ppt+1,2],y[7*N_ppt:8*N_ppt+1,2],'-xm',linewidth=2,markers
 plt.plot(x[8*N_ppt:9*N_ppt+1,2],y[8*N_ppt:9*N_ppt+1,2],'-xg',linewidth=2,markersize=10) 
 plt.xlabel('$x/ro_L$',color='m',fontsize=16)
 plt.ylabel('$y/ro_L$',color='m',fontsize=16)
-plt.xlim([-1.,1.])
-# plt.title('First 9 Turns: $\Omega/\omega_L=1.002$, $ro/ro_{crit}=1.03\cdot10^{-3}$',color='m',fontsize=16)
-titleHeader='First 9 Turns: $\Omega/\omega_L=$%5.3f, $ro/ro_{crit}=$%5.3f'
-plt.title(titleHeader % (Omega_omega_L[2],ro_roCrit[2]),color='m',fontsize=16)
+plt.title('First 9 Turns: $\Omega/\omega_L=1.002$, $ro/ro_{crit}=1.03\cdot10^{-3}$',color='m',fontsize=16)
 plt.grid(True)
 plt.axes().set_aspect('equal')
    
@@ -362,9 +346,7 @@ plt.plot(x[7*N_ppt:8*N_ppt+1,3],y[7*N_ppt:8*N_ppt+1,3],'-xm',linewidth=2,markers
 plt.plot(x[8*N_ppt:9*N_ppt+1,3],y[8*N_ppt:9*N_ppt+1,3],'-xg',linewidth=2,markersize=10) 
 plt.xlabel('$x/ro_L$',color='m',fontsize=16)
 plt.ylabel('$y/ro_L$',color='m',fontsize=16)
-# plt.title('First 9 Turns: $\Omega/\omega_L=1.00001$, $ro/ro_{crit}=2.9\cdot10^{-2}$',color='m',fontsize=16)
-titleHeader='First 9 Turns: $\Omega/\omega_L=$%5.3f, $ro/ro_{crit}=$%5.3f'
-plt.title(titleHeader % (Omega_omega_L[3],ro_roCrit[3]),color='m',fontsize=16)
+plt.title('First 9 Turns: $\Omega/\omega_L=1.00001$, $ro/ro_{crit}=2.9\cdot10^{-2}$',color='m',fontsize=16)
 plt.grid(True)
 plt.axes().set_aspect('equal')
    
@@ -376,60 +358,16 @@ plt.plot(x[0*N_ppt:1*N_ppt+1,2],y[0*N_ppt:1*N_ppt+1,2],'-m',linewidth=2)
 plt.plot(x[0*N_ppt:1*N_ppt+1,3],y[0*N_ppt:1*N_ppt+1,3],'-g',linewidth=2) 
 plt.xlabel('$x/ro_L$',color='m',fontsize=16)
 plt.ylabel('$y/ro_L$',color='m',fontsize=16)
-plt.title( \
-'First Turn for Different $ro/ro_{crit}$ with $ro_{crit}=[Z_ie^2/(m\omega_L^2)]^{1/3}$', \
+plt.title('First Turn for Different $ro/ro_{crit}$ with $ro_{crit}=[Z_ie^2/(m\omega_L^2)]^{1/3}$', \
           color='m',fontsize=16)
-plt.legend([('%5.3f' % ro_roCrit[0]),('%5.3f' % ro_roCrit[1]), \
-            ('%5.3f' % ro_roCrit[2]),('%5.3f' % ro_roCrit[3]),], \
-          fontsize=16,loc='upper left')
+# plt.legend(['$ro/ro_{crit}=4.9\cdot10^{-4}$','$ro/ro_{crit}=6.2\cdot10^{-4}$', \
+#             '$ro/ro_{crit}=1.03\cdot10^{-3}$','$ro/ro_{crit}=2.88\cdot10^{-2}$'],fontsize=16,loc='upper left')
+plt.legend(['$4.9\cdot10^{-4}$','$6.2\cdot10^{-4}$','$1.0\cdot10^{-3}$','$2.9\cdot10^{-2}$'], \
+           fontsize=16,loc='upper left')
 plt.grid(True)
 plt.axes().set_aspect('equal')
    
 
-#
-# "Radius of the "orbital torus":
-#   
-maxLogRho_s=0.7
-minLogRho_s=0.
-pointsLog10_s=50
-log10Rho_s=np.zeros(pointsLog10_s)
-rhoCrrnt_s=np.zeros(pointsLog10_s)
-omega_z_s=np.zeros(pointsLog10_s)
-Omega_s=np.zeros(pointsLog10_s)
-relOmegas_s=np.zeros(pointsLog10_s)
-radiusTorus_ro=np.zeros(pointsLog10_s)
-
-print 'ro_larm=%e, ro_crit=%e' % (ro_larm,rhoCrit)
-
-for i in range(pointsLog10_s):
-   log10Rho_s[i]=minLogRho_s+(maxLogRho_s-minLogRho_s)/(pointsLog10_s-1)*i
-   rhoCrrnt_s[i]=rhoCrit*math.pow(10.,log10Rho_s[i])
-   omega_z_s[i]=np.sqrt(q_elec**2/(m_elec*rhoCrrnt_s[i]**3))
-   Omega_s[i]=np.sqrt(omega_L**2+4.*omega_z_s[i]**2)
-   relOmegas_s[i]=omega_z_s[i]/Omega_s[i]
-   radiusTorus_ro[i]=.5*(1.-np.sqrt(1.-4.*relOmegas_s[i]**2))
-#   print 'i=%d, rhoCrrnt_s=%e,rhoCrrnt_s/rhoCrit=%e, widthTorus_ro=%e' % \
-#         (i,rhoCrrnt_s[i],log10Rho_s[i],radiusTorus_ro[i])
-
-fig35=plt.figure(35)
-plt.plot(rhoCrrnt_s/rhoCrit,radiusTorus_ro,'-r',linewidth=2)   
-plt.hold(True)  
-plt.xlabel('Impact Parameter: $ro/ro_{crit}$',color='m',fontsize=16)
-plt.ylabel('$\Delta_r$',color='m',fontsize=16)
-plt.xlim([.95,5.05])
-plt.title('$\Delta_r=0.5\cdot\Delta ro/ro_L=0.5\cdot[1-(|r(t)|/ro_L)|_{min}]$', \
-color='m',fontsize=16)
-plt.grid(True)
-plt.text(1.5,.25, '$\Delta_r=0.5\cdot$',color='m',fontsize=20)
-plt.plot([2.24,2.85-.25],[.254,.254],'-m',linewidth=1)   
-plt.text(2.2525,.2575,'$\Delta ro$',color='m',fontsize=20)
-plt.text(2.315,.245,'$ro_L$',color='m',fontsize=20)
-plt.text(2.6,.25,'$=0.5\cdot(1-[$',color='m',fontsize=20)
-plt.plot([3.45,4.49],[.254,.254],'-m',linewidth=1)   
-plt.text(3.45,.235,'$4+ro^3/ro_{crit}^3$',color='m',fontsize=20)
-plt.text(3.62,.26,'$ro^3/ro_{crit}^3$',color='m',fontsize=20)
-plt.text(4.495,.25,'$]^{1/2})$',color='m',fontsize=20)
-   
 #
 # Plot for maximamal impact parameter R_shield:
 #   
@@ -456,7 +394,7 @@ for i in range(pointsDens):
    neutR[i]=1e4*math.pow(.75/densElec[i],1./3.)                    # mkm 
    debyeR[i]=1e4*np.sqrt(tempL/(2*pi*q_elec**2*densElec[i]))       # mkm
 
-# print 'densElec, debyeR: ', debyeR,densElec
+print 'densElec, debyeR: ', debyeR,densElec
 
 pointsVrel=100
 velRel=np.zeros(pointsVrel)
@@ -612,10 +550,10 @@ plt.grid(True)
 
 plt.show()   
 
-'''  
+# sys.exit()   
+
 fig5.savefig('picturesKME/magnetizationArea_vs_Bfield_fig5kme.jpg')    
 fig30.savefig('picturesKME/omegaZ_vs_impctPrmtr_fig30kme.jpg')    
-fig35.savefig('picturesKME/torusRadius_vs_impctPrmtr_fig35kme.jpg')  
 fig50.savefig('picturesKME/Omega_vs_impctPrmtr_fig50kme.jpg')    
 fig55.savefig('picturesKME/Omega_vs_impctPrmtr_zoom_fig55kme.jpg')    
 fig70.savefig('picturesKME/relativeR_vs_time_fig70kme.jpg')    
@@ -625,6 +563,6 @@ fig90.savefig('picturesKME/nineTurns_relRo_62e-5_fig90kme.jpg')
 fig100.savefig('picturesKME/nineTurns_relRo_103e-5_fig100kme.jpg')    
 fig110.savefig('picturesKME/nineTurns_relRo_29e-3_fig110kme.jpg')    
 fig120.savefig('picturesKME/fistTurn_different-relRo_fig120kme.jpg')    
-'''
+
 
 sys.exit()   
