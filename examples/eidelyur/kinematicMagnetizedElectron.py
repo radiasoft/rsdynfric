@@ -249,6 +249,15 @@ stepT=2*pi/omega_L
 # print ' stepT = %e, Omega_omegaL=%e:, omega_p_omega_L=%e, omega_m_omega_L=%e' % \
 #       (stepT, Omega_omega_L,omega_p_omega_L,omega_m_omega_L)
 
+#
+# This parameter means, that electron does not come near the ion
+# by a distance less then rhoCrit 
+#
+# shift_ro=1.+rhoCrit/ro_larm
+#
+# In case under consideration ro_larm/rhoCrit equals approx 20.
+# Therefore shift_ro is practically 1:
+shift_ro=1.
 
 for i in range(N_ppt*turns):
    fi[i]=2*pi/N_ppt*i
@@ -258,13 +267,13 @@ for j in range(4):
    pnt=0
    for turn in range(turns):
       for i in range(N_ppt):
-         x[pnt,j]=(omega_p_omega_L[j]*math.cos(omega_m_omega_L[j]*fi[pnt])- \
-                 omega_m_omega_L[j]*math.cos(omega_p_omega_L[j]*fi[pnt])+ \
+         x[pnt,j]=(shift_ro*omega_p_omega_L[j]*math.cos(omega_m_omega_L[j]*fi[pnt])- \
+                 shift_ro*omega_m_omega_L[j]*math.cos(omega_p_omega_L[j]*fi[pnt])+ \
 	         math.cos(omega_p_omega_L[j]*fi[pnt])-math.cos(omega_m_omega_L[j]*fi[pnt]))/Omega_omega_L[j]
-         y[pnt,j]=(omega_p_omega_L[j]*math.sin(omega_m_omega_L[j]*fi[pnt])+ \
-                 omega_m_omega_L[j]*math.sin(omega_p_omega_L[j]*fi[pnt])+ \
+         y[pnt,j]=(shift_ro*omega_p_omega_L[j]*math.sin(omega_m_omega_L[j]*fi[pnt])+ \
+                 shift_ro*omega_m_omega_L[j]*math.sin(omega_p_omega_L[j]*fi[pnt])+ \
 	         math.sin(omega_p_omega_L[j]*fi[pnt])-math.sin(omega_m_omega_L[j]*fi[pnt]))/Omega_omega_L[j]
-         r[pnt,j]=np.sqrt(1-ampl[j]*math.cos(.5*Omega_omega_L[j]*fi[pnt])**2)
+         r[pnt,j]=np.sqrt(1-ampl[j]*math.sin(.5*Omega_omega_L[j]*fi[pnt])**2)
          pnt += 1
    
 fig70=plt.figure(70)
@@ -275,7 +284,7 @@ plt.plot(fi[0:1.5*N_ppt],r[0:1.5*N_ppt,0],'-r',fi[0:1.5*N_ppt],r[0:1.5*N_ppt,1],
 plt.xlabel('$\phi=\omega_L\cdot t$',color='m',fontsize=16)
 plt.ylabel('$r(t)/ro_L$',color='m',fontsize=16)
 plt .ylim([0.,1.])
-plt.title('$r(t)/ro_L=[1-4\omega_z^2/\Omega^2\cdot cos^2(\Omega t/2)]^{1/2}$,  $\Omega=[\omega_L^2+4\cdot\omega_z^2]^{1/2}$',color='m',fontsize=16)
+plt.title('$r(t)/ro_L=[1-4\omega_z^2/\Omega^2\cdot sin^2(\Omega t/2)]^{1/2}$,  $\Omega=[\omega_L^2+4\cdot\omega_z^2]^{1/2}$',color='m',fontsize=16)
 plt.legend(['$\Omega/\omega_L=2.236$','$\Omega/\omega_L=1.733$','$\Omega/\omega_L=1.200$'],fontsize=16,loc='lower right')
 plt.grid(True)
 
@@ -284,7 +293,7 @@ plt.plot(fi[0:1.5*N_ppt],(1-r[0:1.5*N_ppt,3])*1e+4,'-r',linewidth=2)
 # plt.plot(fi[0:1.5*N_ppt],r[0:1.5*N_ppt,3],'-r',linewidth=2) 
 plt.xlabel('$\phi=\omega_L\cdot t$',color='m',fontsize=16)
 plt.ylabel('$10^5\cdot[1-r(t)/ro_L]$',color='m',fontsize=16)
-plt.title('$r(t)/ro_L=[1-4\omega_z^2/\Omega^2\cdot cos^2(\Omega t/2)]^{1/2}$,  $\Omega=[\omega_L^2+4\cdot\omega_z^2]^{1/2}$',color='m',fontsize=16)
+plt.title('$r(t)/ro_L=[1-4\omega_z^2/\Omega^2\cdot sin^2(\Omega t/2)]^{1/2}$,  $\Omega=[\omega_L^2+4\cdot\omega_z^2]^{1/2}$',color='m',fontsize=16)
 plt.legend(['$\Omega/\omega_L=1.00001$'],fontsize=16,loc='upper right')
 plt.grid(True)
 # plt.ylim([.99998,1.])
@@ -302,7 +311,6 @@ plt.plot(x[7*N_ppt:8*N_ppt+1,0],y[7*N_ppt:8*N_ppt+1,0],'-xm',linewidth=2,markers
 plt.plot(x[8*N_ppt:9*N_ppt+1,0],y[8*N_ppt:9*N_ppt+1,0],'-xg',linewidth=2,markersize=10) 
 plt.xlabel('$x/ro_L$',color='m',fontsize=16)
 plt.ylabel('$y/ro_L$',color='m',fontsize=16)
-# plt.title('First 9 Turns: $\Omega/\omega_L=2.236$, $ro/ro_{crit}=4.9\cdot10^{-4}$',color='m',fontsize=16)
 titleHeader='First 9 Turns: $\Omega/\omega_L=$%5.3f, $ro/ro_{crit}=$%5.3f'
 plt.title(titleHeader % (Omega_omega_L[0],ro_roCrit[0]),color='m',fontsize=16)
 plt.grid(True)
@@ -322,7 +330,6 @@ plt.plot(x[7*N_ppt:8*N_ppt+1,1],y[7*N_ppt:8*N_ppt+1,1],'-xm',linewidth=2,markers
 plt.plot(x[8*N_ppt:9*N_ppt+1,1],y[8*N_ppt:9*N_ppt+1,1],'-xg',linewidth=2,markersize=10) 
 plt.xlabel('$x/ro_L$',color='m',fontsize=16)
 plt.ylabel('$y/ro_L$',color='m',fontsize=16)
-# plt.title('First 9 Turns: $\Omega/\omega_L=1.733$, $ro/ro_{crit}=6.2\cdot10^{-4}$',color='m',fontsize=16)
 titleHeader='First 9 Turns: $\Omega/\omega_L=$%5.3f, $ro/ro_{crit}=$%5.3f'
 plt.title(titleHeader % (Omega_omega_L[1],ro_roCrit[1]),color='m',fontsize=16)
 plt.grid(True)
@@ -343,7 +350,6 @@ plt.plot(x[8*N_ppt:9*N_ppt+1,2],y[8*N_ppt:9*N_ppt+1,2],'-xg',linewidth=2,markers
 plt.xlabel('$x/ro_L$',color='m',fontsize=16)
 plt.ylabel('$y/ro_L$',color='m',fontsize=16)
 plt.xlim([-1.,1.])
-# plt.title('First 9 Turns: $\Omega/\omega_L=1.002$, $ro/ro_{crit}=1.03\cdot10^{-3}$',color='m',fontsize=16)
 titleHeader='First 9 Turns: $\Omega/\omega_L=$%5.3f, $ro/ro_{crit}=$%5.3f'
 plt.title(titleHeader % (Omega_omega_L[2],ro_roCrit[2]),color='m',fontsize=16)
 plt.grid(True)
@@ -362,7 +368,6 @@ plt.plot(x[7*N_ppt:8*N_ppt+1,3],y[7*N_ppt:8*N_ppt+1,3],'-xm',linewidth=2,markers
 plt.plot(x[8*N_ppt:9*N_ppt+1,3],y[8*N_ppt:9*N_ppt+1,3],'-xg',linewidth=2,markersize=10) 
 plt.xlabel('$x/ro_L$',color='m',fontsize=16)
 plt.ylabel('$y/ro_L$',color='m',fontsize=16)
-# plt.title('First 9 Turns: $\Omega/\omega_L=1.00001$, $ro/ro_{crit}=2.9\cdot10^{-2}$',color='m',fontsize=16)
 titleHeader='First 9 Turns: $\Omega/\omega_L=$%5.3f, $ro/ro_{crit}=$%5.3f'
 plt.title(titleHeader % (Omega_omega_L[3],ro_roCrit[3]),color='m',fontsize=16)
 plt.grid(True)
@@ -618,8 +623,10 @@ fig30.savefig('picturesKME/omegaZ_vs_impctPrmtr_fig30kme.jpg')
 fig35.savefig('picturesKME/torusRadius_vs_impctPrmtr_fig35kme.jpg')  
 fig50.savefig('picturesKME/Omega_vs_impctPrmtr_fig50kme.jpg')    
 fig55.savefig('picturesKME/Omega_vs_impctPrmtr_zoom_fig55kme.jpg')    
+'''  
 fig70.savefig('picturesKME/relativeR_vs_time_fig70kme.jpg')    
 fig75.savefig('picturesKME/relativeR_vs_time_spec_fig75kme.jpg')    
+'''  
 fig80.savefig('picturesKME/nineTurns_relRo_49e-5_fig80kme.jpg')    
 fig90.savefig('picturesKME/nineTurns_relRo_62e-5_fig90kme.jpg')    
 fig100.savefig('picturesKME/nineTurns_relRo_103e-5_fig100kme.jpg')    
