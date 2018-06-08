@@ -1382,70 +1382,72 @@ if runFlagApproach_1 == 1 and plotFlagTracks == 1:
 #
 # First electron's trajectory (Start):
 #
-###   turns=10                                                        # Number of larmor turns for drawing 
-###   pointsTurns=turns*stepsNumberOnGyro                             # Number of points for drawing
-###   pointsStartLarmor=turns*stepsNumberOnGyro                       # Number of points for drawing
-###   lengthArrowElc=4
-###   pBegArrw=pointsTurns/2
-###   pEndArrw=pointsTurns/2+50
+'''
+   turns=10                                                        # Number of larmor turns for drawing 
+   pointsTurns=turns*stepsNumberOnGyro                             # Number of points for drawing
+   pointsStartLarmor=turns*stepsNumberOnGyro                       # Number of points for drawing
+   lengthArrowElc=4
+   pBegArrw=pointsTurns/2
+   pEndArrw=pointsTurns/2+50
 
-###   fig50=plt.figure(50)
-###   ax50=fig50.gca(projection='3d')
-###   ax50.plot(1.e+4*prtclCoorFirst_1[0,0:pointsStartLarmor], \
-###             1.e+4*prtclCoorFirst_1[2,0:pointsStartLarmor], \
-###             1.e+4*prtclCoorFirst_1[4,0:pointsStartLarmor],'-r',linewidth=2)
-###   ax50.plot(1.e+4*prtclCoorFirst_1[0,0:lengthArrowElc],1.e+4*prtclCoorFirst_1[2,0:lengthArrowElc], \
-###             1.e+4*prtclCoorFirst_1[4,0:lengthArrowElc],'-b',linewidth=2)
-###   ax50.plot(1.e+4*prtclCoorFirst_1[0,pointsStartLarmor-lengthArrowElc:pointsStartLarmor], \
-###             1.e+4*prtclCoorFirst_1[2,pointsStartLarmor-lengthArrowElc:pointsStartLarmor], \
-###             1.e+4*prtclCoorFirst_1[4,pointsStartLarmor-lengthArrowElc:pointsStartLarmor], \
-###	     '-b',linewidth=2)
-###   plt.xlabel('x, $\mu m$',color='m',fontsize=16)
-###   plt.ylabel('y, $\mu m$',color='m',fontsize=16)
-###   ax50.set_zlabel('z, $\mu m$',color='m',fontsize=16)
-###   titleHeader="Approach-1. First Electron's Trajectory (Start; $N_{Larm}=$%d):"
-###   titleHeader += '\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m'
-###   plt.title((titleHeader % (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)), \
-###             color='m',fontsize=16)
+   fig50=plt.figure(50)
+   ax50=fig50.gca(projection='3d')
+   ax50.plot(1.e+4*prtclCoorFirst_1[0,0:pointsStartLarmor], \
+             1.e+4*prtclCoorFirst_1[2,0:pointsStartLarmor], \
+             1.e+4*prtclCoorFirst_1[4,0:pointsStartLarmor],'-r',linewidth=2)
+   ax50.plot(1.e+4*prtclCoorFirst_1[0,0:lengthArrowElc],1.e+4*prtclCoorFirst_1[2,0:lengthArrowElc], \
+             1.e+4*prtclCoorFirst_1[4,0:lengthArrowElc],'-b',linewidth=2)
+   ax50.plot(1.e+4*prtclCoorFirst_1[0,pointsStartLarmor-lengthArrowElc:pointsStartLarmor], \
+             1.e+4*prtclCoorFirst_1[2,pointsStartLarmor-lengthArrowElc:pointsStartLarmor], \
+             1.e+4*prtclCoorFirst_1[4,pointsStartLarmor-lengthArrowElc:pointsStartLarmor], \
+	     '-b',linewidth=2)
+   plt.xlabel('x, $\mu m$',color='m',fontsize=16)
+   plt.ylabel('y, $\mu m$',color='m',fontsize=16)
+   ax50.set_zlabel('z, $\mu m$',color='m',fontsize=16)
+   titleHeader="Approach-1. First Electron's Trajectory (Start; $N_{Larm}=$%d):"
+   titleHeader += '\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m'
+   plt.title((titleHeader % (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)), \
+             color='m',fontsize=16)
 #
 # First electron's trajectory (End):
 #
-###   pBeg=pointsEndLarmor-pointsTurns
+   pBeg=pointsEndLarmor-pointsTurns
 
-###   fig60=plt.figure(60)
-###   ax60=fig60.gca(projection='3d')
-###   ax60.plot(1.e+4*prtclCoorFirst_1[0,pBeg:pointsEndLarmor], \
-###             1.e+4*prtclCoorFirst_1[2,pBeg:pointsEndLarmor], \
-###             1.e+4*prtclCoorFirst_1[4,pBeg:pointsEndLarmor],'-r',linewidth=2)
-###   ax60.plot(1.e+4*prtclCoorFirst_1[0,pointsEndLarmor-lengthArrowElc:pointsEndLarmor], \
-###             1.e+4*prtclCoorFirst_1[2,pointsEndLarmor-lengthArrowElc:pointsEndLarmor], \
-###             1.e+4*prtclCoorFirst_1[4,pointsEndLarmor-lengthArrowElc:pointsEndLarmor], \
-###	     '-b',linewidth=2)
-###   ax60.plot(1.e+4*prtclCoorFirst_1[0,pBeg:pBeg+lengthArrowElc], \
-###             1.e+4*prtclCoorFirst_1[2,pBeg:pBeg+lengthArrowElc], \
-###             1.e+4*prtclCoorFirst_1[4,pBeg:pBeg+lengthArrowElc],'-b',linewidth=2)
-###   plt.xlabel('x, $\mu m$',color='m',fontsize=16)
-###   plt.ylabel('y, $\mu m$',color='m',fontsize=16)
-###   ax60.set_zlabel('z, $\mu m$',color='m',fontsize=16)
-###   titleHeader="Approach-1. First Electron's Trajectory (End; $N_{Larm}=$%d):"
-###   titleHeader += '\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m'
-###   plt.title((titleHeader % (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)), \
-###             color='m',fontsize=16)
+   fig60=plt.figure(60)
+   ax60=fig60.gca(projection='3d')
+   ax60.plot(1.e+4*prtclCoorFirst_1[0,pBeg:pointsEndLarmor], \
+             1.e+4*prtclCoorFirst_1[2,pBeg:pointsEndLarmor], \
+             1.e+4*prtclCoorFirst_1[4,pBeg:pointsEndLarmor],'-r',linewidth=2)
+   ax60.plot(1.e+4*prtclCoorFirst_1[0,pointsEndLarmor-lengthArrowElc:pointsEndLarmor], \
+             1.e+4*prtclCoorFirst_1[2,pointsEndLarmor-lengthArrowElc:pointsEndLarmor], \
+             1.e+4*prtclCoorFirst_1[4,pointsEndLarmor-lengthArrowElc:pointsEndLarmor], \
+	     '-b',linewidth=2)
+   ax60.plot(1.e+4*prtclCoorFirst_1[0,pBeg:pBeg+lengthArrowElc], \
+             1.e+4*prtclCoorFirst_1[2,pBeg:pBeg+lengthArrowElc], \
+             1.e+4*prtclCoorFirst_1[4,pBeg:pBeg+lengthArrowElc],'-b',linewidth=2)
+   plt.xlabel('x, $\mu m$',color='m',fontsize=16)
+   plt.ylabel('y, $\mu m$',color='m',fontsize=16)
+   ax60.set_zlabel('z, $\mu m$',color='m',fontsize=16)
+   titleHeader="Approach-1. First Electron's Trajectory (End; $N_{Larm}=$%d):"
+   titleHeader += '\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m'
+   plt.title((titleHeader % (larmorNumber[0],1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn)), \
+             color='m',fontsize=16)
 #
 # First ion trajectory (Start):
 #
-###   fig70=plt.figure(70)
-###   ax70=fig70.gca(projection='3d')
-###   ax70.plot(1.e+7*prtclCoorFirst_1[6,0:pointsStartLarmor],1.e+7*prtclCoorFirst_1[8,0:pointsStartLarmor], \
-###             1.e+7*prtclCoorFirst_1[10,0:pointsStartLarmor],'-b',linewidth=2)
-###   ax70.plot(1.e+7*prtclCoorFirst_1[6,pBegArrw:pEndArrw],1.e+7*prtclCoorFirst_1[8,pBegArrw:pEndArrw], \
-###             1.e+7*prtclCoorFirst_1[10,pBegArrw:pEndArrw],'-b',linewidth=4)
-####     ax70.plot([arrwBegxIon,arrwEndxIon],[arrwBegyIon,arrwEndyIon], \
-####               [arrwBegzIon,arrwEndzIon],color='r',alpha=0.8,lw=2)
-###   plt.xlabel('x, $nm$',color='m',fontsize=16)
-###   plt.ylabel('y, $nm$',color='m',fontsize=16)
-###   ax70.set_zlabel('z, $nm$',color='m',fontsize=16)
-###   plt.title('Approach-1. First Ion Trajectory (Start)',color='m',fontsize=16)
+   fig70=plt.figure(70)
+   ax70=fig70.gca(projection='3d')
+   ax70.plot(1.e+7*prtclCoorFirst_1[6,0:pointsStartLarmor],1.e+7*prtclCoorFirst_1[8,0:pointsStartLarmor], \
+             1.e+7*prtclCoorFirst_1[10,0:pointsStartLarmor],'-b',linewidth=2)
+   ax70.plot(1.e+7*prtclCoorFirst_1[6,pBegArrw:pEndArrw],1.e+7*prtclCoorFirst_1[8,pBegArrw:pEndArrw], \
+             1.e+7*prtclCoorFirst_1[10,pBegArrw:pEndArrw],'-b',linewidth=4)
+#     ax70.plot([arrwBegxIon,arrwEndxIon],[arrwBegyIon,arrwEndyIon], \
+#               [arrwBegzIon,arrwEndzIon],color='r',alpha=0.8,lw=2)
+   plt.xlabel('x, $nm$',color='m',fontsize=16)
+   plt.ylabel('y, $nm$',color='m',fontsize=16)
+   ax70.set_zlabel('z, $nm$',color='m',fontsize=16)
+   plt.title('Approach-1. First Ion Trajectory (Start)',color='m',fontsize=16)
+'''
 
 #   arrayRatioA=np.asarray(uPot_enrgKin_1)
 #   print ('Length(arrayRatioA)=%d' % len(arrayRatioA))
@@ -1742,31 +1744,34 @@ if runFlagApproach_2 == 1 and plotFlagDpTransf == 1:
 #
 # Transfered momentum py (surface):
 #
-###   fig350=plt.figure(350)
-###   ax350=fig350.gca(projection='3d')
-####    surf=ax350.plot_surface(X,Y,specFctr*dpyTotal_2,cmap=cm.coolwarm, \
-####                            linewidth=0,antialiased=False)
-###   surf=ax350.plot_surface(X,Y,specFctr*dpyTotal_2,cmap=cm.jet,linewidth=0,antialiased=False)
-###   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-###   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-###   ax350.set_zlabel('$dP_y \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
-###   titleHeader='Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-###   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
-###   plt.title((titleHeader % (lastTrackNumber,specFctr*dpyTotalMax_2)), color='m',fontsize=16)
-###   cb = fig350.colorbar(surf)
-###   plt.grid(True)
+'''
+   fig350=plt.figure(350)
+   ax350=fig350.gca(projection='3d')
+#    surf=ax350.plot_surface(X,Y,specFctr*dpyTotal_2,cmap=cm.coolwarm, \
+#                            linewidth=0,antialiased=False)
+   surf=ax350.plot_surface(X,Y,specFctr*dpyTotal_2,cmap=cm.jet,linewidth=0,antialiased=False)
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   ax350.set_zlabel('$dP_y \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
+   titleHeader='Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr*dpyTotalMax_2)), color='m',fontsize=16)
+   cb = fig350.colorbar(surf)
+   plt.grid(True)
 #
 # Transfered momentum py (map):
 #
-###   fig355=plt.figure(355)
-###   ax=fig355.add_subplot(111)                                       # for contours plotting
-###   mapDpy=ax.contourf(X,Y,specFctr*dpyTotal_2)   
-###   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-###   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-###   titleHeader='Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-###   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
-###   plt.title((titleHeader % (lastTrackNumber,specFctr*dpyTotalMax_2)), color='m',fontsize=14)
-###   fig355.colorbar(mapDpx)
+   fig355=plt.figure(355)
+   ax=fig355.add_subplot(111)                                       # for contours plotting
+   mapDpy=ax.contourf(X,Y,specFctr*dpyTotal_2)   
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   titleHeader='Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr*dpyTotalMax_2)), color='m',fontsize=14)
+   fig355.colorbar(mapDpx)
+'''
+
 #
 # Transfered momentum pz (surface):
 #
@@ -2072,31 +2077,34 @@ if runFlagApproach_3 == 1 and plotFlagDpTransf == 1:
 #
 # Transfered momentum py (surface):
 #
-###   fig850=plt.figure(850)
-###   ax850=fig850.gca(projection='3d')
-####    surf=ax850.plot_surface(X,Y,specFctr3*dpyTotal_3,cmap=cm.coolwarm, \
-####                            linewidth=0,antialiased=False)
-###   surf=ax550.plot_surface(X,Y,specFctr3*dpyTotal_3,cmap=cm.jet,linewidth=0,antialiased=False)
-###   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-###   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-###   ax850.set_zlabel('$dP_y \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
-###   titleHeader='Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-###   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
-###   plt.title((titleHeader % (lastTrackNumber,specFctr3*dpyTotalMax_3)), color='m',fontsize=16)
-###   cb = fig850.colorbar(surf)
-###   plt.grid(True)
+'''
+   fig850=plt.figure(850)
+   ax850=fig850.gca(projection='3d')
+#    surf=ax850.plot_surface(X,Y,specFctr3*dpyTotal_3,cmap=cm.coolwarm, \
+#                            linewidth=0,antialiased=False)
+   surf=ax550.plot_surface(X,Y,specFctr3*dpyTotal_3,cmap=cm.jet,linewidth=0,antialiased=False)
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   ax850.set_zlabel('$dP_y \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
+   titleHeader='Approach-2: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr3*dpyTotalMax_3)), color='m',fontsize=16)
+   cb = fig850.colorbar(surf)
+   plt.grid(True)
 #
 # Transfered momentum py (map):
 #
-###   fig855=plt.figure(855)
-###   ax=fig855.add_subplot(111)                                       # for contours plotting
-###   mapDpy=ax.contourf(X,Y,specFctr3*dpyTotal_3)   
-###   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-###   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-###   titleHeader='Approach-3: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-###   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
-###   plt.title((titleHeader % (lastTrackNumber,specFctr3*dpyTotalMax_3)), color='m',fontsize=14)
-###   fig855.colorbar(mapDpx)
+   fig855=plt.figure(855)
+   ax=fig855.add_subplot(111)                                       # for contours plotting
+   mapDpy=ax.contourf(X,Y,specFctr3*dpyTotal_3)   
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   titleHeader='Approach-3: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
+   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
+   plt.title((titleHeader % (lastTrackNumber,specFctr3*dpyTotalMax_3)), color='m',fontsize=14)
+   fig855.colorbar(mapDpx)
+'''
+
 #
 # Transfered momentum pz (surface):
 #
