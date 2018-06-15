@@ -269,6 +269,7 @@ fig20.savefig('myTest_gauss-kronrod_fig20.jpg')
 
 sys.exit()
 
+'''
 #----------------------------------------------------
 #
 # Results of integration on interval (a=0.1, b=2.15):
@@ -312,4 +313,4 @@ intgrlGK(10) = 4.90107036669213e-01; GK-anltcl=-7.71822928846699e-02
 intgrlGK(11) = 4.90110822415593e-01; GK-anltcl=6.03679595201356e-05
 intgrlGK(12) = 4.90108630924974e-01; GK-anltcl=-4.46538177378830e-02
 intgrlGK(16) = 4.90110811033566e-01; GK-anltcl=-1.71865782716552e-04
-
+'''

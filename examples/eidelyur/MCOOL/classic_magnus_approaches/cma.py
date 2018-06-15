@@ -426,9 +426,42 @@ for i in range(nVion):
    impctPrmtrMax[i]=min(help,R_pass[i])
    impctPrmtrMax_1[i]=min(help,R_pass_1[i])
 
-print 'Checking: VionMin=%e, vIonMax=%e' % (Vion[0],Vion[nVion-1])   
+#-----------------------------------------------------------------
+# Checking of corection of the maximal impact parameter on depence
+# of preset number of minimal Larmor turns
+# 
+larmorTurnsMin=[10,20,30,40]
 
-'''
+impctPrmtrMaxCrrctd=np.zeros((nVion,4))
+impctPrmtrMaxCrrctdRel=np.zeros((nVion,4))
+
+for n in range (4):
+   for i in range(nVion):
+      impctPrmtrMaxCrrctd[i,n]=impctPrmtrMax[i]* \
+      np.sqrt(1.- (pi*larmorTurnsMin[n]*eVrmsLong/omega_L/impctPrmtrMax[i])**2)
+      impctPrmtrMaxCrrctdRel[i,n]=impctPrmtrMaxCrrctd[i,n]/impctPrmtrMax[i]
+
+fig10=plt.figure(10)
+plt.semilogx(impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,0],'-r', \
+           impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,1],'-b', \
+           impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,2],'-g', \
+           impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,3],'-m',linewidth=2)
+plt.grid(True)
+hold=True
+plt.xlabel('Maximal Impact parameter $R_{max}$, cm',color='m',fontsize=16)
+plt.ylabel('$R_{max}^{Crrtd}/R_{Max}$',color='m',fontsize=16)
+# plt.xlim([.9*min(impctPrmtrMax),1.1*max(impctPrmtrMax)])
+plt.xlim([1.e-2,1.1*max(impctPrmtrMax)])
+plt.ylim([.986,1.001])
+titleHeader='$R_{max}^{Crrtd}=R_{Max} \cdot [1-(\pi\cdot N_{Larm} \cdot' 
+titleHeader += '\Delta_{e||}/(\omega_{Larm} \cdot R_{max})]^{1/2}$'
+plt.title(titleHeader,color='m',fontsize=16)
+plt.legend([('$N_{Larm}=$%2d' % larmorTurnsMin[0]), \
+           ('$N_{Larm}=$%2d' % larmorTurnsMin[1]), \
+           ('$N_{Larm}=$%2d' % larmorTurnsMin[2]), \
+           ('$N_{Larm}=$%2d' % larmorTurnsMin[3])],loc='lower center',fontsize=16)
+#-----------------------------------------------------------------
+
 xLimit=[.9*VionRel[0],1.1*VionRel[nVion-1]]
 
 fig209=plt.figure(209)
@@ -478,20 +511,26 @@ plt.text(2.8e-5,.2,'Collisions are Screened',color='r',fontsize=25)
 plt.text(1.6e-5,1.e-3,'$ \cong 20\cdot R_{Crit}$',color='k',fontsize=16)
 
 plt.show()
-'''
 
+larmorTurns=10
 nImpctPrmtr=50
 
 rhoMin=impctPrmtrMin
+log10rhoMin=math.log10(rhoMin)
 crrntImpctPrmtr=np.zeros(nImpctPrmtr)
 for i in range(nVion):
    if (VionRel[i] < 2.e-4):
-      rhoMax=impctPrmtrMax[i]
-   if ((2.e-4 <= VionRel[i]) and (VionRel[i] < 4.e-3):
-
+      rhoMax=impctPrmtrMax[i]* \
+      np.sqrt(1.- (pi*larmorTurns*eVrmsLong/omega_L/impctPrmtrMax[i])**2)
+      log10rhoMax=math.log10(rhoMax)
+      log10rhoStep=(log10rhoMax-log10rhoMin)/(nImpctPrmtr-1)
+      for n in range(nImpctPrmtr):
+         log10rhoCrrnt=log10rhoMin+n*log10rhoStep 
+         rhoCrrnt=math.pow(10.,log10rhoCrrnt)
 
 sys.exit()
 
+'''
 z_elecCrrnt_c=np.zeros(6)                              # 6-vector for electron ("classic")
 z_ionCrrnt_c=np.zeros(6)                               # 6-vector for ion ("classic")
 z_elecCrrnt_gc=np.zeros(6)  # 6-vector for electron in #guiding center" system (both approaches)
