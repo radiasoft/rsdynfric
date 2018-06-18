@@ -449,11 +449,11 @@ plt.semilogx(impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,0],'-r', \
 plt.grid(True)
 hold=True
 plt.xlabel('Maximal Impact parameter $R_{max}$, cm',color='m',fontsize=16)
-plt.ylabel('$R_{max}^{Crrtd}/R_{Max}$',color='m',fontsize=16)
+plt.ylabel('$R_{max}^{Crrctd}/R_{Max}$',color='m',fontsize=16)
 # plt.xlim([.9*min(impctPrmtrMax),1.1*max(impctPrmtrMax)])
 plt.xlim([1.e-2,1.1*max(impctPrmtrMax)])
 plt.ylim([.986,1.001])
-titleHeader='$R_{max}^{Crrtd}=R_{Max} \cdot [1-(\pi\cdot N_{Larm} \cdot' 
+titleHeader='$R_{max}^{Crrctd}=R_{Max} \cdot [1-(\pi\cdot N_{Larm} \cdot' 
 titleHeader += '\Delta_{e||}/(\omega_{Larm} \cdot R_{max})]^{1/2}$'
 plt.title(titleHeader,color='m',fontsize=16)
 plt.legend([('$N_{Larm}=$%2d' % larmorTurnsMin[0]), \
@@ -512,31 +512,107 @@ plt.text(1.6e-5,1.e-3,'$ \cong 20\cdot R_{Crit}$',color='k',fontsize=16)
 
 plt.show()
 
+fig10.savefig('picturesCMA/correctedRmax_fig10cma.jpg')    
+fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.jpg')    
+fig3151.savefig('picturesCMA/impctPrmtr_3151cma.jpg')    
+
+sys.exit()
+
+kinEnergy=m_elec*(eVrmsTran**2+eVrmsLong**2)/2.   # kinetic energy; erg
+nLarmorAvrgng=1               # number of averaged Larmor rotations 
+#
+# Data for approach_c:
+#
+timeStep_c=nLarmorAvrgng*stepsNumberOnGyro*timeStep    # time step       
+#
+# matrix for electron with .5*timeStep_c:
+#
+matr_elec_c=guidingCenter_Matrix(.5*timeStep_c)        
+#
+# matrix for ion with mass M_ion  and .5*timeStep_c:
+#
+matr_ion_c=drift_Matrix(M_ion,.5*timeStep_c) 
+
 larmorTurns=10
-nImpctPrmtr=50
+nImpctPrmtr=20
 
 rhoMin=impctPrmtrMin
 log10rhoMin=math.log10(rhoMin)
 crrntImpctPrmtr=np.zeros(nImpctPrmtr)
 for i in range(nVion):
-   if (VionRel[i] < 2.e-4):
-      rhoMax=impctPrmtrMax[i]* \
-      np.sqrt(1.- (pi*larmorTurns*eVrmsLong/omega_L/impctPrmtrMax[i])**2)
-      log10rhoMax=math.log10(rhoMax)
-      log10rhoStep=(log10rhoMax-log10rhoMin)/(nImpctPrmtr-1)
-      for n in range(nImpctPrmtr):
-         log10rhoCrrnt=log10rhoMin+n*log10rhoStep 
-         rhoCrrnt=math.pow(10.,log10rhoCrrnt)
+   rhoMax = impctPrmtrMax[i]* \
+   np.sqrt(1.- (pi*larmorTurns*eVrmsLong/omega_L/impctPrmtrMax[i])**2)
+   rhoMax = impctPrmtrMax[i]
+   log10rhoMax = math.log10(rhoMax)
+   log10rhoStep = (log10rhoMax-log10rhoMin)/(nImpctPrmtr-1)
+   print 'Vion(%d) = %e, rhoMax = %e' % (i,Vion[i],rhoMax)
+   for n in range(nImpctPrmtr-1):
+      log10rhoCrrnt = log10rhoMin+(n+0.5)*log10rhoStep 
+      rhoCrrnt = math.pow(10.,log10rhoCrrnt)
+      halfLintr = np.sqrt(rhoMax**2-rhoCrrnt**2)   # half length of interaction; cm
+      timeHalfPath = halfLintr/eVrmsLong     # 0.5 time of interaction; sec
+      numbLarmor = int(2.*timeHalfPath/T_larm)             
+      pointAlongTrack = numbLarmor/nLarmorAvrgng
+      print '     %d: rhoCrrnt = %e, numbLarmor = %d, pointAlongTrack = %d' % \
+            (n,rhoCrrnt,numbLarmor,pointAlongTrack)
+      arrayA=np.zeros((pointAlongTrack,nImpctPrmtr))      
+      arrayB=np.zeros((pointAlongTrack,nImpctPrmtr))     
+# Current distance (cm) from origin of the coordinate system to electron 
+# along the trajectory:
+      bCrrnt = np.zeros((pointAlongTrack,nImpctPrmtr))   
+      z_ionCrrnt = np.zeros(6)      # Current initial zero-vector for ion
+      z_elecCrrnt = np.zeros(6)     # Zeroing out of vector for electron
+# Current initial vector for electron:
+      z_elecCrrnt[Ix] = rhoCrrnt                     # x, cm
+      z_elecCrrnt[Iz] = -halfLintr                   # z, cm
+      z_elecCrrnt[Ipy] = m_elec*eVrmsTran            # py, g*cm/sec
+      z_elecCrrnt[Ipz] = m_elec*eVrmsLong            # pz, g*cm/sec
+#
+# Main loop:
+#
+      for k in range(pointAlongTrack):
+#
+# Dragging both paticles through first half of trajectory:
+#
+  	 z_elecCrrnt = np.dot(matr_elec_c,z_elecCrrnt) # electron
+  	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)    # ion
+# Current distance between ion and electron; cm:   
+  	 bCrrnt_c=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
+ 	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
+ 			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
+#
+# Dragging both paticles through interaction point:
+#
+	 dpIon,dpElec,action,b_gc = \
+	          guidingCenterCollision(z_elecCrrnt,z_ionCrrnt,timeStep_c) 
+####
+#### Taking into account transfer of momentum for both particles:
+####
+####	     for ic in range(3):
+####	        z_ionCrrnt[2*ic+1] += dpIon[ic]   
+####	        z_elecCrrnt[2*ic+1] += dpElec[ic]
+#
+# Dragging both paticles through second half of trajectory:
+#
+ 	 z_elecCrrnt = np.dot(matr_elec_c,z_elecCrrnt)   # electron
+ 	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)        # ion
+# Current distance between ion and electron; cm:
+ 	 bCrrnt_c=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
+	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
+			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
+# Current values of parameters A,B:  
+	 arrayA[k,n] = math.log10(ro_Larm/bCrrnt_c)     
+	 arrayB[k,n] = math.log10((q_elec**2/bCrrnt_c)/kinEnergy)
+
+
+
+
+
+
 
 sys.exit()
 
 '''
-z_elecCrrnt_c=np.zeros(6)                              # 6-vector for electron ("classic")
-z_ionCrrnt_c=np.zeros(6)                               # 6-vector for ion ("classic")
-z_elecCrrnt_gc=np.zeros(6)  # 6-vector for electron in #guiding center" system (both approaches)
-z_elecCrrnt_m=np.zeros(6)                              # 6-vector for electron ("magnus")
-z_ionCrrnt_m=np.zeros(6)                               # 6-vector for ion ("magnus")
-
 #===============================================================================
 #
 # Case: the same longidudinal (eVrmsLong).
@@ -1727,3 +1803,5 @@ plt.show()
 
 sys.exit()
 
+
+'''
