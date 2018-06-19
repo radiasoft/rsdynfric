@@ -7,7 +7,7 @@
 # This script based on the previous script
 # threeApproachesComparison_v6.py
 #
-# 06/08/2018: IT IS NOT FINISHED!
+# 06/19/2018: IT IS NOT FINISHED!
 # 
 #-------------------------------------
 
@@ -396,7 +396,7 @@ print 'ro_Larm (cm)=%e' % ro_Larm
 
 impctPrmtrMin=2.*ro_Larm
 
-nVion=100
+nVion=50
 Vion=np.zeros(nVion)
 VionRel=np.zeros(nVion)
 
@@ -510,16 +510,16 @@ plt.text(1.e-4,10.e-4,'Adiabatic or Fast Collisions',color='r',fontsize=25)
 plt.text(2.8e-5,.2,'Collisions are Screened',color='r',fontsize=25)
 plt.text(1.6e-5,1.e-3,'$ \cong 20\cdot R_{Crit}$',color='k',fontsize=16)
 
-plt.show()
+# plt.show()
 
-fig10.savefig('picturesCMA/correctedRmax_fig10cma.jpg')    
-fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.jpg')    
-fig3151.savefig('picturesCMA/impctPrmtr_3151cma.jpg')    
+# fig10.savefig('picturesCMA/correctedRmax_fig10cma.jpg')    
+# fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.jpg')    
+# fig3151.savefig('picturesCMA/impctPrmtr_3151cma.jpg')    
 
-sys.exit()
+# sys.exit()
 
 kinEnergy=m_elec*(eVrmsTran**2+eVrmsLong**2)/2.   # kinetic energy; erg
-nLarmorAvrgng=1               # number of averaged Larmor rotations 
+nLarmorAvrgng=10               # number of averaged Larmor rotations 
 #
 # Data for approach_c:
 #
@@ -533,12 +533,16 @@ matr_elec_c=guidingCenter_Matrix(.5*timeStep_c)
 #
 matr_ion_c=drift_Matrix(M_ion,.5*timeStep_c) 
 
-larmorTurns=10
-nImpctPrmtr=20
+larmorTurns = 10
+nImpctPrmtr = 50
 
-rhoMin=impctPrmtrMin
-log10rhoMin=math.log10(rhoMin)
-crrntImpctPrmtr=np.zeros(nImpctPrmtr)
+rhoMin = impctPrmtrMin
+log10rhoMin = math.log10(rhoMin)
+crrntImpctPrmtr = np.zeros(nImpctPrmtr)
+rhoInit = np.zeros(nImpctPrmtr*nVion)
+pointAlongTrack = np.zeros((nImpctPrmtr,nVion))
+
+totalPoints = 0
 for i in range(nVion):
    rhoMax = impctPrmtrMax[i]* \
    np.sqrt(1.- (pi*larmorTurns*eVrmsLong/omega_L/impctPrmtrMax[i])**2)
@@ -552,36 +556,70 @@ for i in range(nVion):
       halfLintr = np.sqrt(rhoMax**2-rhoCrrnt**2)   # half length of interaction; cm
       timeHalfPath = halfLintr/eVrmsLong     # 0.5 time of interaction; sec
       numbLarmor = int(2.*timeHalfPath/T_larm)             
-      pointAlongTrack = numbLarmor/nLarmorAvrgng
+      pointAlongTrack[n,i] = int(2.*timeHalfPath/timeStep_c)
+      totalPoints += pointAlongTrack[n,i]
       print '     %d: rhoCrrnt = %e, numbLarmor = %d, pointAlongTrack = %d' % \
-            (n,rhoCrrnt,numbLarmor,pointAlongTrack)
-      arrayA=np.zeros((pointAlongTrack,nImpctPrmtr))      
-      arrayB=np.zeros((pointAlongTrack,nImpctPrmtr))     
-# Current distance (cm) from origin of the coordinate system to electron 
-# along the trajectory:
-      bCrrnt = np.zeros((pointAlongTrack,nImpctPrmtr))   
+            (n,rhoCrrnt,numbLarmor,pointAlongTrack[n,i])
+print 'totalPoints = %d' % totalPoints
+
+arrayA=np.zeros(2*totalPoints)      
+arrayB=np.zeros(2*totalPoints)     
+bCrrnt_c = np.zeros(2*totalPoints)   
+deltaEnrgElec = np.zeros((nImpctPrmtr,nVion))
+
+# Factor to calculate transfered momenta for electron
+# (deltaP=dpFactor*dpElec):
+dpFactor = q_elec**2*timeStep                              # g*cm^3/sec
+# Factor to calculate transfered energy to electron
+# (the friction force is defined by this transfered energy): 
+deFactor = 0.5*dpFactor**2/m_elec
+indx = 0
+for i in range(nVion):
+   rhoMax = impctPrmtrMax[i]* \
+   np.sqrt(1.- (pi*larmorTurns*eVrmsLong/omega_L/impctPrmtrMax[i])**2)
+   rhoMax = impctPrmtrMax[i]
+   log10rhoMax = math.log10(rhoMax)
+   log10rhoStep = (log10rhoMax-log10rhoMin)/(nImpctPrmtr-1)
+   print 'Vion(%d) = %e, rhoMax = %e' % (i,Vion[i],rhoMax)
+   for n in range(nImpctPrmtr-1):
+      log10rhoCrrnt = log10rhoMin+(n+0.5)*log10rhoStep 
+      rhoCrrnt = math.pow(10.,log10rhoCrrnt)
+      rhoInit[i*nImpctPrmtr+n] = rhoCrrnt
+      halfLintr = np.sqrt(rhoMax**2-rhoCrrnt**2)   # half length of interaction; cm
       z_ionCrrnt = np.zeros(6)      # Current initial zero-vector for ion
       z_elecCrrnt = np.zeros(6)     # Zeroing out of vector for electron
+# Zeroing out of "guiding center" vector for electron:
+      z_elecCrrnt_gc = np.zeros(6)  
+# Current values to transfered momemta: 
+      dpCrrnt = np.zeros(3)
 # Current initial vector for electron:
       z_elecCrrnt[Ix] = rhoCrrnt                     # x, cm
       z_elecCrrnt[Iz] = -halfLintr                   # z, cm
       z_elecCrrnt[Ipy] = m_elec*eVrmsTran            # py, g*cm/sec
       z_elecCrrnt[Ipz] = m_elec*eVrmsLong            # pz, g*cm/sec
+# transfer to system of guiding center:
+      z_elecCrrnt_gc=toGuidingCenter(z_elecCrrnt)  
 #
-# Main loop:
+# Main loop over the tracks:
 #
-      for k in range(pointAlongTrack):
+      for k in range(int(pointAlongTrack[n,i])):
 #
-# Dragging both paticles through first half of trajectory:
+# Dragging both particles through first half of the step of the track:
 #
-  	 z_elecCrrnt = np.dot(matr_elec_c,z_elecCrrnt) # electron
-  	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)    # ion
-# Current distance between ion and electron; cm:   
-  	 bCrrnt_c=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
- 	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
- 			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
+  	 z_elecCrrnt_gc = np.dot(matr_elec_c,z_elecCrrnt_gc) # electron
+  	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)          # ion
+# transfer from system of guiding center: 
+	 z_elecCrrnt=fromGuidingCenter(z_elecCrrnt_gc)     
+# Current distance between ion and electron; cm:
+ 	 bCrrnt_c[indx]=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
+	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
+			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
+# Current values of parameters A,B:  
+	 arrayA[indx] = math.log10(ro_Larm/bCrrnt_c[indx])     
+	 arrayB[indx] = math.log10((q_elec**2/bCrrnt_c[indx])/kinEnergy)
+         indx += 1
 #
-# Dragging both paticles through interaction point:
+# Dragging both particles through interaction during this step of track:
 #
 	 dpIon,dpElec,action,b_gc = \
 	          guidingCenterCollision(z_elecCrrnt,z_ionCrrnt,timeStep_c) 
@@ -591,24 +629,76 @@ for i in range(nVion):
 ####	     for ic in range(3):
 ####	        z_ionCrrnt[2*ic+1] += dpIon[ic]   
 ####	        z_elecCrrnt[2*ic+1] += dpElec[ic]
+# Accumulation of the transfered momenta along the track:  
+         for ic in range(3):
+ 	    dpCrrnt[ic] += dpElec[ic]                      # g*cm/csec;  
 #
-# Dragging both paticles through second half of trajectory:
+# Dragging both particles through second half of the step of the track:
 #
- 	 z_elecCrrnt = np.dot(matr_elec_c,z_elecCrrnt)   # electron
- 	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)        # ion
+ 	 z_elecCrrnt_gc = np.dot(matr_elec_c,z_elecCrrnt_gc)     # electron
+ 	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)              # ion
+# transfer from system of guiding center: 
+	 z_elecCrrnt=fromGuidingCenter(z_elecCrrnt_gc)     
 # Current distance between ion and electron; cm:
- 	 bCrrnt_c=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
+ 	 bCrrnt_c[indx]=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
 	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
 			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
 # Current values of parameters A,B:  
-	 arrayA[k,n] = math.log10(ro_Larm/bCrrnt_c)     
-	 arrayB[k,n] = math.log10((q_elec**2/bCrrnt_c)/kinEnergy)
+	 arrayA[indx] = math.log10(ro_Larm/bCrrnt_c[indx])     
+	 arrayB[indx] = math.log10((q_elec**2/bCrrnt_c[indx])/kinEnergy)
+         indx += 1
+# Transfered energy along the track:  
+      deltaEnrgElec[n,i] = (dpCrrnt[0]**2+dpCrrnt[1]**2+dpCrrnt[2]**2)
+#                           deFactor                        # erg = g*cm^2/sec^2
+      
+#Plotting:      
+      
+fig110=plt.figure (110)
+plt.plot(arrayA,arrayB,'.r')
+plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+plt.title('Map of Parameters A,B', color='m',fontsize=16)
+# plt.xlim([minA,maxA])
+# plt.ylim([minB,maxB])
+plt.grid(True)
 
+fig20=plt.figure (20)
+n=np.arange(0,2*totalPoints-1,1)
+plt.plot(n,bCrrnt_c[0:2*totalPoints-1],'.r')
+#   plt.plot(xAboundary,xBboundary,'-xb')
+plt.xlabel('Points of Tracks',color='m',fontsize=16)
+plt.ylabel('$b_{crrnt}$, cm',color='m',fontsize=16)
+plt.title('Distance between Particles $b_{crrnt}$', color='m',fontsize=16)
+plt.xlim([-5000,2*totalPoints+5000])
+# plt.xlim([0,2000])
+plt.grid(True)
 
+fig30=plt.figure (30)
+n=np.arange(0,2*totalPoints-1,1)
+plt.plot(n,arrayA[0:2*totalPoints-1],'.r',n,arrayB[0:2*totalPoints-1],'.b')
+plt.xlabel('Points of Tracks',color='m',fontsize=16)
+plt.ylabel('$A$, $B$',color='m',fontsize=16)
+plt.title('$A=log_{10}(q_e^2/b/E_{kin})$, $B=log_{10}(R_{Larm}/b)$', \
+          color='m',fontsize=16)
+plt.xlim([-5000,2*totalPoints+5000])
+# plt.ylim([minB,maxB])
+plt.grid(True)
 
+fig40=plt.figure (40)
+n=np.arange(0,nImpctPrmtr*nVion-1,1)
+plt.plot(n,rhoInit[0:nImpctPrmtr*nVion-1],'.r')
+plt.xlabel('Point of Tracks',color='m',fontsize=16)
+plt.ylabel('$rho_{Init}$, cm',color='m',fontsize=16)
+plt.title('Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+plt.xlim([-100,nImpctPrmtr*nVion+100])
+plt.grid(True)
 
+plt.show()
 
-
+fig20.savefig('picturesCMA/particles_distance_fig20cma.jpg')    
+fig30.savefig('picturesCMA/parametersA-B_fig30cma.jpg')    
+fig40.savefig('picturesCMA/initialImpactParameter_fig40cma.jpg')    
+fig110.savefig('picturesCMA/mapA-B_fig110cma.jpg')    
 
 sys.exit()
 
