@@ -7,7 +7,7 @@
 # This script based on the previous script
 # threeApproachesComparison_v6.py
 #
-# 06/19/2018: IT IS NOT FINISHED!
+# 06/21/2018: IT IS NOT FINISHED (works incorrectly)!
 # 
 #-------------------------------------
 
