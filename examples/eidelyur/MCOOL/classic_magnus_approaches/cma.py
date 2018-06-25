@@ -426,7 +426,7 @@ print 'ro_Larm (cm)=%e' % ro_Larm
 
 impctPrmtrMin=2.*ro_Larm
 
-nVion=5
+nVion=50
 Vion=np.zeros(nVion)
 VionRel=np.zeros(nVion)
 
@@ -522,9 +522,8 @@ hold=True
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 plt.ylabel('Impact Parameter, cm',color='m',fontsize=16)
 titleHeader= \
-          'Magnetized Collision: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
+          'Types of Collisions: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
 plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
-titleHeader='$V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
 plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[8.e-4,.6]
@@ -540,14 +539,6 @@ plt.text(1.e-4,10.e-4,'Adiabatic or Fast Collisions',color='r',fontsize=25)
 plt.text(2.8e-5,.2,'Collisions are Screened',color='r',fontsize=25)
 plt.text(1.6e-5,1.e-3,'$ \cong 20\cdot R_{Crit}$',color='k',fontsize=16)
 
-# plt.show()
-
-# fig10.savefig('picturesCMA/correctedRmax_fig10cma.jpg')    
-# fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.jpg')    
-# fig3151.savefig('picturesCMA/impctPrmtr_3151cma.jpg')    
-
-# sys.exit()
-
 #
 # matrix for electron with .5*timeStep_c:
 #
@@ -561,25 +552,27 @@ larmorTurns = 10
 nImpctPrmtr = 50
 
 rhoMin = impctPrmtrMin
+rhoMax = np.zeros(nVion)
 log10rhoMin = math.log10(rhoMin)
 crrntImpctPrmtr = np.zeros(nImpctPrmtr)
+halfLintr = np.zeros((nImpctPrmtr,nVion))
 pointAlongTrack = np.zeros((nImpctPrmtr,nVion))
 
 totalPoints = 0
 for i in range(nVion):
-   rhoMax = impctPrmtrMax[i]* \
+   rhoMax[i] = impctPrmtrMax[i]* \
    np.sqrt(1.- (pi*larmorTurns*eVrmsLong/omega_L/impctPrmtrMax[i])**2)
-   rhoMax = impctPrmtrMax[i]
-#   print 'rhoMax(%d) = %e' % (i,rhoMax)
-   log10rhoMax = math.log10(rhoMax)
+   rhoMax[i] = impctPrmtrMax[i]
+#   print 'rhoMax(%d) = %e' % (i,rhoMax[i])
+   log10rhoMax = math.log10(rhoMax[i])
    log10rhoStep = (log10rhoMax-log10rhoMin)/(nImpctPrmtr)
-#   print 'Vion(%d) = %e, rhoMax = %e' % (i,Vion[i],rhoMax)
+#   print 'Vion(%d) = %e, rhoMax = %e' % (i,Vion[i],rhoMax[i])
    for n in range(nImpctPrmtr):
       log10rhoCrrnt = log10rhoMin+(n+0.5)*log10rhoStep 
       rhoCrrnt = math.pow(10.,log10rhoCrrnt)
 #      print '    rhoCrrnt(%d) = %e' % (n,rhoCrrnt)
-      halfLintr = np.sqrt(rhoMax**2-rhoCrrnt**2)   # half length of interaction; cm
-      timeHalfPath = halfLintr/eVrmsLong     # 0.5 time of interaction; sec
+      halfLintr[n,i] = np.sqrt(rhoMax[i]**2-rhoCrrnt**2)   # half length of interaction; cm
+      timeHalfPath = halfLintr[n,i]/eVrmsLong     # 0.5 time of interaction; sec
       numbLarmor = int(2.*timeHalfPath/T_larm)             
       pointAlongTrack[n,i] = int(2.*timeHalfPath/timeStep_c)
       totalPoints += pointAlongTrack[n,i]
@@ -614,18 +607,18 @@ deFactor = 0.5/M_ion                               # 1/g
 
 indx = 0
 for i in range(nVion):
-   rhoMax = impctPrmtrMax[i]* \
+   rhoMax[i] = impctPrmtrMax[i]* \
    np.sqrt(1.- (pi*larmorTurns*eVrmsLong/omega_L/impctPrmtrMax[i])**2)
-   rhoMax = impctPrmtrMax[i]
-   log10rhoMax = math.log10(rhoMax)
+   rhoMax[i] = impctPrmtrMax[i]
+   log10rhoMax = math.log10(rhoMax[i])
    log10rhoStep = (log10rhoMax-log10rhoMin)/(nImpctPrmtr)
-   print 'Vion(%d) = %e, rhoMax = %e' % (i,Vion[i],rhoMax)
+   print 'Vion(%d) = %e, rhoMax = %e' % (i,Vion[i],rhoMax[i])
    for n in range(nImpctPrmtr):
       log10rhoCrrnt = log10rhoMin+(n+0.5)*log10rhoStep 
       rhoCrrnt = math.pow(10.,log10rhoCrrnt)
 #      rhoInit[i*nImpctPrmtr+n] = rhoCrrnt
       rhoInit[n,i] = rhoCrrnt
-      halfLintr = np.sqrt(rhoMax**2-rhoCrrnt**2)   # half length of interaction; cm
+      halfLintr[n,i] = np.sqrt(rhoMax[i]**2-rhoCrrnt**2)   # half length of interaction; cm
       z_ionCrrnt = np.zeros(6)      # Zeroing out of vector for ion
       z_elecCrrnt = np.zeros(6)     # Zeroing out of vector for electron
 # Zeroing out of "guiding center" vector for electron:
@@ -641,7 +634,7 @@ for i in range(nVion):
       dpElec_m = np.zeros(3) 
 # Current initial vector for electron:
       z_elecCrrnt[Ix] = rhoCrrnt                     # x, cm
-      z_elecCrrnt[Iz] = -halfLintr                   # z, cm
+      z_elecCrrnt[Iz] = -halfLintr[n,i]                   # z, cm
       z_elecCrrnt[Ipy] = m_elec*eVrmsTran            # py, g*cm/sec
       z_elecCrrnt[Ipz] = m_elec*eVrmsLong            # pz, g*cm/sec
 # transfer to system of guiding center:
@@ -781,7 +774,7 @@ for i in range(nVion):
 #      
 # Plotting:      
 #      
-'''
+
 fig110=plt.figure (110)
 plt.plot(arrayA,arrayB,'.r')
 plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
@@ -843,13 +836,15 @@ plt.text(2.e-3,-.021,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
 # for i in range(nVion):
 #    plt.figure (50+i)
 #    plt.loglog(rhoInit[:,i],deltaEnrgIon[:,i],'-r',linewidth=2)
-#    plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+#    plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+#               color='m',fontsize=16)
 #    plt.ylabel('$\Delta E$, erg', color='m',fontsize=16)
 #    plt.title('Transferred Energy $\Delta E$', color='m',fontsize=16)
 #    plt.grid(True)
 #    time.sleep(5)
 
 
+'''
 VionCrrnt = V0*VionRel[0]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
@@ -859,7 +854,8 @@ plt.loglog(rhoInit[0:nImpctPrmtr-1,0],deltaEnrgIon_c[0:nImpctPrmtr-1,0],'-xr', \
            linewidth=1)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader='Transferred Energy $\Delta E_{ion}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
 plt.grid(True)
@@ -891,9 +887,11 @@ plt.figure (51)
 plt.loglog(xRhoInitPx_c[0:maxIndx_c],yDeltaPx_c[0:maxIndx_c],'-xr', \
            xRhoInitPx_m[0:maxIndx_m],yDeltaPx_m[0:maxIndx_m],'--or', \
            linewidth=1)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$, $cm$', color='m',fontsize=16)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$, $cm$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta P_{ix}$, $g\cdot cm/s$', color='m',fontsize=16)
-titleHeader='Transferred Momenta $\Delta P_{ix}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Momenta $\Delta P_{ix}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*min(xRhoInitPx_c[0],xRhoInitPx_m[0]), \
          1.05*max(xRhoInitPx_c[maxIndx_c],xRhoInitPx_m[maxIndx_m])])
@@ -926,9 +924,11 @@ plt.figure (53)
 plt.loglog(xRhoInitPz_c[0:maxIndx_c],yDeltaPz_c[0:maxIndx_c],'-xr', \
            xRhoInitPz_m[0:maxIndx_m],yDeltaPz_m[0:maxIndx_m],'--or', \
            linewidth=1)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$, $cm$', color='m',fontsize=16)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$, $cm$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta P_{iz}$, $g\cdot cm/s$', color='m',fontsize=16)
-titleHeader='Transferred Momenta $\Delta P_{iz}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Momenta $\Delta P_{iz}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*min(xRhoInitPz_c[0],xRhoInitPz_m[0]), \
          1.05*max(xRhoInitPz_c[maxIndx_c],xRhoInitPz_m[maxIndx_m])])
@@ -941,9 +941,11 @@ plt.figure (60)
 plt.loglog(rhoInit[0:nImpctPrmtr-1,1],deltaEnrgIon_c[0:nImpctPrmtr-1,1],'-xb', \
            rhoInit[0:nImpctPrmtr-1,1],deltaEnrgIon_m[0:nImpctPrmtr-1,1],'--ob', \
            linewidth=1)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader='Transferred Energy $\Delta E_{ion}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,1],1.05*rhoInit[nImpctPrmtr-1,1]])
 plt.grid(True)
@@ -955,9 +957,11 @@ plt.figure (70)
 plt.loglog(rhoInit[0:nImpctPrmtr-1,2],deltaEnrgIon_c[0:nImpctPrmtr-1,2],'-xg', \
            rhoInit[0:nImpctPrmtr-1,2],deltaEnrgIon_m[0:nImpctPrmtr-1,2],'--og', \
            linewidth=1)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader='Transferred Energy $\Delta E_{ion}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,2],1.05*rhoInit[nImpctPrmtr-1,2]])
 plt.grid(True)
@@ -969,9 +973,11 @@ plt.figure (80)
 plt.loglog(rhoInit[0:nImpctPrmtr-1,3],deltaEnrgIon_c[0:nImpctPrmtr-1,3],'-xk', \
            rhoInit[0:nImpctPrmtr-1,3],deltaEnrgIon_m[0:nImpctPrmtr-1,3],'--ok', \
            linewidth=1)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader='Transferred Energy $\Delta E_{ion}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,3],1.05*rhoInit[nImpctPrmtr-2,3]])
 plt.grid(True)
@@ -983,103 +989,226 @@ plt.figure (90)
 plt.loglog(rhoInit[0:nImpctPrmtr-1,4],deltaEnrgIon_c[0:nImpctPrmtr-1,4],'-xm', \
            rhoInit[0:nImpctPrmtr-1,4],deltaEnrgIon_m[0:nImpctPrmtr-1,4],'--om', \
            linewidth=1)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader='Transferred Energy $\Delta E_{ion}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,4],1.05*rhoInit[nImpctPrmtr-1,4]])
 plt.grid(True)
 '''
 
-VionCrrnt = V0*VionRel[0]
+indxPlot=0
+VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
-plt.figure (500)
-plt.loglog(rhoInit[0:nImpctPrmtr-1,0],deltaEnrgIon_c[0:nImpctPrmtr-1,0],'-xr', \
-           rhoInitFit[0:maxIndx[0],0],deltaEnrgIon_c_Fit[0:maxIndx[0],0],'ob', \
-	   linewidth=2)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+fig500=plt.figure (500)
+plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+           deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader='Transferred Energy $\Delta E_{ion}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
 plt.ylim([3.e-23,3.e-20])
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
+plt.text(2.5e-3,1.e-20, \
+         ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
-VionCrrnt = V0*VionRel[1]
+indxPlot=9
+VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
-plt.figure (600)
-plt.loglog(rhoInit[0:nImpctPrmtr-1,1],deltaEnrgIon_c[0:nImpctPrmtr-1,1],'-xr', \
-           rhoInitFit[0:maxIndx[1],1],deltaEnrgIon_c_Fit[0:maxIndx[1],1],'ob', \
-	   linewidth=2)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+fig600=plt.figure (600)
+plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+           deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader='Transferred Energy $\Delta E_{ion}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
 plt.ylim([2.e-22,3.e-20])
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
+plt.text(2.5e-3,1.5e-20, \
+         ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
-VionCrrnt = V0*VionRel[2]
+indxPlot=19
+VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
-plt.figure (700)
-plt.loglog(rhoInit[0:nImpctPrmtr-1,2],deltaEnrgIon_c[0:nImpctPrmtr-1,2],'-xr', \
-           rhoInitFit[0:maxIndx[2],2],deltaEnrgIon_c_Fit[0:maxIndx[2],2],'ob', \
-	   linewidth=2)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+fig700=plt.figure (700)
+plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+           deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader='Transferred Energy $\Delta E_{ion}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
-plt.ylim([3.e-22,3.e-20])
+# plt.ylim([3.e-22,3.e-20])  # for "indxPlot=1"
+plt.ylim([3.e-22,3.e-20])  # for "indxPlot=19"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
+plt.text(2.5e-3,1.5e-20, \
+         ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
-VionCrrnt = V0*VionRel[3]
+indxPlot=29
+VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
-plt.figure (800)
-plt.loglog(rhoInit[0:nImpctPrmtr-1,3],deltaEnrgIon_c[0:nImpctPrmtr-1,3],'-xr', \
-           rhoInitFit[0:maxIndx[3],3],deltaEnrgIon_c_Fit[0:maxIndx[3],3],'ob', \
-	   linewidth=2)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+fig800=plt.figure (800)
+plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+           deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader='Transferred Energy $\Delta E_{ion}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
-plt.ylim([3.e-22,3.e-20])
+# plt.ylim([3.e-22,3.e-20])  # for "indxPlot=2"
+plt.ylim([3.e-22,3.e-20])  # for "indxPlot=29"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
+plt.text(2.5e-3,1.5e-20, \
+         ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
-VionCrrnt = V0*VionRel[4]
+indxPlot=39
+VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
-plt.figure (900)
-plt.loglog(rhoInit[0:nImpctPrmtr-1,4],deltaEnrgIon_c[0:nImpctPrmtr-1,4],'-xr', \
-           rhoInitFit[0:maxIndx[4],4],deltaEnrgIon_c_Fit[0:maxIndx[4],4],'ob', \
-	   linewidth=2)
-plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+fig900=plt.figure (900)
+plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+           deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+           color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader='Transferred Energy $\Delta E_{ion}$ to Ion for $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
-plt.ylim([3.e-22,3.e-20])
+# plt.ylim([3.e-22,3.e-20])  # for "indxPlot=3"
+plt.ylim([3.e-22,3.e-20])  # for "indxPlot=39"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
+plt.text(2.5e-3,1.5e-20, \
+         ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+	  abs(fitB[indxPlot])),color='m',fontsize=16)
+plt.grid(True)
+
+indxPlot=49
+VionCrrnt = V0*VionRel[indxPlot]
+powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
+mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
+fig1000=plt.figure (1000)
+plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+           deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
+           color='m',fontsize=16)
+plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
+plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
+# plt.ylim([3.e-22,3.e-20])  # for "indxPlot=4"
+plt.ylim([3.e-22,3.e-20])  # for "indxPlot=49"
+plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
+plt.text(2.5e-3,1.5e-20, \
+         ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+	  abs(fitB[indxPlot])),color='m',fontsize=16)
+plt.grid(True)
+
+fig1100=plt.figure (1100)
+plt.semilogx(VionRel,fitB,'-xr',linewidth=2)
+plt.xlabel('Relative Ion Velocity  $V_{ion}/V_0$',color='m',fontsize=16)
+plt.ylabel('$B$', color='m',fontsize=16)
+titleHeader = \
+    'Dependence of $\Delta E$ on $rho^B$ ($V_{e0}=%5.3f\cdot10^{%2d}$cm/s)'
+plt.title(titleHeader % (mantV0,powV0),color='m',fontsize=16)
+plt.xlim(xLimit)
+yLimit=[-2.3,-1.95]
+plt.ylim(yLimit)
+plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+plt.text(2.e-3,-2.3175,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
 plt.grid(True)
 
 plt.show()
 
-'''
+''''
+fig10.savefig('picturesCMA/correctedRmax_fig10cma.jpg')    
 fig20.savefig('picturesCMA/particles_distance_fig20cma.jpg')    
 fig30.savefig('picturesCMA/parametersA-B_fig30cma.jpg')    
 fig40.savefig('picturesCMA/initialImpactParameter_fig40cma.jpg')    
 fig110.savefig('picturesCMA/mapA-B_fig110cma.jpg')    
+fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.jpg')    
+fig3151.savefig('picturesCMA/impctPrmtr_3151cma.jpg')    
+fig500.savefig('picturesCMA/deltaEtransf_indxPolt-0_500cma.jpg')    
+fig600.savefig('picturesCMA/deltaEtransf_indxPolt-9_600cma.jpg')    
+fig700.savefig('picturesCMA/deltaEtransf_indxPolt-19_700cma.jpg')    
+fig800.savefig('picturesCMA/deltaEtransf_indxPolt-29_800cma.jpg')    
+fig900.savefig('picturesCMA/deltaEtransf_indxPolt-39_900cma.jpg')    
+fig1000.savefig('picturesCMA/deltaEtransf_indxPolt-49_1000cma.jpg')    
+fig1100.savefig('picturesCMA/exponentB_on_ionVelocity_1100cma.jpg')    
 '''
 
+#
+# Opening the output file: 
+#
+apprchClsscl_file='resultsClassicalApproach.dat'
+print 'Open output file "%s"...' % apprchClsscl_file
+apprchClsscl_flag=0
+try:
+   outfile = open(apprchClsscl_file,'w')
+   apprchClsscl_file_flag=1
+except:
+   print 'Problem to open output file "%s"' % apprchClsscl_file
+
+#
+# Writing the results to output file: 
+#
+outfile.write ('\n                       Initial data\n\n')
+outfile.write ('eVrmsTran=%5.3e cm/s, eVrmsLong=%5.3e cm/s, Ekin =%5.3f eV' \
+               % (eVrmsTran,eVrmsLong,ergToEV*kinEnergy))
+outfile.write ('\nBfield=%6.1f Gs, ro_Larm= %5.3f mkm, rho_min=%6.3f mkm' \
+               % (fieldB[0],1.e4*ro_Larm,1.e4*rhoMin))
+outfile.write ('\nV_0=%5.3e cm/s, VionMin=%5.3e cm/s, VionMax= %5.3e cm/s' \
+               % (V0,vIonMin,vIonMax))
+outfile.write ('\n    Vion/V_0:         min  =%5.3e,        max  = %5.3e' \
+               % (vIonMin/V0,vIonMax/V0))
+outfile.write ('\n    Vion/eVtran:      min  =%5.3e,        max  = %5.3e' \
+               % (vIonMin/eVrmsTran,vIonMax/eVrmsTran))
+outfile.write \
+('\n\nVion, cm/s     Vion/V_0    Vion/eVtran  ro_max, mkm   Lintr_max, mkm      fitA      fitB\n')
+
+for i in range(nVion):
+   outfile.write \
+    ('\n %5.3e    %5.3e     %5.3e    %8.2f       %8.2f        %8.4f   %5.3f' \
+     % (Vion[i],Vion[i]/V0,Vion[i]/eVrmsTran,1.e4*rhoMax[i], \
+        2.e4*halfLintr[0,i],fitA[i],fitB[i]))
+   
 sys.exit()
 
 '''
