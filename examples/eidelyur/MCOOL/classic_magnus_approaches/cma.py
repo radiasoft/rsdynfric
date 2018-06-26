@@ -7,7 +7,8 @@
 # This script based on the previous script
 # threeApproachesComparison_v6.py
 #
-# 06/22/2018: IT IS NOT FINISHED (works incorrectly)!
+# 06/26/2018: IT IS NOT FINISHED ("classical" approach works appropriate,
+#                                 but friction forces doesn't checked)!
 # 
 #-------------------------------------
 
@@ -426,7 +427,9 @@ print 'ro_Larm (cm)=%e' % ro_Larm
 
 impctPrmtrMin=2.*ro_Larm
 
-nVion=50
+# rhoDependenceFlag = 1  # skip calculation of rho dependence if = 0!
+
+nVion=5
 Vion=np.zeros(nVion)
 VionRel=np.zeros(nVion)
 
@@ -708,7 +711,7 @@ for i in range(nVion):
 #      if deltaPz_c[n,i] <= 0.: 
 #         print 'deltaPz_c[%2d,%2d] = %e' % (n,i,deltaPz_c[n,i])
       deltaEnrgIon_c[n,i] = (dpCrrnt[0,0]**2+dpCrrnt[1,0]**2+dpCrrnt[2,0]**2)* \
-                           deFactor                        # erg = g*cm^2/sec^2
+                            deFactor/eVtoErg                      # eV
       deltaPx_m[n,i] = abs(dpCrrnt[0,1]*dpFactor) 
 #      if deltaPx_m[n,i] <= 0.: 
 #         print 'deltaPx_m[%2d,%2d] = %e' % (n,i,deltaPx_m[n,i])
@@ -719,7 +722,7 @@ for i in range(nVion):
 #      if deltaPz_m[n,i] <= 0.: 
 #         print 'deltaPz_m[%2d,%2d] = %e' % (n,i,deltaPz_m[n,i])
       deltaEnrgIon_m[n,i] = (dpCrrnt[0,1]**2+dpCrrnt[1,1]**2+dpCrrnt[2,1]**2)* \
-                           deFactor                        # erg = g*cm^2/sec^2
+                            deFactor/eVtoErg                      # eV
 
 #
 # Fitting for figures with deltaEnrgIon_c (my own Least Squares Method - LSM;
@@ -729,9 +732,6 @@ for i in range(nVion):
 log10rhoInit = np.zeros((nImpctPrmtr,nVion))
 log10deltaEnrgIon_c = np.zeros((nImpctPrmtr,nVion))
 
-#
-# Only for data from figure(5)):
-#
 maxIndx = np.zeros(nVion)
 fitA = np.zeros(nVion)
 fitB = np.zeros(nVion)
@@ -770,6 +770,175 @@ for i in range(nVion):
       rhoInitFit[n,i] = math.pow(10.,log10rhoInit[n,i])
       deltaEnrgIon_c_Fit[n,i] = math.pow(10.,fitA[i])* \
                              math.pow(rhoInitFit[n,i],fitB[i])
+
+#----------------------------------------------------
+#
+# Integration of the transferred energy to ion from electron beam
+#----------------------------------------------------
+#
+#  "Gauss-Kronrod" method of integration (GK)
+#
+#
+# Points (psi_i) and weigths (w_i) to integrate for interval from -1 to 1;
+# These data are from William H. Beyer. "Handbook of Mathematical Science".
+# 5th Edition, CRC Press, Inc, 1978.
+#
+# To integrate for interval from 0 to 1 it is necessary to change points
+# psi_i with points ksi_i=(1+psi_i)/2;
+#
+# For method with order N for function F(x):
+#      int_(-1)^1 = sum_1^N [w_i* F(psi_i)];
+#
+# In case of integration over interval from a to b:  
+#      int_(a)^b = (b-a)/2 * sum_1^N [w_i* F(x_i)], where
+#            x_i = (b-a)*psi_i/2+(a+b)/2.
+#
+#----------------------------------------------------
+#
+# Data for GK:
+#
+#----------------------------------------------------
+
+psi16=np.array([-0.9894009, -0.9445750, -0.8656312, -0.7554044, -0.6178762, \
+                -0.4580168, -0.2816036, -0.0950125,  0.0950125,  0.2816036, \
+		 0.4580168,  0.6178762,  0.7554044,  0.8656312,  0.9445750, \
+		 0.9894009])
+w16  =np.array([ 0.0271525,  0.0622535,  0.0951585,  0.1246290,  0.1495960, \
+                 0.1691565,  0.1826034,  0.1894506,  0.1894506,  0.1826034, \
+		 0.1691565,  0.1495960,  0.1246290,  0.0951585,  0.0622535, \
+		 0.0271525])
+
+frctnForceCM = np.zeros(nVion)
+nPointsGK = 16
+rhoCrrntGK = np.zeros((nPointsGK,nVion))
+
+indx = 0
+totalPointsIntgrtn = 0
+for i in range(nVion):
+   rhoMaxCrrnt = impctPrmtrMax[i]* \
+   np.sqrt(1.- (pi*larmorTurns*eVrmsLong/omega_L/impctPrmtrMax[i])**2)
+   rhoMaxCrrnt = impctPrmtrMax[i]
+#   log10rhoMax = math.log10(rhoMaxCrrnt)
+#   log10rhoStep = (log10rhoMax-log10rhoMin)/(nPointsGK)
+   print 'Vion(%d) = %e, rhoMin = %e, rhoMaxCrrnt = %e' % \
+         (i,Vion[i],rhoMin,rhoMaxCrrnt)
+   for n in range(nPointsGK):
+#      log10rhoCrrnt = log10rhoMin+(n+0.5)*log10rhoStep 
+#      rhoCrrnt = math.pow(10.,log10rhoCrrnt)
+      rhoCrrntGK[n,i] = psi16[n]*(rhoMaxCrrnt-rhoMin)/2 + \
+                       (rhoMaxCrrnt+rhoMin)/2
+      print '    rhoCrrntGK[%2d,%2d] = %e' % (n,i,rhoCrrntGK[n,i])
+      halfLintrCrrnt = np.sqrt(rhoMaxCrrnt**2-rhoCrrntGK[n,i]**2)   # half length of interaction; cm
+      timeHalfPath = halfLintrCrrnt/eVrmsLong     # 0.5 time of interaction; sec
+      numbLarmor = int(2.*timeHalfPath/T_larm)             
+      pointAlongTrackCrrnt = int(2.*timeHalfPath/timeStep_c)
+      totalPointsIntgrtn += pointAlongTrackCrrnt
+      z_ionCrrnt = np.zeros(6)      # Zeroing out of vector for ion
+      z_elecCrrnt = np.zeros(6)     # Zeroing out of vector for electron
+# Zeroing out of "guiding center" vector for electron:
+      z_elecCrrnt_gc = np.zeros(6)  
+# Current values to transfered momemta 
+# (second index numerates "classical", if 0, and 
+#                         "Magnus expand" (if 1) approaches: 
+      dpCrrnt = np.zeros((3,2))
+# Intermediate arrays:
+      dpIon_c = np.zeros(3) 
+      dpIon_m = np.zeros(3) 
+      dpElec_c = np.zeros(3) 
+      dpElec_m = np.zeros(3) 
+# Current initial vector for electron:
+      z_elecCrrnt[Ix] = rhoCrrntGK[n,i]                # x, cm
+      z_elecCrrnt[Iz] = -halfLintrCrrnt              # z, cm
+      z_elecCrrnt[Ipy] = m_elec*eVrmsTran            # py, g*cm/sec
+      z_elecCrrnt[Ipz] = m_elec*eVrmsLong            # pz, g*cm/sec
+# transfer to system of guiding center:
+      z_elecCrrnt_gc=toGuidingCenter(z_elecCrrnt)  
+#
+# Main loop along the each track:
+#
+      for k in range(int(pointAlongTrackCrrnt)):
+#
+# Dragging both particles through first half of the step of the track:
+#
+  	 z_elecCrrnt_gc = np.dot(matr_elec_c,z_elecCrrnt_gc) # electron
+  	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)          # ion
+# transfer from system of guiding center: 
+	 z_elecCrrnt=fromGuidingCenter(z_elecCrrnt_gc)     
+# Current distance between ion and electron; cm:
+ 	 bCrrnt_c[indx]=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
+	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
+			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
+         indx += 1
+#
+# Dragging both particles through interaction during this step of track
+# (for both approaches):
+#
+#    "Classical":
+	 dpIon_c,dpElec_c,action,b_gc_c = \
+	         guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt,timeStep_c) 
+#    "Magnus Expand":
+	 dpIon_m,dpElec_m,action,dy_gc_m = \
+	         MagnusExpansionCollision(z_elecCrrnt_gc,z_ionCrrnt,timeStep_c) 
+####
+#### Taking into account transfer of momentum for both particles:
+####
+####	     for ic in range(3):
+####	        z_ionCrrnt[2*ic+1] += dpIon[ic]   
+####	        z_elecCrrnt[2*ic+1] += dpElec[ic]
+# Accumulation of the transfered momenta along the track:  
+         for ic in range(3):
+#	    if i == 0:
+#	       print 'dpIon_c[%2d] = %20.14e, dpIon_m[%2d] = %20.14e' % \
+#	             (ic,dpIon_c[ic],ic,dpIon_m[ic])
+ 	    dpCrrnt[ic,0] += dpIon_c[ic]                      # g*cm/csec  
+ 	    dpCrrnt[ic,1] += dpIon_m[ic]                      # g*cm/csec  
+#
+# Dragging both particles through second half of the step of the track:
+#
+ 	 z_elecCrrnt_gc = np.dot(matr_elec_c,z_elecCrrnt_gc)     # electron
+ 	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)              # ion
+# transfer from system of guiding center: 
+	 z_elecCrrnt=fromGuidingCenter(z_elecCrrnt_gc)     
+# Current distance between ion and electron; cm:
+ 	 bCrrnt_c[indx]=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
+	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
+			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
+         indx += 1
+#	 
+# Transferred momenta and energy along the entire length of each track
+# for both approaches:
+#
+      deltaPx_c[n,i] = abs(dpCrrnt[0,0]) 
+#      if deltaPx_c[n,i] <= 0.: 
+#         print 'deltaPx_c[%2d,%2d] = %e, dpCrrnt[%2d,%2d] = %e' % \
+#	       (n,i,deltaPx_c[n,i],n,i,dpCrrnt[0,0])
+      deltaPy_c[n,i] = abs(dpCrrnt[1,0]) 
+#      if deltaPy_c[n,i] <= 0.: 
+#         print 'deltaPy_c[%2d,%2d] = %e' % (n,i,deltaPy_c[n,i])
+      deltaPz_c[n,i] = abs(dpCrrnt[2,0]) 
+#      if deltaPz_c[n,i] <= 0.: 
+#         print 'deltaPz_c[%2d,%2d] = %e' % (n,i,deltaPz_c[n,i])
+      deltaEnrgIon_c[n,i] = (dpCrrnt[0,0]**2+dpCrrnt[1,0]**2+dpCrrnt[2,0]**2)* \
+                            deFactor/eVtoErg                      # eV
+      deltaPx_m[n,i] = abs(dpCrrnt[0,1]*dpFactor) 
+#      if deltaPx_m[n,i] <= 0.: 
+#         print 'deltaPx_m[%2d,%2d] = %e' % (n,i,deltaPx_m[n,i])
+      deltaPy_m[n,i] = abs(dpCrrnt[1,1]*dpFactor) 
+#      if deltaPy_m[n,i] <= 0.: 
+#         print 'deltaPy_m[%2d,%2d] = %e' % (n,i,deltaPy_m[n,i])
+      deltaPz_m[n,i] = abs(dpCrrnt[2,1]*dpFactor) 
+#      if deltaPz_m[n,i] <= 0.: 
+#         print 'deltaPz_m[%2d,%2d] = %e' % (n,i,deltaPz_m[n,i])
+      deltaEnrgIon_m[n,i] = (dpCrrnt[0,1]**2+dpCrrnt[1,1]**2+dpCrrnt[2,1]**2)* \
+                            deFactor/eVtoErg                      # eV
+#
+# Integration:
+#
+      frctnForceCM[i] += .5*(rhoMaxCrrnt-rhoMin)*w16[n]*deltaEnrgIon_c[n,i]
+
+
+
+
 
 #      
 # Plotting:      
@@ -826,6 +995,24 @@ for i in range(nVion):
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 plt.ylabel('$rho_{Init}$, cm',color='m',fontsize=16)
 plt.title('Track Initial Impact Parameter $rho_{Init}$', color='m',fontsize=16)
+plt.grid(True)
+yLimit=[0.,.405]
+plt.ylim(yLimit)
+plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+plt.text(2.e-3,-.021,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+
+
+xVionRelIntgr = np.zeros((nPointsGK,nVion))
+for i in range(nVion):
+   for n in range(nPointsGK):
+       xVionRelIntgr[n,i] = VionRel[i]
+
+fig41=plt.figure (41)
+for i in range(nVion):
+    plt.semilogx(xVionRelIntgr[0:nPointsGK,i],rhoCrrntGK[0:nPointsGK,i],'.r')
+plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
+plt.ylabel('$rho$, cm',color='m',fontsize=16)
+plt.title('Subdivision $rho_{Init}$ for Integration', color='m',fontsize=16)
 plt.grid(True)
 yLimit=[0.,.405]
 plt.ylim(yLimit)
@@ -998,7 +1185,6 @@ plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,4],1.05*rhoInit[nImpctPrmtr-1,4]])
 plt.grid(True)
 '''
-
 indxPlot=0
 VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
@@ -1010,18 +1196,19 @@ plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
-plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion for '
 titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
-plt.ylim([3.e-23,3.e-20])
+plt.ylim([3.e-11,2.e-8])
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
-plt.text(2.5e-3,1.e-20, \
+plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
+'''
 indxPlot=9
 VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
@@ -1033,17 +1220,19 @@ plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
-plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion for '
 titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
-plt.ylim([2.e-22,3.e-20])
+plt.ylim([8.e-11,2.e-8])
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
-plt.text(2.5e-3,1.5e-20, \
+plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
+
+yLimit=[1.5e-10,2.e-8]
 
 indxPlot=19
 VionCrrnt = V0*VionRel[indxPlot]
@@ -1056,15 +1245,14 @@ plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
-plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion for '
 titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
-# plt.ylim([3.e-22,3.e-20])  # for "indxPlot=1"
-plt.ylim([3.e-22,3.e-20])  # for "indxPlot=19"
+plt.ylim(yLimit)  # for "indxPlot=19"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
-plt.text(2.5e-3,1.5e-20, \
+plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
@@ -1080,15 +1268,14 @@ plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
-plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion for '
 titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
-# plt.ylim([3.e-22,3.e-20])  # for "indxPlot=2"
-plt.ylim([3.e-22,3.e-20])  # for "indxPlot=29"
+plt.ylim(yLimit)  # for "indxPlot=29"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
-plt.text(2.5e-3,1.5e-20, \
+plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
@@ -1104,15 +1291,14 @@ plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
-plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion for '
 titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
-# plt.ylim([3.e-22,3.e-20])  # for "indxPlot=3"
-plt.ylim([3.e-22,3.e-20])  # for "indxPlot=39"
+plt.ylim(yLimit)  # for "indxPlot=39"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
-plt.text(2.5e-3,1.5e-20, \
+plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
@@ -1128,18 +1314,18 @@ plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
-plt.ylabel('$\Delta E_{ion}$, $erg$', color='m',fontsize=16)
-titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Ion for '
+plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
+titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion for '
 titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
 plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
 plt.xlim([.95*rhoInit[0,0],1.05*rhoInit[nImpctPrmtr-1,0]])
-# plt.ylim([3.e-22,3.e-20])  # for "indxPlot=4"
-plt.ylim([3.e-22,3.e-20])  # for "indxPlot=49"
+plt.ylim(yLimit)  # for "indxPlot=49"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
-plt.text(2.5e-3,1.5e-20, \
+plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
+'''
 
 fig1100=plt.figure (1100)
 plt.semilogx(VionRel,fitB,'-xr',linewidth=2)
@@ -1157,7 +1343,8 @@ plt.grid(True)
 
 plt.show()
 
-''''
+
+'''
 fig10.savefig('picturesCMA/correctedRmax_fig10cma.jpg')    
 fig20.savefig('picturesCMA/particles_distance_fig20cma.jpg')    
 fig30.savefig('picturesCMA/parametersA-B_fig30cma.jpg')    
@@ -1165,15 +1352,16 @@ fig40.savefig('picturesCMA/initialImpactParameter_fig40cma.jpg')
 fig110.savefig('picturesCMA/mapA-B_fig110cma.jpg')    
 fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.jpg')    
 fig3151.savefig('picturesCMA/impctPrmtr_3151cma.jpg')    
-fig500.savefig('picturesCMA/deltaEtransf_indxPolt-0_500cma.jpg')    
-fig600.savefig('picturesCMA/deltaEtransf_indxPolt-9_600cma.jpg')    
-fig700.savefig('picturesCMA/deltaEtransf_indxPolt-19_700cma.jpg')    
-fig800.savefig('picturesCMA/deltaEtransf_indxPolt-29_800cma.jpg')    
-fig900.savefig('picturesCMA/deltaEtransf_indxPolt-39_900cma.jpg')    
-fig1000.savefig('picturesCMA/deltaEtransf_indxPolt-49_1000cma.jpg')    
+fig500.savefig('picturesCMA/deltaEtransf_indxPlot-0_500cma.jpg')    
+fig600.savefig('picturesCMA/deltaEtransf_indxPlot-9_600cma.jpg')    
+fig700.savefig('picturesCMA/deltaEtransf_indxPlot-19_700cma.jpg')    
+fig800.savefig('picturesCMA/deltaEtransf_indxPlot-29_800cma.jpg')    
+fig900.savefig('picturesCMA/deltaEtransf_indxPlot-39_900cma.jpg')    
+fig1000.savefig('picturesCMA/deltaEtransf_indxPlot-49_1000cma.jpg')    
 fig1100.savefig('picturesCMA/exponentB_on_ionVelocity_1100cma.jpg')    
 '''
 
+'''
 #
 # Opening the output file: 
 #
@@ -1208,1199 +1396,7 @@ for i in range(nVion):
     ('\n %5.3e    %5.3e     %5.3e    %8.2f       %8.2f        %8.4f   %5.3f' \
      % (Vion[i],Vion[i]/V0,Vion[i]/eVrmsTran,1.e4*rhoMax[i], \
         2.e4*halfLintr[0,i],fitA[i],fitB[i]))
+'''
    
 sys.exit()
 
-'''
-#===============================================================================
-#
-# Case: the same longidudinal (eVrmsLong).
-# The selection of main parameters is sescribed in the
-# document "notesToChoiceCodeParameters.docx"
-#
-
-rhoMin=1.e-4                                                       # R_crit=1 mkm; cm
-Rshield=[100.e-4,150.e-4,200.e-4]                                  # max value of the R_shield; cm
-rhoMax=Rshield[0]                                                     # cm
-
-bMin=rhoMin                                                        # cm
-bMax=2*rhoMax                                                      # cm (In case with L_int=R_shield sqrt(2) instead 2 is  needed)
-
-nTotal=500
-bEdges=np.zeros(nTotal+1)
-bStep=(bMax-bMin)/nTotal                                           # cm
-
-print 'bMin(mkm)=%e, bMax(mkm)=%e, bStep(mkm)=%e' % (1.e+4*bMin,1.e+4*bMax,1.e+4*bStep)
-
-for i in range(nTotal+1):
-   bEdges[i]=bMin+bStep*i                                          # cm
-   
-print 'bEdges[0]=%e, bEdges[nTotal]=%e (all sizes in mkm)' % \
-      (1.e+4*bEdges[0],1.e+4*bEdges[nTotal])
-
-#
-# Transfered momenta for different approaches:
-#      deltaP=q_e^2*timeStep*abs(dpApprch_NTot|).
-# First index numerates the x,y and z-component of deltaP:
-#
-dpApprch_cTot=np.zeros((3,nTotal))                                 # 1/cm^2
-dpApprch_mTot=np.zeros((3,nTotal))                                 # 1/cm^2
-
-sumPoints_c=0
-sumPoints_m=0
-
-#
-# Electrons are magnetized for impact parameter >> rhoCrit:
-#
-rhoCrit=math.pow(q_elec**2/(m_elec*omega_L**2),1./3)    # cm
-alpha=2*q_elec**2*omega_L/(m_elec*eVrmsLong**3)         # dimensionless
-beta=2*q_elec**2/(m_elec*eVrmsLong**2)                  # cm
-print 'Rshield(mkm)=%e, rhoCrit(mkm)=%f, alpha=%f' % \
-      (1.e+4*Rshield[0],1.e+4*rhoCrit,alpha)
-
-#
-# Array A=log10(Upot/Ekin)=
-#        =log10([q_e^2/rho]/[m_e((V_transverse^2+V_longitudinal^2)/2]): 
-#
-nA=25
-crrntA=np.zeros(nA)
-minA=-5.
-maxA=0.
-stepA=(maxA-minA)/(nA-1)
-
-#
-# Array B=log10(R_larm/rho): 
-#
-nB=25
-crrntB=np.zeros(nB)
-minB=-3.
-maxB=-.5
-stepB=(maxB-minB)/(nB-1)
-
-evTran=np.zeros((nA,nB))                                # cm/sec
-rho_larm=np.zeros((nA,nB))                              # cm
-kinEnergy=np.zeros((nA,nB))                             # erg
-rhoCrrnt=np.zeros((nA,nB))                              # cm
-#-----
-# To check the solution of the  equation for V_transversal, using comparison 
-# two formulas to calculate the impact parameter:
-rhoCheck=np.zeros((nA,nB))                              # cm
-#-----
-halfLintr=np.zeros((nA,nB))                             # cm
-timePath=np.zeros((nA,nB))                              # sec
-numbLarmor=np.zeros((nA,nB))                            # dimensionless
-
-# To plot area of the impact parameter b; 
-# First index =0 for b < Rshield[0], 
-#             =1 for Rshield[0] < b < Rshield[1], 
-#             =2 for Rshield[1] < b < Rshield[2]: 
-
-mapAimpctParmtr=np.zeros((3,nA*nB))
-mapBimpctParmtr=np.zeros((3,nA*nB))
-rhoCrrntMax=0.
-rhoCrrntMax_A=0
-rhoCrrntMax_B=0
-trackNumb=-1                                    # Tracks are enumerated from 0!
-track_1=-1                                      # Tracks are enumerated from 0!
-track_c=-1                                      # Tracks are enumerated from 0!
-
-for iA in range(nA):
-   crrntA[iA]=minA+stepA*iA                     # log10(Upot/Ekin)
-   for iB in range(nB):
-      crrntB[iB]=minB+stepB*iB                  # log10(Rlarm/rho)
-#
-# Transverse electron velocity V_transverse=V_longidudinal * y, where
-# y is the root of equation y^3+y+q=0 for each selected values of A and B:
-#
-      q=-alpha*math.pow(10.,crrntB[iB]-crrntA[iA])
-      D=1./27+(q/2)**2
-      root=math.pow(np.sqrt(D)-q/2,1./3)-math.pow(np.sqrt(D)+q/2,1./3)	 
-# Checking, that root^3+root+q=0:
-      leftPart=root**3+root+q  
-# Corrections of the root:
-      m=0
-      while (abs(leftPart) > 1.e-8) and (m  < 5):
-         deltaRoot=-leftPart/(root*(3.*root+1))
-         root += deltaRoot
-         leftPart=root**3+root+q  
-	 m += 1
-      evTran[iA,iB]=eVrmsLong*root                                 # transverse velocity; cm/sec
-      rho_larm[iA,iB]=evTran[iA,iB]/omega_L                        # Larmor radius; cm
-      kinEnergy[iA,iB]=m_elec*(evTran[iA,iB]**2+eVrmsLong**2)/2.   # kinetic energy; erg
-      rhoCrrnt[iA,iB]=rho_larm[iA,iB]/math.pow(10.,crrntB[iB])     # current impact parameter; cm
-#-----
-# Comparison of the two formulas to calculate the impact parameter
-# ("bad" solutions exist when abs(rhoCrrnt-rhoCheck) > 1.e-12):      
-      rhoCheck[iA,iB]=beta/(1.+root**2)/math.pow(10.,crrntA[iA])   # impact parameter for checking; cm
-      if abs(rhoCrrnt[iA,iB]-rhoCheck[iA,iB]) > 1.e-11:
-         print 'A=%e, B=%e: abs(rhoCrrnt-rhoCheck)=%e' % \
-	       (crrntA[iA],crrntB[iB],abs(rhoCrrnt[iA,iB]-rhoCheck[iA,iB]))
-#-----
-      if rhoCrrntMax < rhoCrrnt[iA,iB]:
-         rhoCrrntMax=rhoCrrnt[iA,iB]
-	 rhoCrrntMax_A=crrntA[iA]
-	 rhoCrrntMax_B=crrntB[iB]
-      if rhoCrrnt[iA,iB] < Rshield[0]:
-         trackNumb += 1  
-	 mapAimpctParmtr[0,trackNumb]=crrntA[iA]                   # Tracks are enumerated from 0!  
-	 mapBimpctParmtr[0,trackNumb]=crrntB[iB]                   # Tracks are enumerated from 0!  
-         halfLintr[iA,iB]=np.sqrt(Rshield[0]**2-rhoCrrnt[iA,iB]**2)   # half length of interaction; cm
-         timePath[iA,iB]=halfLintr[iA,iB]/eVrmsLong                # time of interaction; sec
-         numbLarmor[iA,iB]=int(timePath[iA,iB]/T_larm)             # dimensionless
-###	 if trackNumb < 100:
-###            print 'iA=%d, iB=%d: track=%d, numbLarmor[iA,iB]=%d: Lintr=%e, rhoLarm=%e, rhoCrrnt=%e' % \
-###	          (iA,iB,trackNumb,numbLarmor[iA,iB],1.e4*halfLintr[iA,iB], \
-###	           1.e4*rho_larm[iA,iB],1.e4*rhoCrrnt[iA,iB])  
-###      else: 
-###         print 'iA=%d, iB=%d, rhoLarm=%e, rhoCrrnt=%e' % \
-###	       (iA,iB,1.e4*rho_larm[iA,iB],1.e4*rhoCrrnt[iA,iB]) 
-#-----
-# To plot area of the impact parameter b:
-      if Rshield[0] <= rhoCrrnt[iA,iB] < Rshield[1]:
-         track_1 += 1  
-	 mapAimpctParmtr[1,track_1]=crrntA[iA]                     # Tracks are enumerated from 0!  
-	 mapBimpctParmtr[1,track_1]=crrntB[iB]                     # Tracks are enumerated from 0!  
-      if Rshield[1] <= rhoCrrnt[iA,iB] < Rshield[2]:
-         track_c += 1  
-	 mapAimpctParmtr[2,track_c]=crrntA[iA]                     # Tracks are enumerated from 0!  
-	 mapBimpctParmtr[2,track_c]=crrntB[iB]                     # Tracks are enumerated from 0!  
-#-----
-
-lastTrackNumber=trackNumb
-print 'lastTrackNumber=%d' % lastTrackNumber	  
-print 'rhoCrrntMax=%e for iA=%e, iB=%e' % (1.e4*rhoCrrntMax,rhoCrrntMax_A,rhoCrrntMax_B)
-
-#-----------------------------------------
-#
-# Plotting of working arrays:
-#
-#-----------------------------------------
-
-plotFlagWorkingArrays=1         # Plot working arrays if = 1, orherwise don't plot
-
-if plotFlagWorkingArrays ==1:
-
-#
-# Area of initial impact parameter:
-#
-   plt.figure (10)
-   plt.plot(mapAimpctParmtr[0,0:trackNumb],mapBimpctParmtr[0,0:trackNumb],'.r',markersize=10)
-   plt.plot(mapAimpctParmtr[1,0:track_1],mapBimpctParmtr[1,0:track_1],'.b',markersize=10)
-   plt.plot(mapAimpctParmtr[2,0:track_c],mapBimpctParmtr[2,0:track_c],'.m',markersize=10)
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   Rshield_mkm=1.e4*Rshield[0]
-   Rshield_150_mkm=1.e4*Rshield[1]
-   Rshield_200_mkm=1.e4*Rshield[2]
-   plt.title(('Area of Initial Impact Parameter $b$ (%d Tracks)' % lastTrackNumber), \
-             color='m',fontsize=16)
-   plt.xlim([minA,maxA])
-   plt.ylim([minB,maxB])
-   plt.legend([('$b$ < %6.1f $\mu$m' % Rshield_mkm), \
-               ('%6.1f $\mu$m < $b$ < %6.1f $\mu$m' % (Rshield_mkm,Rshield_150_mkm)), \
-      	       ('%6.1f $\mu$m < $b$ < %6.1f $\mu$m' % (Rshield_150_mkm,Rshield_200_mkm))], \
-   	      loc='lower left',fontsize=16)
-   plt.grid(True)
-
-   X,Y=np.meshgrid(crrntA,crrntB)      
-
-#
-# Half length of interaction:
-#
-   fig20=plt.figure(20)
-   ax20=fig20.gca(projection='3d')
-   surf=ax20.plot_surface(X,Y,1.e+4*halfLintr,cmap=cm.coolwarm,linewidth=0,antialiased=False)
-   plt.title('Half Length of Interaction $L_{interaction}$, $\mu$m', color='m',fontsize=16)
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   ax20.set_zlabel('$1/2 \cdot L_{interaction}$',color='m',fontsize=16)
-   fig20.colorbar(surf, shrink=1., aspect=10)
-   plt.grid(True)
-
-#
-# Number of Larmor turns:
-#
-   fig30=plt.figure(30)
-   ax30=fig30.gca(projection='3d')
-   surf=ax30.plot_surface(X,Y,numbLarmor,cmap=cm.coolwarm,linewidth=0,antialiased=False)
-   plt.title('Number of Larmor Turns $N_{Larmor}$', color='m',fontsize=16)
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   ax30.set_zlabel('$N_{Larmor}$',color='m',fontsize=16)
-   fig30.colorbar(surf, shrink=1., aspect=10)
-   plt.grid(True)
-
-# plt.show()
-
-#-----------------------------------------
-#
-# Definitions:
-#
-#-----------------------------------------
-larmorNumber=np.zeros(lastTrackNumber+1)
-larmorRadius=np.zeros(lastTrackNumber+1)                           # cm
-
-trackNumb_1=-1                                                     # Tracks will be enumerated from 0!
-
-# 
-# For approach_c (with averaging over nLarmorAvrgng larmor rotation) +
-# "Magnus extansion" method to calculate the transferred momenmta):
-#
-nLarmorAvrgng=1                                              # number of averaged Larmor rotations 
-timeStep_c=nLarmorAvrgng*stepsNumberOnGyro*timeStep          # time step for approach_c
-matr_elec_c=guidingCenter_Matrix(.5*timeStep_c)       # matrix for electron for .5*timeStep_c 
-matr_ion_c=drift_Matrix(M_ion,.5*timeStep_c)  # matrix for ion (with mass M_ion) for .5*timeStep_c
-trackNumb_c=-1                                               # Tracks will be enumerated from 0!
-minLarmR_b_c=1.e8                                            # dimensionless     
-maxLarmR_b_c=-1.e8                                           # dimensionless
-minUpot_enrgKin_c=1.e8                                       # dimensionless      
-maxUpot_enrgKin_c=-1.e8                                      # dimensionless      
-timePoints_c=np.zeros(lastTrackNumber+1)                     # for approach_c; dimensionless
-print 'lastTrackNumber=%d' % lastTrackNumber
-pointTrack_c=np.zeros(lastTrackNumber+1)                     # for approach_c; dimensionless  
-
-# 
-# For approach_m (with averaging over nLarmorAvrgng larmor rotation +
-# "Guiding center" method to calculate the transferred momenmta):
-#
-nLarmorAvrgng=1                                              # number of averaged Larmor rotations 
-timeStep_m=nLarmorAvrgng*stepsNumberOnGyro*timeStep          # time step for approach_m
-matr_elec_m=guidingCenter_Matrix(.5*timeStep_m)       # matrix for electron for .5*timeStep_m 
-matr_ion_m=drift_Matrix(M_ion,.5*timeStep_m)  # matrix for ion (with mass M_ion) for .5*timeStep_m
-trackNumb_m=-1                                               # Tracks will be enumerated from 0!
-minLarmR_b_m=1.e8                                            # dimensionless     
-maxLarmR_b_m=-1.e8                                           # dimensionless
-minUpot_enrgKin_m=1.e8                                       # dimensionless      
-maxUpot_enrgKin_m=-1.e8                                      # dimensionless      
-timePoints_m=np.zeros(lastTrackNumber+1)                     # for approach_m; dimensionless
-pointTrack_m=np.zeros(lastTrackNumber+1)                     # for approach_m; dimensionless  
-
-print 'timeStep=%e, timeStep_c=%e, timeStep_m=%e' % (timeStep,timeStep_c,timeStep_m)
-
-# 
-# To draw track with maximal transfer of px:
-#
-
-maxAbsDpxApprch_c=0.
-maxAbsDpxApprch_m=0.
-
-totAbsDpxApprch_c=0.
-totAbsDpxApprch_m=0.
-
-indxAmaxAbsDpxApprch_c=0
-indxAmaxAbsDpxApprch_m=0
-
-indxBmaxAbsDpxApprch_c=0
-indxBmaxAbsDpxApprch_m=0
-
-trackNumbMaxAbsDpxApprch_c=0
-trackNumbMaxAbsDpxApprch_m=0
-
-#
-# Working arrays:
-#
-larmorNumber=np.zeros(nA*nB)
-larmorRadius=np.zeros(nA*nB)
-
-cpuTime_c=np.zeros(nA*nB)
-
-pointTrack_m=np.zeros(nA*nB)  
-timePoints_m=np.zeros(nA*nB)
-cpuTime_m=np.zeros(nA*nB)
-
-evTran=np.zeros((nA,nB))                                           # cm/sec
-rho_larm=np.zeros((nA,nB))                                         # cm
-kinEnergy=np.zeros((nA,nB))                                        # erg
-rhoCrrnt=np.zeros((nA,nB))                                         # cm
-halfLintr=np.zeros((nA,nB))                                        # cm
-timePath=np.zeros((nA,nB))                                         # sec
-numbLarmor=np.zeros((nA,nB))                                       # dimensionless
-
-dpxTotal_c=np.zeros((nA,nB))                                       # g*cm/sec
-dpyTotal_c=np.zeros((nA,nB))                                       # g*cm/sec
-dpzTotal_c=np.zeros((nA,nB))                                       # g*cm/sec
-
-dpxTotalMax_c=0.                                                   # g*cm/sec
-dpyTotalMax_c=0.                                                   # g*cm/sec
-dpzTotalMax_c=0.                                                   # g*cm/sec
-
-dpxTotal_m=np.zeros((nA,nB))                                       # g*cm/sec
-dpyTotal_m=np.zeros((nA,nB))                                       # g*cm/sec
-dpzTotal_m=np.zeros((nA,nB))                                       # g*cm/sec
-
-dpxTotalMax_m=0.                                                   # g*cm/sec
-dpyTotalMax_m=0.                                                   # g*cm/sec
-dpzTotalMax_m=0.                                                   # g*cm/sec
-
-maxYcoorElec_c=0.
-maxYcoorIon_c=0.
-maxYcoorElec_m=0.
-maxYcoorIon_m=0.
-
-cpuTimeTotal=0
-
-runFlagApproach_c=1             # run approach2 if = 1, otherwise don't run
-runFlagApproach_m=1             # run approach3 if = 1, otherwise don't run
-
-plotFlagTracks=1                # Plot everything about tracks if = 1, orherwise don't plot
-plotFlagDpTransf=1              # Plot everything about dp transf. if = 1, orherwise don't plot
-
-print 'nA=%d, nB=%d' % (nA,nB)
-
-for iA in range(nA):
-   crrntA[iA]=minA+stepA*iA                                      # log10(Upot/Ekin)
-   for iB in range(nB):
-      crrntB[iB]=minB+stepB*iB                                   # log10(Rlarm/rho)
-#
-# Transverse electron velocity V_transverse=V_longidudinal * y, where
-# y is the root of equation y^3+y+q=0 for each selected values of A and B:
-#
-      q=-alpha*math.pow(10.,crrntB[iB]-crrntA[iA])
-      D=1./27+(q/2)**2
-      root=math.pow(np.sqrt(D)-q/2,1./3)-math.pow(np.sqrt(D)+q/2,1./3)	 
-# Checking, that root^3+root+q=0:
-      leftPart=root**3+root+q  
-# Corrections of the root:
-      m=0
-      while (abs(leftPart) > 1.e-8) and (m  < 5):
-         deltaRoot=-leftPart/(root*(3.*root+1))
-         root += deltaRoot
-         leftPart=root**3+root+q  
-	 m += 1
-      evTran[iA,iB]=eVrmsLong*root                                 # transverse velocity; cm/sec
-      rho_larm[iA,iB]=evTran[iA,iB]/omega_L                        # Larmor radius; cm
-      kinEnergy[iA,iB]=m_elec*(evTran[iA,iB]**2+eVrmsLong**2)/2.   # kinetic energy; erg
-      rhoCrrnt[iA,iB]=rho_larm[iA,iB]/math.pow(10.,crrntB[iB])     # current impact parameter; cm
-###      print 'A(%d)=%e, B(%d)=%e: rhoCrrnt=%e, Rshield[0]=%e' % \
-###            (iA,crrntA[iA],iB,crrntB[iB],rhoCrrnt[iA,iB],Rshield[0])
-      if rhoCrrnt[iA,iB] < Rshield[0]:
-         print 'Track: %d' % trackNumb_1
-         trackNumb_1 += 1  
-         trackNumb_c += 1  
-         trackNumb_m += 1  
-         halfLintr[iA,iB]=np.sqrt(Rshield[0]**2-rhoCrrnt[iA,iB]**2)   # half length of interaction; cm
-         timePath[iA,iB]=halfLintr[iA,iB]/eVrmsLong                # time of interaction; sec
-         numbLarmor[iA,iB]=int(timePath[iA,iB]/T_larm)             # dimensionless
-###         print 'iA=%d, iB=%d: track=%d, numbLarmor[iA,iB]=%d: Lintr=%e, rhoLarm=%e, rhoCrrnt=%e' % \
-###	       (iA,iB,trackNumb_1,numbLarmor[iA,iB],1.e4*halfLintr[iA,iB], \
-###	        1.e4*rho_larm[iA,iB],1.e4*rhoCrrnt[iA,iB])  
-         larmorNumber[trackNumb_1]=numbLarmor[iA,iB]
-         larmorRadius[trackNumb_1]=rho_larm[iA,iB]                 # cm
-#--          timePoints_1[trackNumb_1]=int(numbLarmor[iA,iB]*stepsNumberOnGyro) # for approach_1; dimensionless
-         timePoints_c[trackNumb_c]=int(numbLarmor[iA,iB]/nLarmorAvrgng)     # for approach_c; dimensionless
-         timePoints_m[trackNumb_m]=int(numbLarmor[iA,iB]/nLarmorAvrgng)     # for approach_m; dimensionless
-###	 print 'timePoints_1=%d, timePoints_c=%d, timePoints_m=%d, numbLarmor[iA,iB]=%d' % \
-###	       (timePoints_1[trackNumb_1],timePoints_c[trackNumb_c],timePoints_m[trackNumb_m], \
-###	        larmorNumber[trackNumb_1])   
-	 print 'timePoints_c=%d, timePoints_m=%d, numbLarmor[iA,iB]=%d' % \
-	       (timePoints_c[trackNumb_c],timePoints_m[trackNumb_m], \
-	        larmorNumber[trackNumb_1])   
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#
-# Approach_c: dragging with averaging over nLarmorAvrgng larmor rotation +
-#             "Guiding center" method to calculate the transferred momenta
-#
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#
-#------- Start of calculations for approach_c --------------
-#
-         if runFlagApproach_c == 1:
-            timeStart=os.times()
-            if trackNumb_c == 0:
-	       rhoFirstTurn=rhoCrrnt[iA,iB]
-	       rhoLarmorFirstTurn=rho_larm[iA,iB]
-#
-# 6-vectors for ion and electron and distance 'b' between them for the first trajectory and 
-# (T)rajectory with (M)aximal (T)ransferred (dpx) ( trajectory TMTdpx);
-# (for checking only; indices 0-5 for electron, indices 6-11 for ion,
-#  index=12 for 'b', index=13 for action and index=14 for b_gc):
-#
-               prtclCoorFirst_c=np.zeros((15,timePoints_c[trackNumb_c])) # first trajectory                 
-            prtclCoorCrrnt_c=np.zeros((15,timePoints_c[trackNumb_c])) # current trajectory                
-            prtclCoorMaxAbsDpx_c=np.zeros((15,timePoints_c[trackNumb_c]))      # trajectory TMTdpx
-# Current distance from origin of the coordinate system to electron along the trajectory; cm
-            bCrrnt_c=np.zeros(timePoints_c[trackNumb_c])           # cm
-# Current log10 of two important ratios:
-# First - ratio R_larmor/b; dimensionless
-            larmR_bCrrnt_c=np.zeros(timePoints_c[trackNumb_c])       
-# Second - ratio potential_energy/kinetic_energy; dimensionless
-            uPot_enrgKinCrrnt_c=np.zeros(timePoints_c[trackNumb_c])  
-# deltaPapprch_m=dpApprch_cCrrnt
-            dpApprch_cCrrnt=np.zeros((3,timePoints_c[trackNumb_c]))
-            for m in range(6): 
-               z_ionCrrnt_c[m]=0.                     # Current initial zero-vector for ion
-               z_elecCrrnt_c[m]=0.                    # Zeroing out of vector for electron
-# Current initial vector for electron:
-            z_elecCrrnt_c[Ix]=rhoCrrnt[iA,iB]+rho_larm[iA,iB]      # x, cm
-            z_elecCrrnt_c[Iz]=-halfLintr[iA,iB]                    # z, cm
-            z_elecCrrnt_c[Ipy]=m_elec*evTran[iA,iB]                # py, g*cm/sec
-            z_elecCrrnt_c[Ipz]=m_elec*eVrmsLong                    # pz, g*cm/sec
-	    z_elecCrrnt_gc=toGuidingCenter(z_elecCrrnt_c)          # transfer to system of guiding center
-#	    if iA == 0 and iB == 0:
-#	       print 'z_elecCrrnt_c: ', z_elecCrrnt_c 
-#	       print 'z_elecCrrnt_gc: ', z_elecCrrnt_gc 
-#-----------------------------------------------
-# Main action - dragging of the current trajectories (for given i and j)
-#
-            for k in range(int(timePoints_c[trackNumb_c])):
-#	       if k < 100: 
-#	          print 'k=%d: x=%e, y=%e, z=%e' % \
-#                      (k,1.e+4*z_elecCrrnt_gc[0],1.e+4*z_elecCrrnt_gc[2],1.e+4*z_elecCrrnt_gc[4]) 
-#	       if k > timePoints_c[trackNumb_c]-100: 
-#	          print 'k=%d: x=%e, y=%e, z=%e' % \
-#                       (k,1.e+4*z_elecCrrnt_gc[0],1.e+4*z_elecCrrnt_gc[2],1.e+4*z_elecCrrnt_gc[4]) 
-#
-# dragging both paticles through first half of trajectory:
-#
- 	       z_elecCrrnt_gc=np.dot(matr_elec_c,z_elecCrrnt_gc)   # electron
- 	       z_ionCrrnt_c=np.dot(matr_ion_c,z_ionCrrnt_c)        # ion
-#
-# dragging both paticles through interaction point:
-#
-	       dpIon,dpElec,action,b_gc=guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt_c,timeStep_c) 
-#	       if trackNumb_c == 0:
-#	          print 'point %d: dpgcElec=%e, dpzElec=%e' % 
-#                       (pointTrack_c[0],dpElec[1],dpElec[2])
-	       for ic in range(3):
-####
-#### Taking into account transfer of momentum for both particles:
-####
-####	          z_ionCrrnt_c[2*ic+1] += dpIon[ic]   
-####	          z_elecCrrnt_gc[2*ic+1] += dpElec[ic]
-#   
-# Current values to calculate deltaPapprch_c:  
-#
-	          dpApprch_cCrrnt[ic,k]=dpIon[ic]                  # g*cm/sec 
-#
-# dragging both paticles through second half of trajectory:
-#
- 	       z_elecCrrnt_gc=np.dot(matr_elec_c,z_elecCrrnt_gc)   # electron
- 	       z_ionCrrnt_c=np.dot(matr_ion_c,z_ionCrrnt_c)        # ion
-#	       crrntPoint=pointTrack_c[trackNumb_c]
-#	       if iA == 0 and iB == 0 and crrntPoint < 10:
-#                     print 'k, z_ionCrrnt_c', (k,z_ionCrrnt_c)
-	       z_elecCrrnt_c=fromGuidingCenter(z_elecCrrnt_gc)     # transfer from system of guiding center 
-# Current distance between ion and electron; cm:
- 	       bCrrnt_c[k]=np.sqrt((z_ionCrrnt_c[0]-z_elecCrrnt_c[0])**2+ \
-	                           (z_ionCrrnt_c[2]-z_elecCrrnt_c[2])**2+ \
-			           (z_ionCrrnt_c[4]-z_elecCrrnt_c[4])**2)
-# Current log10 of two important ratios:  
-	       larmR_bCrrnt_c[k]=math.log10(rho_larm[iA,iB]/bCrrnt_c[k])      # dimensionless 
-	       if maxLarmR_b_c < larmR_bCrrnt_c[k]:
-	          maxLarmR_b_c=larmR_bCrrnt_c[k]
-	       if minLarmR_b_c > larmR_bCrrnt_c[k]:
-	          minLarmR_b_c=larmR_bCrrnt_c[k]
-	       uPot_enrgKinCrrnt_c[k]=math.log10((q_elec**2/bCrrnt_c[k])/kinEnergy[iA,iB])
-	       if maxUpot_enrgKin_c < uPot_enrgKinCrrnt_c[k]:
-	          maxUpot_enrgKin_c=uPot_enrgKinCrrnt_c[k]
-	       if minUpot_enrgKin_c > uPot_enrgKinCrrnt_c[k]:
-	          minUpot_enrgKin_c=uPot_enrgKinCrrnt_c[k]
-# To be prepared to draw future TMTdpx trajectory (for checking only):
-               for ic in range(6):
-                  prtclCoorCrrnt_c[ic,pointTrack_c[trackNumb_c]]=z_elecCrrnt_c[ic]  # 6-vector for electron
-                  prtclCoorCrrnt_c[6+ic,pointTrack_c[trackNumb_c]]=z_ionCrrnt_c[ic] # 6-vector for ion 
-	       prtclCoorCrrnt_c[12,pointTrack_c[trackNumb_c]]=bCrrnt_c[k]           # cm
-	       prtclCoorCrrnt_c[13,pointTrack_c[trackNumb_c]]=action                # g*cm^2/sec
-	       prtclCoorCrrnt_c[14,pointTrack_c[trackNumb_c]]=b_gc                  # cm
-# To draw only first trajectory (for checking only):
-               if trackNumb_c == 0:
-                  for ic in range(6):
-                     prtclCoorFirst_c[ic,pointTrack_c[trackNumb_c]]=z_elecCrrnt_c[ic]      # 6-vector for electron
-                     prtclCoorFirst_c[6+ic,pointTrack_c[trackNumb_c]]=z_ionCrrnt_c[ic]     # 6-vector for ion 
-	          prtclCoorFirst_c[12,pointTrack_c[trackNumb_c]]=bCrrnt_c[k]               # cm
-	          prtclCoorFirst_c[13,pointTrack_c[trackNumb_c]]=action                    # g*cm^2/sec
-	          prtclCoorFirst_c[14,pointTrack_c[trackNumb_c]]=b_gc                      # cm
-	          if maxYcoorElec_c < abs(z_elecCrrnt_c[2]):
-	             maxYcoorElec_c=abs(z_elecCrrnt_c[2])
-	          if maxYcoorIon_c < abs(z_ionCrrnt_c[2]):
-	             maxYcoorIon_c=abs(z_ionCrrnt_c[2])
-               pointTrack_c[trackNumb_c] += 1
-# End of dragging of the current trajectory	  
-#-----------------------------------------------
-# To draw the distribution of transferred dp (g*cm/sec):
-               dpxTotal_c[iA,iB] +=-dpApprch_cCrrnt[0,k] 
-               dpyTotal_c[iA,iB] +=-dpApprch_cCrrnt[1,k] 
-               dpzTotal_c[iA,iB] +=-dpApprch_cCrrnt[2,k] 
-#
-# Total transferred dpx  for current track:
-#
-	       totAbsDpxApprch_c += abs(dpApprch_cCrrnt[0,k])
-# 
-# End of dragging of the current trajectory	  
-#-----------------------------------------------
-#
-# Accumulate transferred momenta and other data: 
-#
-            if trackNumb_c == 0: 
-# First definition of the total distance from origin of the
-# coordinate system to electron along the trajectory; cm:
- 	       b_c=bCrrnt_c                                        # cm
-# First definition of the log10 of two important ratios; dimensionless:  
-	       uPot_enrgKin_c=uPot_enrgKinCrrnt_c                  # ratio A 
-	       if maxUpot_enrgKin_c < uPot_enrgKinCrrnt_c[k]:
-	          maxUpot_enrgKin_c=uPot_enrgKinCrrnt_c[k]
-	       if minUpot_enrgKin_c > uPot_enrgKinCrrnt_c[k]:
-	          minUpot_enrgKin_c=uPot_enrgKinCrrnt_c[k]
-	       larmR_b_c=larmR_bCrrnt_c                            # ratio B
-	       if maxLarmR_b_c < larmR_bCrrnt_c[k]:
-	          maxLarmR_b_c=larmR_bCrrnt_c[k]
-	       if minLarmR_b_c > larmR_bCrrnt_c[k]:
-	          minLarmR_b_c=larmR_bCrrnt_c[k]
-#### First definition of the values to calculate deltaPapprch_c (g*cm/sec):
-###               dpxApprch_c=dpApprch_cCrrnt[0,:] 
-###               dpyApprch_c=dpApprch_cCrrnt[1,:]
-###               dpzApprch_c=dpApprch_cCrrnt[2,:] 
-            else:  
-#### Total distance from origin of the coordinate system to electron along the trajectory:
- 	       b_c=np.concatenate((b_c,bCrrnt_c),axis=0)           # cm
-# Total log10 of two important ratios; dimensionless:  
-	       uPot_enrgKin_c=np.concatenate((uPot_enrgKin_c,uPot_enrgKinCrrnt_c),axis=0)        
-	       larmR_b_c=np.concatenate((larmR_b_c,larmR_bCrrnt_c),axis=0)                  
-#### Total values to calculate deltaPapprch_c (g*cm/sec):
-###               dpxApprch_c=np.concatenate((dpxApprch_c,dpApprch_cCrrnt[0,:]),axis=0)
-###               dpyApprch_c=np.concatenate((dpyApprch_c,dpApprch_cCrrnt[1,:]),axis=0)
-###               dpzApprch_c=np.concatenate((dpzApprch_c,dpApprch_cCrrnt[2,:]),axis=0)
-#
-# To draw TMTdpx trajectory (for checking only):
-#
-            if maxAbsDpxApprch_c < totAbsDpxApprch_c:
-	       maxAbsDpxApprch_c=totAbsDpxApprch_c
-	       indxAmaxAbsDpxApprch_c=iA
-	       indxBmaxAbsDpxApprch_c=iB
-	       trackNumbMaxAbsDpxApprch_c=trackNumb_c
-	       prtclCoorMaxAbsDpx_c=prtclCoorCrrnt_c.copy()   
-	       rhoMaxAbsDpxTurn_c=rhoCrrnt[iA,iB]
-	       rhoLarmorMaxAbsDpxTurn_c=rho_larm[iA,iB]
-###	       print 'iA=%d, iB=%d: TMT-track %d, points %d' % \
-###	             (indxAmaxAbsDpxApprch_c,indxBmaxAbsDpxApprch_c, \
-###		     trackNumbMaxAbsDpxApprch_c,pointTrack_c[trackNumbMaxAbsDpxApprch_c]) 
-###	       print 'timePoints.shape: ', \
-###	             (prtclCoorMaxAbsDpx_c.shape[0],prtclCoorMaxAbsDpx_c.shape[1])
-# End of all calculations for approach_c
-            sumPoints_c += pointTrack_c[trackNumb_c]
-# 
-# To draw the distribution of transferred dp:
-#dpxTotalMax_c
-	    if dpxTotalMax_c < abs(dpxTotal_c[iA,iB]):
-	       dpxTotalMax_c=abs(dpxTotal_c[iA,iB])
-	    if dpyTotalMax_c < abs(dpyTotal_c[iA,iB]):
-	       dpyTotalMax_c=abs(dpyTotal_c[iA,iB])
-	    if dpzTotalMax_c < abs(dpzTotal_c[iA,iB]):
-	       dpzTotalMax_c=abs(dpzTotal_c[iA,iB])
-#            print 'Track %d: dpxTotalMax_c=%e, dpyTotalMax_c=%e, dpzTotalMax_c=%e' % \
-#	          (trackNumb_c,dpxTotalMax_c,dpyTotalMax_c,dpzTotalMax_c)
-            timeEnd=os.times()
-	    cpuTime_c[trackNumb_c]=1.e+6*(float(timeEnd[0])-float(timeStart[0]))  # CPU time , mks
-            cpuTimeTotal += cpuTime_c[trackNumb_c] 
-#
-#------- End of approach_c --------------
-#
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#
-# Approach_m: dragging with averaging over nLarmorAvrgng larmor rotation +
-#             "Magnus expansion" method to calculate the transferred momenta
-#
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-#
-#------- Start of calculations for approach_m --------------
-         if runFlagApproach_m == 1:
-            timeStart=os.times()
-            if trackNumb_m == 0:
-	       rhoFirstTurn=rhoCrrnt[iA,iB]
-	       rhoLarmorFirstTurn=rho_larm[iA,iB]
-#
-# 6-vectors for ion and electron and distance 'b' between them for the first trajectory and 
-# (T)rajectory with (M)aximal (T)ransferred (dpx) ( trajectory TMTdpx);
-# (for checking only; indices 0-5 for electron, indices 6-11 for ion,
-#  index=12 for 'b', index=13 for action and index=14 for dy_gc):
-#
-               prtclCoorFirst_m=np.zeros((15,timePoints_m[trackNumb_m]))       # first trajectory                 
-            prtclCoorCrrnt_m=np.zeros((15,timePoints_m[trackNumb_m]))          # current trajectory                
-            prtclCoorMaxAbsDpx_m=np.zeros((15,timePoints_m[trackNumb_m]))      # trajectory TMTdpx
-# Current distance from origin of the coordinate system to electron along the trajectory; cm
-            bCrrnt_m=np.zeros(timePoints_m[trackNumb_m])                       # cm
-# Current log10 of two important ratios:
-# First - ratio R_larmor/b; dimensionless
-            larmR_bCrrnt_m=np.zeros(timePoints_m[trackNumb_m])       
-# Second - ratio potential_energy/kinetic_energy; dimensionless
-            uPot_enrgKinCrrnt_m=np.zeros(timePoints_m[trackNumb_m])  
-# deltaPapprch_m=dpApprch_mCrrnt
-            dpApprch_mCrrnt=np.zeros((3,timePoints_m[trackNumb_m]))
-            for m in range(6): 
-               z_ionCrrnt_m[m]=0.                     # Current initial zero-vector for ion
-               z_elecCrrnt_m[m]=0.                    # Zeroing out of vector for electron
-# Current initial vector for electron:
-            z_elecCrrnt_m[Ix]=rhoCrrnt[iA,iB]+rho_larm[iA,iB]      # x, cm
-            z_elecCrrnt_m[Iz]=-halfLintr[iA,iB]                    # z, cm
-            z_elecCrrnt_m[Ipy]=m_elec*evTran[iA,iB]                # py, g*cm/sec
-            z_elecCrrnt_m[Ipz]=m_elec*eVrmsLong                    # pz, g*cm/sec
-	    z_elecCrrnt_gc=toGuidingCenter(z_elecCrrnt_m)          # transfer to system of guiding center
-#	    if iA == 0 and iB == 0:
-#	       print 'z_elecCrrnt_m: ', z_elecCrrnt_m 
-#	       print 'z_elecCrrnt_gc: ', z_elecCrrnt_gc 
-#-----------------------------------------------
-# Main action - dragging of the current trajectories (for given i and j)
-#
-            for k in range(int(timePoints_m[trackNumb_m])):
-#	       if k < 100: 
-#	          print 'k=%d: x=%e, y=%e, z=%e' % \
-#                      (k,1.e+4*z_elecCrrnt_gc[0],1.e+4*z_elecCrrnt_gc[2],1.e+4*z_elecCrrnt_gc[4]) 
-#	       if k > timePoints_c[trackNumb_m]-100: 
-#	          print 'k=%d: x=%e, y=%e, z=%e' % \
-#                       (k,1.e+4*z_elecCrrnt_gc[0],1.e+4*z_elecCrrnt_gc[2],1.e+4*z_elecCrrnt_gc[4]) 
-#
-# dragging both paticles through first half of trajectory:
-#
- 	       z_elecCrrnt_gc=np.dot(matr_elec_m,z_elecCrrnt_gc)   # electron
- 	       z_ionCrrnt_m=np.dot(matr_ion_m,z_ionCrrnt_m)        # ion
-#
-# dragging both paticles through interaction point:
-#
-	       dpIon,dpElec,action,dy_gc=MagnusExpansionCollision(z_elecCrrnt_gc,z_ionCrrnt_m,timeStep_m) 
-#	       if trackNumb_m == 0:
-#	          print 'point %d: dpgcElec=%e, dpzElec=%e' % 
-#                       (pointTrack_m[0],dpElec[1],dpElec[2])
-	       for ic in range(3):
-####
-#### Taking into account transfer of momentum for both particles:
-####
-####	          z_ionCrrnt_m[2*ic+1] += dpIon[ic]   
-####	          z_elecCrrnt_gc[2*ic+1] += dpElec[ic]
-#   
-# Current values to calculate deltaPapprch_m:  
-#
-	          dpApprch_mCrrnt[ic,k]=dpIon[ic]                  # g*cm/sec
-	       z_elecCrrnt_gc[2] += dy_gc                          # cm 
-#
-# dragging both paticles through second half of trajectory:
-#
- 	       z_elecCrrnt_gc=np.dot(matr_elec_m,z_elecCrrnt_gc)   # electron
- 	       z_ionCrrnt_m=np.dot(matr_ion_m,z_ionCrrnt_m)        # ion
-#	       crrntPoint=pointTrack_m[trackNumb_m]
-#	       if iA == 0 and iB == 0 and crrntPoint < 10:
-#                     print 'k, z_ionCrrnt_m', (k,z_ionCrrnt_m)
-	       z_elecCrrnt_m=fromGuidingCenter(z_elecCrrnt_gc)     # transfer from system of guiding center 
-# Current distance between ion and electron; cm:
- 	       bCrrnt_m[k]=np.sqrt((z_ionCrrnt_m[0]-z_elecCrrnt_m[0])**2+ \
-	                           (z_ionCrrnt_m[2]-z_elecCrrnt_m[2])**2+ \
-			           (z_ionCrrnt_m[4]-z_elecCrrnt_m[4])**2)
-# To be prepared to draw future TMTdpx trajectory (for checking only):
-               for ic in range(6):
-                  prtclCoorCrrnt_m[ic,pointTrack_m[trackNumb_m]]=z_elecCrrnt_m[ic]  # 6-vector for electron
-                  prtclCoorCrrnt_m[6+ic,pointTrack_m[trackNumb_m]]=z_ionCrrnt_m[ic] # 6-vector for ion 
-	       prtclCoorCrrnt_m[12,pointTrack_m[trackNumb_m]]=bCrrnt_m[k]           # cm
-	       prtclCoorCrrnt_m[13,pointTrack_m[trackNumb_m]]=action                # g*cm^2/sec
-	       prtclCoorCrrnt_m[14,pointTrack_m[trackNumb_m]]=dy_gc                 # cm
-# To draw only first trajector3 (for checking only):
-               if trackNumb_m == 0:
-                  for ic in range(6):
-                     prtclCoorFirst_m[ic,pointTrack_m[trackNumb_m]]=z_elecCrrnt_m[ic]      # 6-vector for electron
-                     prtclCoorFirst_m[6+ic,pointTrack_m[trackNumb_m]]=z_ionCrrnt_m[ic]     # 6-vector for ion 
-	          prtclCoorFirst_m[12,pointTrack_m[trackNumb_m]]=bCrrnt_m[k]               # cm
-	          prtclCoorFirst_m[13,pointTrack_m[trackNumb_m]]=action                    # g*cm^2/sec
-	          prtclCoorFirst_m[14,pointTrack_m[trackNumb_m]]=dy_gc                     # cm
-	          if maxYcoorElec_m < abs(z_elecCrrnt_m[2]):
-	             maxYcoorElec_m=abs(z_elecCrrnt_m[2])
-	          if maxYcoorIon_m < abs(z_ionCrrnt_m[2]):
-	             maxYcoorIon_m=abs(z_ionCrrnt_m[2])
-               pointTrack_m[trackNumb_m] += 1
-# End of dragging of the current trajectory	  
-#-----------------------------------------------
-# To draw the distribution of transferred dp (g*cm/sec):
-               dpxTotal_m[iA,iB] +=-dpApprch_mCrrnt[0,k] 
-               dpyTotal_m[iA,iB] +=-dpApprch_mCrrnt[1,k] 
-               dpzTotal_m[iA,iB] +=-dpApprch_mCrrnt[2,k] 
-#
-# Total transferred dpx  for current track:
-#
-	       totAbsDpxApprch_m += abs(dpApprch_mCrrnt[0,k])
-# 
-# End of dragging of the current trajectory	  
-#-----------------------------------------------
-#
-# Accumulate transferred momenta and other data: 
-#
-            if trackNumb_m == 0: 
-# First definition of the total distance from origin of the
-# coordinate system to electron along the trajectory; cm:
- 	       b_m=bCrrnt_m                                        # cm
-# First definition of the log10 of two important ratios; dimensionless:  
-	       uPot_enrgKin_m=uPot_enrgKinCrrnt_m                  # ratio A 
-	       if maxUpot_enrgKin_m < uPot_enrgKinCrrnt_m[k]:
-	          maxUpot_enrgKin_m=uPot_enrgKinCrrnt_m[k]
-	       if minUpot_enrgKin_m > uPot_enrgKinCrrnt_m[k]:
-	          minUpot_enrgKin_m=uPot_enrgKinCrrnt_m[k]
-	       larmR_b_m=larmR_bCrrnt_m                            # ratio B
-	       if maxLarmR_b_m < larmR_bCrrnt_m[k]:
-	          maxLarmR_b_m=larmR_bCrrnt_m[k]
-	       if minLarmR_b_m > larmR_bCrrnt_m[k]:
-	          minLarmR_b_m=larmR_bCrrnt_m[k]
-#### First definition of the values to calculate deltaPapprch_m (g*cm/sec):
-###               dpxApprch_m=dpApprch_mCrrnt[0,:] 
-###               dpyApprch_m=dpApprch_mCrrnt[1,:]
-###               dpzApprch_m=dpApprch_mCrrnt[2,:] 
-            else:  
-#### Total distance from origin of the coordinate system to electron along the trajectory:
- 	       b_m=np.concatenate((b_m,bCrrnt_m),axis=0)           # cm
-# Total log10 of two important ratios; dimensionless:  
-	       uPot_enrgKin_m=np.concatenate((uPot_enrgKin_m,uPot_enrgKinCrrnt_m),axis=0)        
-	       larmR_b_m=np.concatenate((larmR_b_m,larmR_bCrrnt_m),axis=0)                  
-#### Total values to calculate deltaPapprch_m (g*cm/sec):
-###               dpxApprch_m=np.concatenate((dpxApprch_m,dpApprch_mCrrnt[0,:]),axis=0)
-###               dpyApprch_m=np.concatenate((dpyApprch_m,dpApprch_mCrrnt[1,:]),axis=0)
-###               dpzApprch_m=np.concatenate((dpzApprch_m,dpApprch_mCrrnt[2,:]),axis=0)
-#
-# To draw TMTdpx trajectory (for checking only):
-#
-            if maxAbsDpxApprch_m < totAbsDpxApprch_m:
-	       maxAbsDpxApprch_m=totAbsDpxApprch_m
-	       indxAmaxAbsDpxApprch_m=iA
-	       indxBmaxAbsDpxApprch_m=iB
-	       trackNumbMaxAbsDpxApprch_m=trackNumb_m
-	       prtclCoorMaxAbsDpx_m=prtclCoorCrrnt_m.copy()   
-	       rhoMaxAbsDpxTurn_m=rhoCrrnt[iA,iB]
-	       rhoLarmorMaxAbsDpxTurn_m=rho_larm[iA,iB]
-###	       print 'iA=%d, iB=%d: TMT-track %d, points %d' % \
-###	             (indxAmaxAbsDpxApprch_m,indxBmaxAbsDpxApprch_m, \
-###		     trackNumbMaxAbsDpxApprch_m,pointTrack_m[trackNumbMaxAbsDpxApprch_m]) 
-###	       print 'timePoints.shape: ', \
-###	             (prtclCoorMaxAbsDpx_m.shape[0],prtclCoorMaxAbsDpx_m.shape[1])
-# End of all calculations for approach_m
-            sumPoints_m += pointTrack_m[trackNumb_m]
-# 
-# To draw the distribution of transferred dp:
-#
-	    if dpxTotalMax_m < abs(dpxTotal_m[iA,iB]):
-	       dpxTotalMax_m=abs(dpxTotal_m[iA,iB])
-	    if dpyTotalMax_m < abs(dpyTotal_m[iA,iB]):
-	       dpyTotalMax_m=abs(dpyTotal_m[iA,iB])
-	    if dpzTotalMax_m < abs(dpzTotal_m[iA,iB]):
-	       dpzTotalMax_m=abs(dpzTotal_m[iA,iB])
-            print 'Track %d: dpxTotalMax_m=%e, dpyTotalMax_m=%e, dpzTotalMax_m=%e' % \
-	          (trackNumb_m,dpxTotalMax_m,dpyTotalMax_m,dpzTotalMax_m)
-            timeEnd=os.times()
-	    cpuTime_m[trackNumb_m]=1.e+6*(float(timeEnd[0])-float(timeStart[0]))  # CPU time , mks
-            cpuTimeTotal += cpuTime_m[trackNumb_m] 
-#
-#------- End of approach_m --------------
-#
-
-if runFlagApproach_c == 1:
-   print 'Approach_c: for %d tracks number of points is %d' % (lastTrackNumber,sumPoints_c)
-#   for i in range(b_cLenFirstTrack):
-#      print 'action(%d)=%e' % (i,prtclCoor_c[13,i])
-
-if runFlagApproach_m == 1:
-   print 'Approach_m: for %d tracks number of points is %d' % (lastTrackNumber,sumPoints_m)
-
-# for i in range(lastTrackNumber):
-#    print 'Track %d: larmor turns=%d, cpuTime(mks)=%e, time per turn(mks)=%6.1f' % \
-#          (i,larmorNumber[i],cpuTime[i],cpuTime[i]/larmorNumber[i])
-
-print 'cpuTimeTotal(mksec) = %e' % cpuTimeTotal
-
-#
-# First track: to compare distances between particles for approach_c,m (figure 325):
-#
-
-if runFlagApproach_c == 1:
-#   b_cArray=np.asarray(b_c)
-   b_cLenFirstTrack=int(timePoints_c[0])
-   print 'First track length for b_c: %d' % b_cLenFirstTrack
-
-if runFlagApproach_m == 1:
-#   b_mArray=np.asarray(b_m)
-   b_mLenFirstTrack=int(timePoints_m[0])
-   print 'First track length for b_m: %d' % b_mLenFirstTrack
-
-###############################################
-#
-#                  Plotting
-#
-###############################################
-
-#
-# Checking of the first trajectory:
-#
-specFctr=1.e22                                                   # Use it in titles!
-powerSpecFctr=22                                                 # Use it in titles!
-X,Y=np.meshgrid(crrntA,crrntB) 
-
-if runFlagApproach_c == 1 and plotFlagTracks == 1:
-
-#
-# First electron's trajectory:
-#
-   turns=larmorNumber[0]                                           # Number of larmor turns for drawing 
-   pointsTurns=turns                                               # Number of points for drawing
-   lengthArrowElc=5
-   pBegArrw=turns/2-lengthArrowElc/2
-   pEndArrw=turns/2+lengthArrowElc/2
-
-   fig140=plt.figure(140)
-   ax140=fig140.gca(projection='3d')
-   ax140.plot(1.e+4*prtclCoorFirst_c[0,0:pointsTurns], \
-              1.e+4*prtclCoorFirst_c[2,0:pointsTurns], \
-              1.e+4*prtclCoorFirst_c[4,0:pointsTurns],'-r',linewidth=2)
-   ax140.plot(1.e+4*prtclCoorFirst_c[0,pBegArrw:pEndArrw], \
-              1.e+4*prtclCoorFirst_c[2,pBegArrw:pEndArrw], \
-              1.e+4*prtclCoorFirst_c[4,pBegArrw:pEndArrw],'-b',linewidth=4)
-   plt.xlabel('x, $\mu m$',color='m',fontsize=16)
-   plt.ylabel('y, $\mu m$',color='m',fontsize=16)
-   ax140.set_zlabel('z, $\mu m$',color='m',fontsize=16)
-   titleHeader="Approach-c. First Electron's Trajectory:"
-   titleHeader += '\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m, $N_{Larm}=$%d'
-   plt.title((titleHeader % (1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn,turns)), \
-             color='m',fontsize=16)
-#
-# Trajectory of electron with maximal transferred px:
-#
-   turns=larmorNumber[trackNumbMaxAbsDpxApprch_c]                  # Number of larmor turns for drawing 
-   pointsTurns=turns                                               # Number of points for drawing
-   lengthArrowElc=8
-   pBegArrw=turns/2-lengthArrowElc/2
-   pEndArrw=turns/2+lengthArrowElc/2
-
-   fig145=plt.figure(145)
-   ax145=fig145.gca(projection='3d')
-   ax145.plot(1.e+4*prtclCoorMaxAbsDpx_c[0,0:pointsTurns], \
-              1.e+4*prtclCoorMaxAbsDpx_c[2,0:pointsTurns], \
-              1.e+4*prtclCoorMaxAbsDpx_c[4,0:pointsTurns],'-r',linewidth=2)
-   ax145.plot(1.e+4*prtclCoorMaxAbsDpx_c[0,pBegArrw:pEndArrw], \
-              1.e+4*prtclCoorMaxAbsDpx_c[2,pBegArrw:pEndArrw], \
-              1.e+4*prtclCoorMaxAbsDpx_c[4,pBegArrw:pEndArrw],'-b',linewidth=4)
-   plt.xlabel('x, $\mu m$',color='m',fontsize=16)
-   plt.ylabel('y, $\mu m$',color='m',fontsize=16)
-   ax145.set_zlabel('z, $\mu m$',color='m',fontsize=16)
-   titleHeader='Approach-c. Trajectory of Electron with Maximal Transferred $p_x$:'
-   titleHeader += '\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m, $N_{Larm}=$%d'
-   plt.title((titleHeader % (1.e+4*rhoMaxAbsDpxTurn_c,1.e+4*rhoLarmorMaxAbsDpxTurn_c,turns)), \
-             color='m',fontsize=16)
-#
-# First electron's trajectory (action):
-#
-   specFctr=1.e31                                                  #       Use it in titles!
-   specShift=5.86748911+1.478799548                                            # x e8! Use it in titles!
-
-   plt.figure (160)
-   plt.plot(1.e+4*prtclCoorFirst_c[4,0:pointsTurns], \
-            specFctr*prtclCoorFirst_c[13,0:pointsTurns]-1.e8*specShift,'-xr',linewidth=2)
-   plt.xlabel('z, $\mu$m',color='m',fontsize=16)
-   plt.ylabel(('$10^{31}\cdot J$ $-$ %5.3f$\cdot10^8$, g$\cdot$cm$^2$/sec' % specShift), \
-              color='m',fontsize=16)
-   plt.title("Approach-c: Action $J$ (First Electron's Track)", color='m',fontsize=16)
-   plt.grid(True)
-
-if runFlagApproach_c == 1 and plotFlagDpTransf == 1:              
-
-   specFctr=1.e22                                                  # Use it in titles!
-   powerpecFctr=22                                                 # Use it in titles!
-   X,Y=np.meshgrid(crrntA,crrntB) 
-#
-# Transfered momentum px (surface):
-#
-   fig340=plt.figure(340)
-   ax340=fig340.gca(projection='3d')
-#    surf=ax340.plot_surface(X,Y,specFctr*dpxTotal_c,cmap=cm.coolwarm, \
-#                            linewidth=0,antialiased=False)
-   surf=ax340.plot_surface(X,Y,specFctr*dpxTotal_c,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   ax340.set_zlabel('$dP_x \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
-   titleHeader='Approach-c: Transfered Momentum $dP_x$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
-   plt.title((titleHeader % (lastTrackNumber,specFctr*dpxTotalMax_c)), color='m',fontsize=16)
-   cb = fig340.colorbar(surf)
-   plt.grid(True)
-#
-# Transfered momentum px (map):
-#
-   fig345=plt.figure(345)
-   ax=fig345.add_subplot(111)                                       # for contours plotting
-   mapDpx=ax.contourf(X,Y,specFctr*dpxTotal_c)   
-   plt.plot(xAboundary[0:81],xBboundary[0:81],'-w')
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-#   titleHeader='Approach-c: Transfered Momentum $dP_x$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-#   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
-#   plt.title((titleHeader % (lastTrackNumber,specFctr*dpxTotalMax_c)), color='m',fontsize=14)
-   titleHeader='Approach-c: Transfered Momentum $dP_x$ $(\cdot 10^{%2d}$; $g \cdot cm/sec)$'
-   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-%2d}$ $g \cdot cm/sec)$)'
-   plt.title((titleHeader % \
-              (powerSpecFctr,lastTrackNumber,specFctr*dpxTotalMax_c,powerSpecFctr)), \
-	     color='m',fontsize=14)
-#   plt.text(-4.9,-2.95,'Unallowable Tracks: Initial\nImpact Parameter > $R_{shield}$',color='w',fontsize=20)
-#   plt.text(-4.65,-2.25,'Unallowable\nTracks: Initial\nImpact Parameter\nLarger than $R_{shield}$',color='w',fontsize=20)
-   plt.text(-4.9,-2.5, \
-            '        Area with\nUnallowable Tracks:\n    Initial Impact\nParameter Larger\n     than $R_{shield}$',\
-            color='w',fontsize=20)
-   plt.ylim([-3.,-.5])
-   fig345.colorbar(mapDpx)
-
-#
-# Transfered momentum py (surface):
-#
-###   fig350=plt.figure(350)
-###   ax350=fig350.gca(projection='3d')
-####    surf=ax350.plot_surface(X,Y,specFctr*dpyTotal_c,cmap=cm.coolwarm, \
-####                            linewidth=0,antialiased=False)
-###   surf=ax350.plot_surface(X,Y,specFctr*dpyTotal_c,cmap=cm.jet,linewidth=0,antialiased=False)
-###   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-###   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-###   ax350.set_zlabel('$dP_y \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
-###   titleHeader='Approach-c: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-###   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
-###   plt.title((titleHeader % (lastTrackNumber,specFctr*dpyTotalMax_c)), color='m',fontsize=16)
-###   cb = fig350.colorbar(surf)
-###   plt.grid(True)
-####
-#### Transfered momentum py (map):
-####
-###   fig355=plt.figure(355)
-###   ax=fig355.add_subplot(111)                                       # for contours plotting
-###   mapDpy=ax.contourf(X,Y,specFctr*dpyTotal_c)   
-###   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-###   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-###   titleHeader='Approach-c: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-###   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
-###   plt.title((titleHeader % (lastTrackNumber,specFctr*dpyTotalMax_c)), color='m',fontsize=14)
-###   fig355.colorbar(mapDpx)
-
-#
-# Transfered momentum pz (surface):
-#
-   fig360=plt.figure(360)
-   ax360=fig360.gca(projection='3d')
-#    surf=ax360.plot_surface(X,Y,specFctr*dpzTotal_c,cmap=cm.coolwarm, \
-#                            linewidth=0,antialiased=False)
-   surf=ax360.plot_surface(X,Y,specFctr*dpzTotal_c,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   ax360.set_zlabel('$dP_z \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
-#   titleHeader='Approach-c: Transfered Momentum $dP_z$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-#   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
-#   plt.title((titleHeader % (lastTrackNumber,specFctr*dpzTotalMax_c)), color='m',fontsize=16)
-   titleHeader='Approach-c: Transfered Momentum $dP_z$ $(\cdot 10^{%2d}$; $g \cdot cm/sec)$'
-   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-%2d}$ $g \cdot cm/sec)$)'
-   plt.title((titleHeader % \
-              (powerSpecFctr,lastTrackNumber,specFctr*dpzTotalMax_c,powerSpecFctr)), \
-	     color='m',fontsize=14)
-   cb = fig360.colorbar(surf)
-   plt.grid(True)
-#
-# Transfered momentum pz (map):
-#
-   fig365=plt.figure(365)
-   ax=fig365.add_subplot(111)                                       # for contours plotting
-   mapDpz=ax.contourf(X,Y,specFctr*dpzTotal_c)   
-   plt.plot(xAboundary[0:81],xBboundary[0:81],'-w')
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-#   titleHeader='Approach-c: Transfered Momentum $dP_z$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-#   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
-#   plt.title((titleHeader % (lastTrackNumber,specFctr*dpzTotalMax_c)), color='m',fontsize=14)
-   titleHeader='Approach-c: Transfered Momentum $dP_z$ $(\cdot 10^{%2d}$; $g \cdot cm/sec)$'
-   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-%2d}$ $g \cdot cm/sec)$)'
-   plt.title((titleHeader % \
-              (powerSpecFctr,lastTrackNumber,specFctr*dpxTotalMax_c,powerSpecFctr)), \
-	     color='m',fontsize=14)
-#   plt.text(-4.9,-2.95,'Unallowable Tracks: Initial\nImpact Parameter > $R_{shield}$',color='w',fontsize=20)
-#   plt.text(-4.65,-2.25,'Unallowable\nTracks: Initial\nImpact Parameter\nLarger than $R_{shield}$',color='w',fontsize=20)
-   plt.text(-4.9,-2.5, \
-            '        Area with\nUnallowable Tracks:\n    Initial Impact\nParameter Larger\n     than $R_{shield}$',\
-            color='w',fontsize=20)
-   plt.ylim([-3.,-.5])
-   fig365.colorbar(mapDpx)
-
-if runFlagApproach_m == 1 and plotFlagTracks == 1:
-
-#
-# First electron's trajectory:
-#
-   turns=larmorNumber[0]                                           # Number of larmor turns for drawing 
-   pointsTurns=turns                                               # Number of points for drawing
-   lengthArrowElc=5
-   pBegArrw=turns/2-lengthArrowElc/2
-   pEndArrw=turns/2+lengthArrowElc/2
-
-   fig640=plt.figure(640)
-   ax640=fig640.gca(projection='3d')
-   ax640.plot(1.e+4*prtclCoorFirst_m[0,0:pointsTurns], \
-              1.e+4*prtclCoorFirst_m[2,0:pointsTurns], \
-              1.e+4*prtclCoorFirst_m[4,0:pointsTurns],'-r',linewidth=2)
-   ax640.plot(1.e+4*prtclCoorFirst_m[0,pBegArrw:pEndArrw], \
-              1.e+4*prtclCoorFirst_m[2,pBegArrw:pEndArrw], \
-              1.e+4*prtclCoorFirst_m[4,pBegArrw:pEndArrw],'-b',linewidth=4)
-   plt.xlabel('x, $\mu m$',color='m',fontsize=16)
-   plt.ylabel('y, $\mu m$',color='m',fontsize=16)
-   ax640.set_zlabel('z, $\mu m$',color='m',fontsize=16)
-   titleHeader="Approach-m. First Electron's Trajectory:"
-   titleHeader += '\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m, $N_{Larm}=$%d'
-   plt.title((titleHeader % (1.e+4*rhoFirstTurn,1.e+4*rhoLarmorFirstTurn,turns)), \
-             color='m',fontsize=16)
-#
-# Trajectory of electron with maximal transferred px:
-#
-   turns=larmorNumber[trackNumbMaxAbsDpxApprch_m]                  # Number of larmor turns for drawing 
-   pointsTurns=turns                                               # Number of points for drawing
-   lengthArrowElc=8
-   pBegArrw=turns/2-lengthArrowElc/2
-   pEndArrw=turns/2+lengthArrowElc/2
-
-   fig645=plt.figure(645)
-   ax645=fig645.gca(projection='3d')
-   ax645.plot(1.e+4*prtclCoorMaxAbsDpx_m[0,0:pointsTurns], \
-              1.e+4*prtclCoorMaxAbsDpx_m[2,0:pointsTurns], \
-              1.e+4*prtclCoorMaxAbsDpx_m[4,0:pointsTurns],'-r',linewidth=2)
-   ax645.plot(1.e+4*prtclCoorMaxAbsDpx_m[0,pBegArrw:pEndArrw], \
-              1.e+4*prtclCoorMaxAbsDpx_m[2,pBegArrw:pEndArrw], \
-              1.e+4*prtclCoorMaxAbsDpx_m[4,pBegArrw:pEndArrw],'-b',linewidth=4)
-   plt.xlabel('x, $\mu m$',color='m',fontsize=16)
-   plt.ylabel('y, $\mu m$',color='m',fontsize=16)
-   ax645.set_zlabel('z, $\mu m$',color='m',fontsize=16)
-   titleHeader='Approach-m. Trajectory of Electron with Maximal Transferred $p_x$:'
-   titleHeader += '\nImpact Parameter=%5.2f $\mu$m, $R_{Larm}$=%5.2f $\mu$m, $N_{Larm}=$%d'
-   plt.title((titleHeader % (1.e+4*rhoMaxAbsDpxTurn_m,1.e+4*rhoLarmorMaxAbsDpxTurn_m,turns)), \
-             color='m',fontsize=16)
-
-#
-# First electron's trajectory (action):
-#
-   specFctrJ=1.e31                                                  #       Use it in titles!
-   specShiftJ=5.86748911-.000017                                    # x e8! Use it in titles!
-
-   plt.figure (460)
-   plt.plot(1.e+4*prtclCoorFirst_m[4,0:pointsTurns], \
-            specFctrJ*prtclCoorFirst_m[13,0:pointsTurns]-1.e8*specShiftJ,'-xr',linewidth=2)
-   plt.xlabel('z, $\mu$m',color='m',fontsize=16)
-   plt.ylabel(('Action $J$: $10^{31}\cdot J$ $-$ %10.8f$\cdot10^8$, g$\cdot$cm$^2$/sec' % specShiftJ), \
-              color='m',fontsize=16)
-   plt.title("Approach-m: First Electron's Track", color='m',fontsize=16)
-   plt.grid(True)
-
-if runFlagApproach_m == 1 and plotFlagDpTransf == 1:              
- 
-   specFctr3=1.e26                                                   # Use it in titles!
-   powerSpecFctr3=26                                                 # Use it in titles!
-   X,Y=np.meshgrid(crrntA,crrntB) 
-#
-# Transfered momentum px (surface):
-#
-   fig540=plt.figure(540)
-   ax540=fig540.gca(projection='3d')
-#    surf=ax540.plot_surface(X,Y,specFctr3*dpxTotal_m,cmap=cm.coolwarm, \
-#                            linewidth=0,antialiased=False)
-   surf=ax540.plot_surface(X,Y,specFctr3*dpxTotal_m,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   ax540.set_zlabel('$dP_x \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
-#   titleHeader='Approach-m: Transfered Momentum $dP_x$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-#   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
-#   plt.title((titleHeader % (lastTrackNumber,specFctr3*dpxTotalMax_m)), color='m',fontsize=16)
-   titleHeader='Approach-m: Transfered Momentum $dP_x$ $(\cdot 10^{%2d}$; $g \cdot cm/sec)$'
-   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-%2d}$ $g \cdot cm/sec)$)'
-   plt.title((titleHeader % \
-              (powerSpecFctr3,lastTrackNumber,specFctr3*dpxTotalMax_m,powerSpecFctr3)), \
-	     color='m',fontsize=14)
-   cb = fig540.colorbar(surf)
-   plt.grid(True)
-#
-# Transfered momentum px (map):
-#
-   fig845=plt.figure(845)
-   ax=fig845.add_subplot(111)                                       # for contours plotting
-   mapDpx=ax.contourf(X,Y,specFctr3*dpxTotal_m)   
-   plt.plot(xAboundary[0:81],xBboundary[0:81],'-w')
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   titleHeader='Approach-m: Transfered Momentum $dP_x$ $(\cdot 10^{%2d}$; $g \cdot cm/sec)$'
-   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-%2d}$ $g \cdot cm/sec)$)'
-   plt.title((titleHeader % \
-              (powerSpecFctr3,lastTrackNumber,specFctr3*dpxTotalMax_m,powerSpecFctr3)), \
-	     color='m',fontsize=14)
-   plt.ylim([-3.,-.5])
-   plt.text(-4.9,-2.5, \
-            '        Area with\nUnallowable Tracks:\n    Initial Impact\nParameter Larger\n     than $R_{shield}$',\
-            color='w',fontsize=20)
-   fig845.colorbar(mapDpx)
-
-#
-# Transfered momentum py (surface):
-#
-###   fig850=plt.figure(850)
-###   ax850=fig850.gca(projection='3d')
-####    surf=ax850.plot_surface(X,Y,specFctr3*dpyTotal_m,cmap=cm.coolwarm, \
-####                            linewidth=0,antialiased=False)
-###   surf=ax550.plot_surface(X,Y,specFctr3*dpyTotal_m,cmap=cm.jet,linewidth=0,antialiased=False)
-###   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-###   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-###   ax850.set_zlabel('$dP_y \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
-###   titleHeader='Approach-c: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-###   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
-###   plt.title((titleHeader % (lastTrackNumber,specFctr3*dpyTotalMax_m)), color='m',fontsize=16)
-###   cb = fig850.colorbar(surf)
-###   plt.grid(True)
-####
-#### Transfered momentum py (map):
-####
-###   fig855=plt.figure(855)
-###   ax=fig855.add_subplot(111)                                       # for contours plotting
-###   mapDpy=ax.contourf(X,Y,specFctr3*dpyTotal_m)   
-###   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-###   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-###   titleHeader='Approach-m: Transfered Momentum $dP_y$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-###   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
-###   plt.title((titleHeader % (lastTrackNumber,specFctr3*dpyTotalMax_m)), color='m',fontsize=14)
-###   fig855.colorbar(mapDpx)
-
-#
-# Transfered momentum pz (surface):
-#
-   fig860=plt.figure(860)
-   ax860=fig860.gca(projection='3d')
-#    surf=ax850.plot_surface(X,Y,specFctr3*dpzTotal_m,cmap=cm.coolwarm, \
-#                            linewidth=0,antialiased=False)
-   surf=ax860.plot_surface(X,Y,specFctr3*dpzTotal_m,cmap=cm.jet,linewidth=0,antialiased=False)
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-   ax860.set_zlabel('$dP_z \cdot 10^{22}$; $g \cdot cm/sec$',color='m',fontsize=16)
-#   titleHeader='Approach-m: Transfered Momentum $dP_z$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-#   titleHeader += '\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec$)'
-#   plt.title((titleHeader % (lastTrackNumber,specFctr3*dpzTotalMax_m)), color='m',fontsize=16)
-   titleHeader='Approach-m: Transfered Momentum $dP_z$ $(\cdot 10^{%2d}$; $g \cdot cm/sec)$'
-   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-%2d}$ $g \cdot cm/sec)$)'
-   plt.title((titleHeader % \
-              (powerSpecFctr3,lastTrackNumber,specFctr3*dpzTotalMax_m,powerSpecFctr3)), \
-	     color='m',fontsize=14)
-   cb = fig860.colorbar(surf)
-   plt.grid(True)
-#
-# Transfered momentum pz (map):
-#
-   fig865=plt.figure(865)
-   ax=fig865.add_subplot(111)                                       # for contours plotting
-   mapDpz=ax.contourf(X,Y,specFctr3*dpzTotal_m)   
-   plt.plot(xAboundary[0:81],xBboundary[0:81],'-w')
-   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-#   titleHeader='Approach-m: Transfered Momentum $dP_z$ $(\cdot 10^{22}$; $g \cdot cm/sec)$'
-#   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-22}$ $g \cdot cm/sec)$)'
-#   plt.title((titleHeader % (lastTrackNumber,specFctr3*dpzTotalMax_m)), color='m',fontsize=14)
-   titleHeader='Approach-m: Transfered Momentum $dP_z$ $(\cdot 10^{%2d}$; $g \cdot cm/sec)$'
-   titleHeader +='\nTracks: %d (|Maximum| = %5.1f $\cdot 10^{-%2d}$ $g \cdot cm/sec)$)'
-   plt.title((titleHeader % \
-              (powerSpecFctr3,lastTrackNumber,specFctr3*dpzTotalMax_m,powerSpecFctr3)), \
-	     color='m',fontsize=14)
-   plt.ylim([-3.,-.5])
-   plt.text(-4.9,-2.5, \
-            '        Area with\nUnallowable Tracks:\n    Initial Impact\nParameter Larger\n     than $R_{shield}$',\
-            color='w',fontsize=20)
-   fig865.colorbar(mapDpx)
-
-plt.show()
-
-sys.exit()
-
-
-'''
