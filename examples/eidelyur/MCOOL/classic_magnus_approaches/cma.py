@@ -7,9 +7,11 @@
 # This script based on the previous script
 # threeApproachesComparison_v6.py
 #
-# 06/28/2018: IT IS NOT FINISHED ("classical" approach works appropriate;
+# 07/04/2018: IT IS NOT FINISHED ("classical" approach works appropriate;
 # attempts to receive dependence deltaEion on ion velocity for
-# different impact parameters)
+# different impact parameters - bad results; new script 
+# dataProcessingCMA.py to verify dependence deltaEion on impact parameter
+# for different ion velocities is created)
 # 
 #-------------------------------------
 
@@ -758,30 +760,146 @@ for i in range(nVion):
    maxIndx[i] = indx-1
 #   print 'maxIndx(%d) = %d' % (i,maxIndx[i])
 
-
+'''
 for i in range(nVion):
    sumRho = np.zeros(nVion)
    sumRho2 = np.zeros(nVion)
    sumEnrg = np.zeros(nVion) 
    sumRhoEnrg = np.zeros(nVion)
    for n in range(int(maxIndx[i])):
-      sumRho[0] += log10rhoInit[n,i]
-      sumRho2[0] += log10rhoInit[n,i]**2
-      sumEnrg[0] += log10deltaEnrgIon_c[n,i]
-      sumRhoEnrg[0] += log10rhoInit[n,i]*log10deltaEnrgIon_c[n,i]
+      sumRho[i] += log10rhoInit[n,i]
+      sumRho2[i] += log10rhoInit[n,i]**2
+      sumEnrg[i] += log10deltaEnrgIon_c[n,i]
+      sumRhoEnrg[i] += log10rhoInit[n,i]*log10deltaEnrgIon_c[n,i]
 
-   delta = maxIndx[i]*sumRho2[0]-sumRho[0]**2
-   fitA[i] = (sumRho2[0]*sumEnrg[0]-sumRho[0]*sumRhoEnrg[0])/delta
-   fitB[i] = (maxIndx[i]*sumRhoEnrg[0]-sumRho[0]*sumEnrg[0])/delta
-#    print 'fitA(%d) = %e, fitB(%d) = %e' % (i,fitA[i],i,fitB[i])
+   delta = maxIndx[i]*sumRho2[i]-sumRho[i]**2
+   fitA[i] = (sumRho2[i]*sumEnrg[i]-sumRho[i]*sumRhoEnrg[i])/delta
+   fitB[i] = (maxIndx[i]*sumRhoEnrg[i]-sumRho[i]*sumEnrg[i])/delta
+#   print 'fitA(%d) = %e, fitB(%d) = %e' % (i,fitA[i],i,fitB[i])
 
 rhoInitFit = np.zeros((maxIndx[0],nVion))
 deltaEnrgIon_c_Fit = np.zeros((maxIndx[0],nVion))
+funcHi2 = np.zeros(nVion)
 for i in range(nVion):
+   factorA = math.pow(10.,fitA[i])
    for n in range(int(maxIndx[i])):
       rhoInitFit[n,i] = math.pow(10.,log10rhoInit[n,i])
-      deltaEnrgIon_c_Fit[n,i] = math.pow(10.,fitA[i])* \
-                             math.pow(rhoInitFit[n,i],fitB[i])
+      deltaEnrgIon_c_Fit[n,i] = factorA*math.pow(rhoInitFit[n,i],fitB[i])
+#      funcHi2[i] += (deltaEnrgIon_c[n,i]-deltaEnrgIon_c_Fit[n,i])**2  
+      funcHi2[i] += (1.-deltaEnrgIon_c_Fit[n,i]/deltaEnrgIon_c[n,i])**2  
+   print 'i=%2d: fitA = %e, fitB = %e, hi2 = %e' % \
+         (i,fitA[i],fitB[i],funcHi2[i])
+
+fitAopt = np.zeros(nVion)
+fitBopt = np.zeros(nVion)
+funcHi2opt = np.zeros(nVion)
+for i in range(nVion):
+   print '       Vion(%2d) = %e' % (i,VionRel[i]*V0)
+   fitAopt[i] = fitA[i]
+   fitBopt[i] = fitB[i]
+   minHi2 = funcHi2[i]
+   funcHi2opt[i] = funcHi2[i]
+   for kB in range(-20,21,1):
+      currntB = fitB[i]+.005*kB
+      for kA in range(-20,21,1):
+         currntA = fitA[i]+.025*kA
+         factorA = math.pow(10.,currntA)
+         currntHi2 = 0.
+         for n in range(int(maxIndx[i])):
+            currntRhoInitFit = math.pow(10.,log10rhoInit[n,i])
+            deltaEnrgCurrnt = factorA*math.pow(currntRhoInitFit,currntB)
+#         currntHi2 += (deltaEnrgIon_c[n,i]-deltaEnrgCurrnt)**2  
+            currntHi2 += (1.-deltaEnrgCurrnt/deltaEnrgIon_c[n,i])**2  
+         print 'kA=%2d, kB=%2d: currntA = %e, currntB = %e, currntHi2 = %e' % \
+               (kA,kB,currntA,currntB,currntHi2)
+         if (currntHi2 < minHi2):
+            minHi2 = currntHi2
+	    funcHi2opt[i] = currntHi2
+	    fitAopt[i] = currntA	    
+	    fitBopt[i] = currntB
+	    print 'Current minimum: kA=%2d, kB=%2d, Aopt = %e, Bopt = %e, hi2opt = %e' % \
+	          (kA,kB,fitAopt[i],fitBopt[i],funcHi2opt[i])	    
+   print 'i=%2d: A = %e, B = %e, hi2 = %e; Aopt = %e, Bopt = %e, hi2opt = %e' % \
+         (i,fitA[i],fitB[i],funcHi2[i],fitAopt[i],fitBopt[i],funcHi2opt[i])
+
+deltaEnrgIon_c_FitOpt = np.zeros((maxIndx[0],nVion))
+for i in range(nVion):
+   factorA = math.pow(10.,fitAopt[i])
+   for n in range(int(maxIndx[i])):
+#      rhoInitFit[n,i] = math.pow(10.,log10rhoInit[n,i])
+      deltaEnrgIon_c_FitOpt[n,i] = factorA*math.pow(rhoInitFit[n,i],fitBopt[i])
+'''
+
+for i in range(nVion):
+   sumRhoEnrg = np.zeros(nVion)
+   sumRhoEnrg2 = np.zeros(nVion)
+   sumRho2Enrg2 = np.zeros(nVion)
+   sumEnrg = np.zeros(nVion) 
+   sumEnrg2 = np.zeros(nVion) 
+   for n in range(int(maxIndx[i])):
+      sumRhoEnrg[i] += log10rhoInit[n,i]/log10deltaEnrgIon_c[n,i]
+      sumRhoEnrg2[i] += log10rhoInit[n,i]/log10deltaEnrgIon_c[n,i]**2
+      sumRho2Enrg2[i] += (log10rhoInit[n,i]/log10deltaEnrgIon_c[n,i])**2
+      sumEnrg[i] += 1./log10deltaEnrgIon_c[n,i]
+      sumEnrg2[i] += 1./log10deltaEnrgIon_c[n,i]**2
+
+   delta = sumEnrg2[i]*sumRho2Enrg2[i]-sumRhoEnrg2[i]**2
+   fitA[i] = (sumRho2Enrg2[i]*sumEnrg[i]-sumRhoEnrg[i]*sumRhoEnrg2[i])/delta
+   fitB[i] = (sumEnrg2[i]*sumRhoEnrg[i]-sumRhoEnrg2[i]*sumEnrg[i])/delta
+   print 'fitA(%d) = %e, fitB(%d) = %e' % (i,fitA[i],i,fitB[i])
+
+rhoInitFit = np.zeros((maxIndx[0],nVion))
+deltaEnrgIon_c_Fit = np.zeros((maxIndx[0],nVion))
+funcHi2 = np.zeros(nVion)
+for i in range(nVion):
+   factorA = math.pow(10.,fitA[i])
+   for n in range(int(maxIndx[i])):
+      rhoInitFit[n,i] = math.pow(10.,log10rhoInit[n,i])
+      deltaEnrgIon_c_Fit[n,i] = factorA*math.pow(rhoInitFit[n,i],fitB[i])
+      funcHi2[i] += (1.-np.log10(deltaEnrgIon_c_Fit[n,i])/np.log10(deltaEnrgIon_c[n,i]))**2  
+   print 'i=%2d: fitA = %e, fitB = %e, hi2 = %e' % \
+         (i,fitA[i],fitB[i],funcHi2[i])
+
+fitAopt = np.zeros(nVion)
+fitBopt = np.zeros(nVion)
+funcHi2opt = np.zeros(nVion)
+for i in range(nVion):
+   print '       Vion(%2d) = %e' % (i,VionRel[i]*V0)
+   fitAopt[i] = fitA[i]
+   fitBopt[i] = fitB[i]
+   minHi2 = funcHi2[i]
+   funcHi2opt[i] = funcHi2[i]
+   for kB in range(-20,21,1):
+      currntB = fitB[i]+.005*kB
+      for kA in range(-20,21,1):
+         currntA = fitA[i]+.025*kA
+         factorA = math.pow(10.,currntA)
+         currntHi2 = 0.
+         for n in range(int(maxIndx[i])):
+            currntRhoInitFit = math.pow(10.,log10rhoInit[n,i])
+            deltaEnrgCurrnt = factorA*math.pow(currntRhoInitFit,currntB)
+#         currntHi2 += (deltaEnrgIon_c[n,i]-deltaEnrgCurrnt)**2  
+            currntHi2 += (1.-np.log10(deltaEnrgCurrnt)/np.log10(deltaEnrgIon_c[n,i]))**2  
+         print 'kA=%2d, kB=%2d: currntA = %e, currntB = %e, currntHi2 = %e' % \
+               (kA,kB,currntA,currntB,currntHi2)
+         if (currntHi2 < minHi2):
+            minHi2 = currntHi2
+	    funcHi2opt[i] = currntHi2
+	    fitAopt[i] = currntA	    
+	    fitBopt[i] = currntB
+	    print 'Current minimum: kA=%2d, kB=%2d, Aopt = %e, Bopt = %e, hi2opt = %e' % \
+	          (kA,kB,fitAopt[i],fitBopt[i],funcHi2opt[i])	    
+   print 'i=%2d: A = %e, B = %e, hi2 = %e; Aopt = %e, Bopt = %e, hi2opt = %e' % \
+         (i,fitA[i],fitB[i],funcHi2[i],fitAopt[i],fitBopt[i],funcHi2opt[i])
+
+deltaEnrgIon_c_FitOpt = np.zeros((maxIndx[0],nVion))
+for i in range(nVion):
+   factorA = math.pow(10.,fitAopt[i])
+   for n in range(int(maxIndx[i])):
+#      rhoInitFit[n,i] = math.pow(10.,log10rhoInit[n,i])
+      deltaEnrgIon_c_FitOpt[n,i] = factorA*math.pow(rhoInitFit[n,i],fitBopt[i])
+
+# sys.exit()
 
 #----------------------------------------------------
 #
@@ -1256,7 +1374,13 @@ fig500=plt.figure (500)
 plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
-	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_FitOpt[0:maxIndx[indxPlot],indxPlot],'om',linewidth=2)
+# plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+#            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+#            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+# 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
@@ -1268,11 +1392,15 @@ plt.ylim([3.e-11,2.e-8])
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
 plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
-	  abs(fitB[indxPlot])),color='m',fontsize=16)
+	  abs(fitBopt[indxPlot])),color='m',fontsize=16)
+# plt.text(2.5e-3,1.e-8, \
+#          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+# 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
 
 indxPlot=9
+# indxPlot=1
 VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
@@ -1280,7 +1408,13 @@ fig600=plt.figure (600)
 plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
-	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_FitOpt[0:maxIndx[indxPlot],indxPlot],'om',linewidth=2)
+# plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+#            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+#            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+# 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
@@ -1292,12 +1426,16 @@ plt.ylim([8.e-11,2.e-8])
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
 plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
-	  abs(fitB[indxPlot])),color='m',fontsize=16)
+	  abs(fitBopt[indxPlot])),color='m',fontsize=16)
+# plt.text(2.5e-3,1.e-8, \
+#          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+# 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
 yLimit=[1.5e-10,2.e-8]
 
 indxPlot=19
+# indxPlot=2
 VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
@@ -1305,7 +1443,13 @@ fig700=plt.figure (700)
 plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
-	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_FitOpt[0:maxIndx[indxPlot],indxPlot],'om',linewidth=2)
+# plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+#            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+#            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+# 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
@@ -1317,10 +1461,14 @@ plt.ylim(yLimit)  # for "indxPlot=19"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
 plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
-	  abs(fitB[indxPlot])),color='m',fontsize=16)
+	  abs(fitBopt[indxPlot])),color='m',fontsize=16)
+# plt.text(2.5e-3,1.e-8, \
+#          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+# 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
-indxPlot=29
+# indxPlot=29
+indxPlot=3
 VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
@@ -1328,7 +1476,13 @@ fig800=plt.figure (800)
 plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
-	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_FitOpt[0:maxIndx[indxPlot],indxPlot],'om',linewidth=2)
+# plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+#            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+#            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+# 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
@@ -1340,10 +1494,14 @@ plt.ylim(yLimit)  # for "indxPlot=29"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
 plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
-	  abs(fitB[indxPlot])),color='m',fontsize=16)
+	  abs(fitBopt[indxPlot])),color='m',fontsize=16)
+# plt.text(2.5e-3,1.e-8, \
+#          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+# 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
 indxPlot=39
+# indxPlot=4
 VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
@@ -1351,7 +1509,13 @@ fig900=plt.figure (900)
 plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
-	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_FitOpt[0:maxIndx[indxPlot],indxPlot],'om',linewidth=2)
+# plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+#            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+#            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+# 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
@@ -1363,10 +1527,14 @@ plt.ylim(yLimit)  # for "indxPlot=39"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
 plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
-	  abs(fitB[indxPlot])),color='m',fontsize=16)
+	  abs(fitBopt[indxPlot])),color='m',fontsize=16)
+# plt.text(2.5e-3,1.e-8, \
+#          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+# 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
 indxPlot=49
+# indxPlot=5
 VionCrrnt = V0*VionRel[indxPlot]
 powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
 mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
@@ -1374,7 +1542,13 @@ fig1000=plt.figure (1000)
 plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
-	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
+	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob', \
+           rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+	   deltaEnrgIon_c_FitOpt[0:maxIndx[indxPlot],indxPlot],'om',linewidth=2)
+# plt.loglog(rhoInit[0:nImpctPrmtr-1,indxPlot], \
+#            deltaEnrgIon_c[0:nImpctPrmtr-1,indxPlot],'-xr', \
+#            rhoInitFit[0:maxIndx[indxPlot],indxPlot], \
+# 	   deltaEnrgIon_c_Fit[0:maxIndx[indxPlot],indxPlot],'ob',linewidth=2)
 plt.xlabel('Track Initial Impact Parameter $rho_{Init}$', \
            color='m',fontsize=16)
 plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
@@ -1386,12 +1560,16 @@ plt.ylim(yLimit)  # for "indxPlot=49"
 plt.legend(['Calculated Data','Fitted Data'],loc='lower center',fontsize=16)
 plt.text(2.5e-3,1.e-8, \
          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
-	  abs(fitB[indxPlot])),color='m',fontsize=16)
+	  abs(fitBopt[indxPlot])),color='m',fontsize=16)
+# plt.text(2.5e-3,1.e-8, \
+#          ('Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^{%5.3f}$' % \
+# 	  abs(fitB[indxPlot])),color='m',fontsize=16)
 plt.grid(True)
 
 
 fig1100=plt.figure (1100)
-plt.semilogx(VionRel,fitB,'-xr',linewidth=2)
+plt.semilogx(VionRel,fitB,'-xr',VionRel,fitBopt,'-xb',linewidth=2)
+# plt.semilogx(VionRel,fitB,'-xr',linewidth=2)
 plt.xlabel('Relative Ion Velocity  $V_{ion}/V_0$',color='m',fontsize=16)
 plt.ylabel('$B$', color='m',fontsize=16)
 titleHeader = \
@@ -1405,7 +1583,7 @@ plt.text(2.e-3,1.0075*yLimit[0],'$ \Delta V_{e\perp}/ V_{e0}$', \
          color='m',fontsize=14)
 plt.grid(True)
 
-fig1100=plt.figure (1200)
+fig1200=plt.figure (1200)
 plt.semilogx(VionRel,deltaPx_c[0,:],'-xr',linewidth=2)
 plt.xlabel('Relative Ion Velocity  $V_{ion}/V_0$',color='m',fontsize=16)
 plt.ylabel('$\Delta P_x$ $g\cdot cm/s$', color='m',fontsize=16)
@@ -1435,7 +1613,7 @@ plt.xlim(xLimit)
 # plt.text(2.e-3,1.0075*yLimit[0],'$ \Delta V_{e\perp}/ V_{e0}$', \
 #          color='m',fontsize=14)
 plt.grid(True)
-'''
+
 
 pointsForPlot = np.zeros(nPointsRhoPlot)
 xVionRelStart = np.zeros(nPointsRhoPlot)
@@ -1494,7 +1672,7 @@ for k in range(0,10,9):
 #       plt.text(2.e-3,1.0075*yLimit[0],'$ \Delta V_{e\perp}/ V_{e0}$', \
 #                color='m',fontsize=14)
       plt.grid(True)
-
+'''
 
 plt.show()
 
@@ -1553,5 +1731,35 @@ for i in range(nVion):
         2.e4*halfLintr[0,i],fitA[i],fitB[i]))
 '''
    
+#
+# Opening the output file: 
+#
+deltaEonImpctPrmtr_file='dependenceDeltaEonImpactParameter.data'
+print 'Open output file "%s"...' % deltaEonImpctPrmtr_file
+fileDeltaEonImpctPrmtr_flag=0
+try:
+   outfile = open(deltaEonImpctPrmtr_file,'w')
+   fileDeltaEonImpctPrmtr_flag=1
+except:
+   print 'Problem to open output file "%s"' % deltaEonImpctPrmtr_file
+
+indexList = [0,9,19,29,39,49]
+# indexList = [0,1,2,3,4,5]
+#
+# Writing the results to output file: 
+#
+outfile.write ('\n                nIpmactParameters= %2d\nV_ion,cm/s' % nImpctPrmtr)
+for i in range(6):
+   outfile.write('         %12.6e   ' % (V0*VionRel[indexList[i]]))
+outfile.write ('\n\n       i  ')
+for i in range(6):
+   outfile.write('    Rho,cm     DeltaE,eV')
+outfile.write ('\n')
+
+for n in range(nImpctPrmtr):
+   outfile.write('\n%8d  ' % n)
+   for i in range(6):
+      outfile.write('  %10.4e  %10.4e' % (rhoInit[n,indexList[i]],deltaEnrgIon_c[n,indexList[i]]))
+
 sys.exit()
 
