@@ -7,11 +7,8 @@
 # This script based on the previous script
 # threeApproachesComparison_v6.py
 #
-# 07/18/2018: IT IS NOT FINISHED ("classical" approach works appropriate;
+# 07/13/2018: IT IS NOT FINISHED ("classical" approach works appropriate;
 #                                 goog agreement with Magnus Expansion approach)!
-# 
-# Upgraded version of python (python3.4): script was rewritten to take into
-# account some differences in the descriptions and using of some functions   
 # 
 #-------------------------------------
 
@@ -192,15 +189,15 @@ stepsNumberOnGyro = 25                                             # number of t
 # Opening the input file: 
 #
 inputFile='areaOfImpactParameter_tAC-v6_fig110.data'
-print ('Open input file "%s"...' % inputFile)
+print 'Open input file "%s"...' % inputFile
 inpfileFlag=0
 try:
    inpfile = open(inputFile,'r')
    inpfileFlag=1
 except:
-   print ('Problem to open input file "%s"' % inputFile)
+   print 'Problem to open input file "%s"' % inputFile
 if inpfileFlag == 1:
-   print ('No problem to open input file "%s"' % inputFile)
+   print 'No problem to open input file "%s"' % inputFile
 
 lines=0                                                            # Number of current line from input file   
 dataNumber=0                                                       # Number of current value of any types of Data
@@ -208,20 +205,20 @@ xAboundary=np.zeros(100)
 xBboundary=np.zeros(100)
 while True:
    lineData=inpfile.readline()
-#    print ('line=%d: %s' % (lines,lineData))
+#    print 'line=%d: %s' % (lines,lineData)
    if not lineData:
       break
    lines += 1
    if lines > 4:
       words=lineData.split()
       nWords=len(words)
-#      print ('Data from %d: words=%s, number of entries = %d' % (lines,words,nWords))
+#      print 'Data from %d: words=%s, number of entries = %d' % (lines,words,nWords)
       xAboundary[dataNumber]=float(words[0])
       xBboundary[dataNumber]=float(words[1])
       dataNumber += 1
 
 inpfile.close()
-print ('Close input file "%s"' % inputFile)
+print 'Close input file "%s"' % inputFile
 
 #
 # Larmor frequency electron:
@@ -236,29 +233,29 @@ def omega_Larmor(mass,B_mag):
 omega_L = omega_Larmor(m_elec, B_mag)                              # rad/sec 
 T_larm = 2*pi/omega_L                                              # sec
 timeStep = T_larm/stepsNumberOnGyro                                # time step, sec
-print ('omega_Larmor= %e rad/sec, T_larm = %e sec, timeStep = %e sec' % \
-       (omega_L,T_larm,timeStep))
+print 'omega_Larmor= %e rad/sec, T_larm = %e sec, timeStep = %e sec' % \
+      (omega_L,T_larm,timeStep)
 
 nLarmorAvrgng=10               # number of averaged Larmor rotations 
 #
 # Data to integrate transferred momemta over the track:
 #
 timeStep_c=nLarmorAvrgng*stepsNumberOnGyro*timeStep                # sec      
-print ('timeStep_c = %e s' % timeStep_c)
+print 'timeStep_c = %e s' % timeStep_c
 
 eVrmsTran = np.sqrt(2.*eTempTran*eVtoErg/m_elec)                   # cm/sec
 eVrmsLong = np.sqrt(2.*eTempLong*eVtoErg/m_elec)                   # cm/sec
 kinEnergy = m_elec*(eVrmsTran**2+eVrmsLong**2)/2.     # kinetic energy; erg
-print ('eVrmsTran = %e cm/sec, eVrmsLong = %e cm/sec, kinEnergy = %e eV' % \
-       (eVrmsTran,eVrmsLong,ergToEV*kinEnergy))
+print 'eVrmsTran = %e cm/sec, eVrmsLong = %e cm/sec, kinEnergy = %e eV' % \
+      (eVrmsTran,eVrmsLong,ergToEV*kinEnergy)
 
 ro_larmRMS = eVrmsTran/omega_L                                     # cm
-print ('ro_larmRMS =%e mkm = ', 1.e4*ro_larmRMS)
+print 'ro_larmRMS =%e mkm = ', 1.e4*ro_larmRMS
 #
 # Electrons are magnetized for impact parameter >> rhoCrit:
 #
 rhoCrit=math.pow(q_elec**2/(m_elec*omega_L**2),1./3)               # cm
-print ('rhoCrit (mkm) = ' , 1.e+4*rhoCrit)
+print 'rhoCrit (mkm) = ' , 1.e+4*rhoCrit
 
 #
 # Convertion from 6-vector of relectron's "coordinates" to 6-vector
@@ -335,7 +332,7 @@ def guidingCenter_Matrix(deltaT):
 # and "MagnusExpansionCollision":
 #
 dpFactor = q_elec**2*timeStep_c                              # g*cm^3/sec
-print ('dpFactor = %e g*cm^3/s' % dpFactor)
+print 'dpFactor = %e g*cm^3/s' % dpFactor
 #
 # Description of the collision during time interval 'deltaT'
 # in the system coordinates of "guiding center" of electron
@@ -366,8 +363,8 @@ def guidingCenterCollision(vectrElec_gc,vectrIon,deltaT):
    dpIon[2]=-dpFactor_gc*deltaT*(vectrIon[4]-vectrElec_gc[4])/b_gc**3
    dpElec[1]=-dpIon[1] 
    dpElec[2]=-dpIon[2]
-#    print ('dpIon[0]=%e, dpIon[1]=%e, dpIon[2]=%e' % \
-#           (dpIon[0],dpIon[1],dpIon[2]))
+#    print 'dpIon[0]=%e, dpIon[1]=%e, dpIon[2]=%e' % \
+#           (dpIon[0],dpIon[1],dpIon[2])
    return dpIon,dpElec,action,b_gc                                      
 
 #
@@ -379,9 +376,9 @@ def guidingCenterCollision(vectrElec_gc,vectrIon,deltaT):
 #
 def MagnusExpansionCollision(vectrElec_gc,vectrIon,deltaT):
 
-#    print ('Ion: x=%e, y=%e, z=%e' % (vectrIon[0],vectrIon[2],vectrIon[4]))
-#    print ('Electron: x=%e, y=%e, z=%e' % 
-#          (vectrElec_gc[0],vectrElec_gc[4],vectrElec_gc[4]))
+#    print 'Ion: x=%e, y=%e, z=%e' % (vectrIon[0],vectrIon[2],vectrIon[4])
+#    print 'Electron: x=%e, y=%e, z=%e' % 
+#          (vectrElec_gc[0],vectrElec_gc[4],vectrElec_gc[4])
    dpIon=np.zeros(3)
    dpElec=np.zeros(3)
    mOmegaLarm=m_elec*omega_L                                 # g/sec
@@ -419,37 +416,32 @@ def MagnusExpansionCollision(vectrElec_gc,vectrIon,deltaT):
    dpElec[1]=-dpIon[1] 
    dpElec[2]=-dpIon[2] 
    dy_gc=dpIon[0]/mOmegaLarm                                        # cm
-#    print ('dpIon[0]=%e, dpIon[1]=%e, dpIon[2]=%e' % \
-#           (dpIon[0],dpIon[1],dpIon[2]))
+#    print 'dpIon[0]=%e, dpIon[1]=%e, dpIon[2]=%e' % \
+#           (dpIon[0],dpIon[1],dpIon[2])
    return dpIon,dpElec,action,dy_gc,C1,C2,C3,b,D1,D2,q                                      
 
 sphereNe=3.
 R_e=math.pow(sphereNe/n_e,1./3)                       # cm
-print ('R_e (cm)=%e' % R_e)
+print 'R_e (cm)=%e' % R_e
 
 ro_Larm = eVrmsTran/omega_L                           # cm
-print ('ro_Larm (cm)=%e' % ro_Larm)
+print 'ro_Larm (cm)=%e' % ro_Larm
 
 impctPrmtrMin=2.*ro_Larm
 
 # rhoDependenceFlag = 1  # skip calculation of rho dependence if = 0!
 
-#============ Important flags ===========================
-#
 # Taking into account the transfer of momenta for both particles
 # (for "classical" only):
 dpTransferFlag = 1        # no taking into account if = 0!
-#
-saveFilesFlag = 1         # no saving if = 0!
-#
-#========================================================
+
 nVion=50
 Vion=np.zeros(nVion)
 VionRel=np.zeros(nVion)
 
 vIonMin=4.e-3*eVrmsTran
 vIonMax=10.*eVrmsTran
-print ('VionMin=%e, vIonMax=%e' % (vIonMin,vIonMax))   
+print 'VionMin=%e, vIonMax=%e' % (vIonMin,vIonMax)   
 
 vIonMinRel=vIonMin/V0
 vIonMaxRel=vIonMax/V0
@@ -490,13 +482,14 @@ for n in range (4):
 
 #      
 # First plotting:      
-#   
-   
-fig10 = plt.figure(10)
+#      
+
+'''
+fig10=plt.figure(10)
 plt.semilogx(impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,0],'-r', \
-               impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,1],'-b', \
-               impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,2],'-g', \
-               impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,3],'-m',linewidth=2)
+           impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,1],'-b', \
+           impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,2],'-g', \
+           impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,3],'-m',linewidth=2)
 plt.grid(True)
 hold=True
 plt.xlabel('Maximal Impact parameter $R_{max}$, cm',color='m',fontsize=16)
@@ -508,23 +501,17 @@ titleHeader='$R_{max}^{Crrctd}=R_{Max} \cdot [1-(\pi\cdot N_{Larm} \cdot'
 titleHeader += '\Delta_{e||}/(\omega_{Larm} \cdot R_{max})]^{1/2}$'
 plt.title(titleHeader,color='m',fontsize=16)
 plt.legend([('$N_{Larm}=$%2d' % larmorTurnsMin[0]), \
-            ('$N_{Larm}=$%2d' % larmorTurnsMin[1]), \
-            ('$N_{Larm}=$%2d' % larmorTurnsMin[2]), \
-            ('$N_{Larm}=$%2d' % larmorTurnsMin[3])],loc='lower center',fontsize=16)
-if (saveFilesFlag == 1):
-   fig10.savefig('picturesCMA/correctedRmax_fig10cma.png')  
-   print ('File "picturesCMA/correctedRmax_fig10cma.png" is written')   
-
-# plt.show()
-
-# sys.exit()
-
+           ('$N_{Larm}=$%2d' % larmorTurnsMin[1]), \
+           ('$N_{Larm}=$%2d' % larmorTurnsMin[2]), \
+           ('$N_{Larm}=$%2d' % larmorTurnsMin[3])],loc='lower center',fontsize=16)
 #-----------------------------------------------------------------
+'''
+
 
 xLimit=[.9*VionRel[0],1.1*VionRel[nVion-1]]
 
 
-fig209=plt.figure (209)
+fig209=plt.figure(209)
 plt.loglog(VionRel,R_debye,'-r',VionRel,R_pass,'-b', \
                                 VionRel,R_pass_1,'--b',linewidth=2)
 plt.grid(True)
@@ -532,54 +519,45 @@ hold=True
 plt.plot([VionRel[0],VionRel[nVion-1]],[R_e,R_e],color='m',linewidth=2)   
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 plt.ylabel('$R_{Debye}$, $R_{Pass}$, $R_e$, cm',color='m',fontsize=16)
-# titleHeader='Magnetized Collision: $R_{Debye}$, $R_{Pass}$, $R_e$: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
-# plt.title(titleHeader % (mantV0,powV0),color='m',fontsize=16)
-plt.title('Magnetized Collision: $R_{Debye}$, $R_{Pass}$, $R_e$',color='m',fontsize=16)
+titleHeader='Magnetized Collision: $R_{Debye}$, $R_{Pass}$, $R_e$: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
+plt.title(titleHeader % (mantV0,powV0),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[1.e-3,10.]
 plt.ylim(yLimit)
 plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-plt.text(1.6e-3,5.5e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+plt.text(2.e-3,6.5e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
 plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
 plt.text(4.4e-5,0.001175,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
 plt.text(3.e-5,2.45e-3,'$R_e$',color='k',fontsize=16)
 plt.text(3.e-5,5.e-2,'$R_{Debye}$',color='k',fontsize=16)
 plt.text(3.e-5,1.8e-2,'$R_{Pass}$',color='k',fontsize=16)
 plt.text(4.5e-5,4.8e-3,'$R_{Pass}$ $for$ $T_{e||}=0$',color='k',fontsize=16)
-plt.text(8.3e-5,4.0,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
-         color='m',fontsize=16)
-if (saveFilesFlag == 1):
-   fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.png')    
-   print ('File "picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.png" is written')   
 
-fig3151=plt.figure (3151)
+fig3151=plt.figure(3151)
 plt.loglog(VionRel,impctPrmtrMax,'-r', VionRel,impctPrmtrMax_1,'--r', \
    [VionRel[0],VionRel[nVion-1]],[impctPrmtrMin,impctPrmtrMin],'-r',linewidth=2)
 plt.grid(True)
 hold=True
-plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=14)
-plt.ylabel('Impact Parameter, cm',color='m',fontsize=14)
+plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
+plt.ylabel('Impact Parameter, cm',color='m',fontsize=16)
 titleHeader= \
-          'Types of Collisions: $V_{e0}=%4.2f\cdot10^{%2d}$ cm/s, $B=%6.1f$ Gs'
+          'Types of Collisions: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s, $B=%6.1f$ Gs'
 plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[8.e-4,.6]
 plt.ylim(yLimit)
 plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-plt.text(1.6e-3,5.e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+plt.text(2.e-3,5.9e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
 plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
 plt.text(4.4e-5,.0018,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
 plt.text(3.e-4,1.75e-3,'$R_{min}=2\cdot<rho_\perp>$',color='k',fontsize=16)
 plt.text(7.e-4,5.e-2,'$R_{max}$',color='k',fontsize=16)
 plt.text(2.85e-5,3.3e-3,'$R_{max}$ $for$ $T_{e||}=0$',color='k',fontsize=16)
 plt.plot([VionRel[0],VionRel[nVion-1]],[20.*rhoCrit,20.*rhoCrit],color='k')   
-plt.text(1.e-4,7.e-3,'Magnetized Collisions',color='r',fontsize=20)
-plt.text(1.e-4,10.e-4,'Adiabatic or Fast Collisions',color='r',fontsize=20)
-plt.text(2.25e-5,.275,'Collisions are Screened',color='r',fontsize=20)
+plt.text(1.5e-4,7.e-3,'Magnetized Collisions',color='r',fontsize=25)
+plt.text(1.e-4,10.e-4,'Adiabatic or Fast Collisions',color='r',fontsize=25)
+plt.text(2.8e-5,.2,'Collisions are Screened',color='r',fontsize=25)
 plt.text(1.6e-5,1.e-3,'$ \cong 20\cdot R_{Crit}$',color='k',fontsize=16)
-if (saveFilesFlag == 1):
-   fig3151.savefig('picturesCMA/impctPrmtr_fig3151cma.png')    
-   print ('File "picturesCMA/impctPrmtr_fig3151cma.png" is written')   
 
 
 #
@@ -606,24 +584,23 @@ for i in range(nVion):
    rhoMax[i] = impctPrmtrMax[i]* \
    np.sqrt(1.- (pi*larmorTurns*eVrmsLong/omega_L/impctPrmtrMax[i])**2)
    rhoMax[i] = impctPrmtrMax[i]
-#   print ('rhoMax(%d) = %e' % (i,rhoMax[i]))
+#   print 'rhoMax(%d) = %e' % (i,rhoMax[i])
    log10rhoMax = math.log10(rhoMax[i])
    log10rhoStep = (log10rhoMax-log10rhoMin)/(nImpctPrmtr)
-#   print ('Vion(%d) = %e, rhoMax = %e' % (i,Vion[i],rhoMax[i]))
+#   print 'Vion(%d) = %e, rhoMax = %e' % (i,Vion[i],rhoMax[i])
    for n in range(nImpctPrmtr):
       log10rhoCrrnt = log10rhoMin+(n+0.5)*log10rhoStep 
       rhoCrrnt = math.pow(10.,log10rhoCrrnt)
-#      print ('    rhoCrrnt(%d) = %e' % (n,rhoCrrnt))
+#      print '    rhoCrrnt(%d) = %e' % (n,rhoCrrnt)
       halfLintr[n,i] = np.sqrt(rhoMax[i]**2-rhoCrrnt**2)   # half length of interaction; cm
       timeHalfPath = halfLintr[n,i]/eVrmsLong     # 0.5 time of interaction; sec
       numbLarmor = int(2.*timeHalfPath/T_larm)             
       pointAlongTrack[n,i] = int(2.*timeHalfPath/timeStep_c)
       totalPoints += pointAlongTrack[n,i]
-#      print ('     %d: rhoCrrnt = %e, numbLarmor = %d, pointAlongTrack = %d' % \
-#            (n,rhoCrrnt,numbLarmor,pointAlongTrack[n,i]))
-print ('totalPoints = %d' % totalPoints)
+#      print '     %d: rhoCrrnt = %e, numbLarmor = %d, pointAlongTrack = %d' % \
+#            (n,rhoCrrnt,numbLarmor,pointAlongTrack[n,i])
+print 'totalPoints = %d' % totalPoints
 
-totalPoints = int(totalPoints)
 arrayA=np.zeros(2*totalPoints)      
 arrayB=np.zeros(2*totalPoints)     
 bCrrnt_c = np.zeros(2*totalPoints)
@@ -682,23 +659,20 @@ for i in range(nVion):
    rhoMax[i] = impctPrmtrMax[i]
    log10rhoMax = math.log10(rhoMax[i])
    log10rhoStep = (log10rhoMax-log10rhoMin)/(nImpctPrmtr)
-#   print ('Vion(%d) = %e, rhoMax = %e' % (i,Vion[i],rhoMax[i]))
+   print 'Vion(%d) = %e, rhoMax = %e' % (i,Vion[i],rhoMax[i])
    for n in range(nImpctPrmtr):
       log10rhoCrrnt = log10rhoMin+(n+0.5)*log10rhoStep 
       rhoCrrnt = math.pow(10.,log10rhoCrrnt)
 #      rhoInit[i*nImpctPrmtr+n] = rhoCrrnt
       rhoInit[n,i] = rhoCrrnt
       halfLintr[n,i] = np.sqrt(rhoMax[i]**2-rhoCrrnt**2)   # half length of interaction; cm
-      z_ionCrrnt_c = np.zeros(6)      # Zeroing out of vector for ion ("GC"-approach) 
-      z_elecCrrnt_c = np.zeros(6)     # Zeroing out of vector for electron ("GC"-approach)
-      z_ionCrrnt_m = np.zeros(6)      # Zeroing out of vector for ion ("ME"-approach) 
-      z_elecCrrnt_m = np.zeros(6)     # Zeroing out of vector for electron ("ME"-approach)
-# Zeroing out of "guiding center" vector for electron (both approaches):
-      z_elecCrrnt_gc_c = np.zeros(6)  
-      z_elecCrrnt_gc_m = np.zeros(6)  
+      z_ionCrrnt = np.zeros(6)      # Zeroing out of vector for ion
+      z_elecCrrnt = np.zeros(6)     # Zeroing out of vector for electron
+# Zeroing out of "guiding center" vector for electron:
+      z_elecCrrnt_gc = np.zeros(6)  
 # Current values to transfered momemta 
-# (second index numerates "Guiding Center", (if 0) and 
-#                         "Magnus Expantion" (if 1) approaches: 
+# (second index numerates "classical", (if 0) and 
+#                         "Magnus expantion" (if 1) approaches: 
       dpCrrnt = np.zeros((3,2))
 # Intermediate arrays:
       dpIon_c = np.zeros(3) 
@@ -706,17 +680,12 @@ for i in range(nVion):
       dpElec_c = np.zeros(3) 
       dpElec_m = np.zeros(3) 
 # Current initial vector for electron:
-      z_elecCrrnt_c[Ix] = rhoCrrnt                     # x, cm
-      z_elecCrrnt_c[Iz] = -halfLintr[n,i]              # z, cm
-      z_elecCrrnt_c[Ipy] = m_elec*eVrmsTran            # py, g*cm/sec
-      z_elecCrrnt_c[Ipz] = m_elec*eVrmsLong            # pz, g*cm/sec
-      z_elecCrrnt_m[Ix] = rhoCrrnt                     # x, cm
-      z_elecCrrnt_m[Iz] = -halfLintr[n,i]              # z, cm
-      z_elecCrrnt_m[Ipy] = m_elec*eVrmsTran            # py, g*cm/sec
-      z_elecCrrnt_m[Ipz] = m_elec*eVrmsLong            # pz, g*cm/sec
+      z_elecCrrnt[Ix] = rhoCrrnt                     # x, cm
+      z_elecCrrnt[Iz] = -halfLintr[n,i]              # z, cm
+      z_elecCrrnt[Ipy] = m_elec*eVrmsTran            # py, g*cm/sec
+      z_elecCrrnt[Ipz] = m_elec*eVrmsLong            # pz, g*cm/sec
 # transfer to system of guiding center:
-      z_elecCrrnt_gc_c=toGuidingCenter(z_elecCrrnt_c)  
-      z_elecCrrnt_gc_m=toGuidingCenter(z_elecCrrnt_m)  
+      z_elecCrrnt_gc=toGuidingCenter(z_elecCrrnt)  
 #
 # Main loop along the each track:
 #
@@ -724,34 +693,31 @@ for i in range(nVion):
 #
 # Dragging both particles through first half of the step of the track:
 #
-         z_elecCrrnt_gc_c = np.dot(matr_elec_c,z_elecCrrnt_gc_c) # electron
-         z_elecCrrnt_gc_m = np.dot(matr_elec_c,z_elecCrrnt_gc_m) # electron
-         z_ionCrrnt_c = np.dot(matr_ion_c,z_ionCrrnt_c)          # ion
-         z_ionCrrnt_m = np.dot(matr_ion_c,z_ionCrrnt_m)          # ion
+  	 z_elecCrrnt_gc = np.dot(matr_elec_c,z_elecCrrnt_gc) # electron
+  	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)          # ion
 # transfer from system of guiding center: 
-         z_elecCrrnt_c=fromGuidingCenter(z_elecCrrnt_gc_c)     
-         z_elecCrrnt_m=fromGuidingCenter(z_elecCrrnt_gc_m)     
+	 z_elecCrrnt=fromGuidingCenter(z_elecCrrnt_gc)     
 # Current distance between ion and electron; cm:
-         bCrrnt_c[indx]=np.sqrt((z_ionCrrnt_c[0]-z_elecCrrnt_c[0])**2+ \
-                                (z_ionCrrnt_c[2]-z_elecCrrnt_c[2])**2+ \
-                                (z_ionCrrnt_c[4]-z_elecCrrnt_c[4])**2)
+ 	 bCrrnt_c[indx]=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
+	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
+			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
 # Current values of parameters A,B:  
-         arrayA[indx] = math.log10(ro_Larm/bCrrnt_c[indx])     
-         arrayB[indx] = math.log10((q_elec**2/bCrrnt_c[indx])/kinEnergy)
+	 arrayA[indx] = math.log10(ro_Larm/bCrrnt_c[indx])     
+	 arrayB[indx] = math.log10((q_elec**2/bCrrnt_c[indx])/kinEnergy)
          indx += 1
 #
 # Dragging both particles through interaction during this step of track
 # (for both approaches):
 #
-#    "Guiding Center":
-         dpIon_c,dpElec_c,action,b_gc_c = \
-                guidingCenterCollision(z_elecCrrnt_gc_c,z_ionCrrnt_c,timeStep_c) 
+#    "Classical":
+	 dpIon_c,dpElec_c,action,b_gc_c = \
+	         guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt,timeStep_c) 
 #    "Magnus Expantion":
-         dpIon_m,dpElec_m,actionME,dy_gc_m,C1,C2,C3,b,D1,D2,q = \
-                MagnusExpansionCollision(z_elecCrrnt_gc_m,z_ionCrrnt_m,timeStep_c) 
+	 dpIon_m,dpElec_m,actionME,dy_gc_m,C1,C2,C3,b,D1,D2,q = \
+	         MagnusExpansionCollision(z_elecCrrnt_gc,z_ionCrrnt,timeStep_c) 
 # Save data for testing:
          b_gc[indxTest] = b_gc_c           # "classical" approach
-         action_gc[indxTest] = action      # -"- -"- -"- -"- -"- -"- 
+	 action_gc[indxTest] = action      # -"- -"- -"- -"- -"- -"- 
          C1test[indxTest] = C1             # "Magnus expansion" approach
          C2test[indxTest] = abs(C2)        # -"- -"- -"- -"- -"- -"-
          C3test[indxTest] = C3             # -"- -"- -"- -"- -"- -"-
@@ -759,77 +725,71 @@ for i in range(nVion):
          D1test[indxTest] = D1             # -"- -"- -"- -"- -"- -"-
          D2test[indxTest] = D2             # -"- -"- -"- -"- -"- -"-
          qTest[indxTest] = q               #-"- -"- -"- -"- -"- -"- 
-         action_ME[indxTest] = actionME    #-"- -"- -"- -"- -"- -"- 
-         indxTest += 1  
-         indxTestMax = indxTest           
+	 action_ME[indxTest] = actionME    #-"- -"- -"- -"- -"- -"- 
+	 indxTest += 1  
+	 indxTestMax = indxTest           
 #
 # Taking into account transfer of momentum for both particles:
 #
          if (dpTransferFlag == 1):
-            for ic in range(3):
-               z_ionCrrnt_c[2*ic+1] += dpIon_c[ic]   
-               z_elecCrrnt_c[2*ic+1] += dpElec_c[ic]
-               z_ionCrrnt_m[2*ic+1] += dpIon_m[ic]   
-               z_elecCrrnt_m[2*ic+1] += dpElec_m[ic]
+	    for ic in range(3):
+	       z_ionCrrnt[2*ic+1] += dpIon_c[ic]   
+	       z_elecCrrnt[2*ic+1] += dpElec_c[ic]
 # transfer to system of guiding center:
-         z_elecCrrnt_gc_c=toGuidingCenter(z_elecCrrnt_c)  
-         z_elecCrrnt_gc_m=toGuidingCenter(z_elecCrrnt_m)  
+         z_elecCrrnt_gc=toGuidingCenter(z_elecCrrnt)  
 # Accumulation of the transfered momenta to ion along the track for both approaches:  
          for ic in range(3):
 #	    if i == 0:
-#	       print ('dpIon_c[%2d] = %20.14e, dpIon_m[%2d] = %20.14e' % \
-#	             (ic,dpIon_c[ic],ic,dpIon_m[ic]))
-            dpCrrnt[ic,0] += dpIon_c[ic]       # "classical", g*cm/sec  
-            dpCrrnt[ic,1] += dpIon_m[ic]       # "Magnus expansion", g*cm/sec  
+#	       print 'dpIon_c[%2d] = %20.14e, dpIon_m[%2d] = %20.14e' % \
+#	             (ic,dpIon_c[ic],ic,dpIon_m[ic])
+ 	    dpCrrnt[ic,0] += dpIon_c[ic]       # "classical", g*cm/sec  
+ 	    dpCrrnt[ic,1] += dpIon_m[ic]       # "Magnus expansion", g*cm/sec  
 #
 # Dragging both particles through second half of the step of the track:
 #
-         z_elecCrrnt_gc_c = np.dot(matr_elec_c,z_elecCrrnt_gc_c)     # electron
-         z_ionCrrnt_c = np.dot(matr_ion_c,z_ionCrrnt_c)              # ion
-         z_elecCrrnt_gc_m = np.dot(matr_elec_c,z_elecCrrnt_gc_m)     # electron
-         z_ionCrrnt_m = np.dot(matr_ion_c,z_ionCrrnt_m)              # ion
+ 	 z_elecCrrnt_gc = np.dot(matr_elec_c,z_elecCrrnt_gc)     # electron
+ 	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)              # ion
 # transfer from system of guiding center: 
-         z_elecCrrnt_c=fromGuidingCenter(z_elecCrrnt_gc_c)     
-         z_elecCrrnt_m=fromGuidingCenter(z_elecCrrnt_gc_m)     
+	 z_elecCrrnt=fromGuidingCenter(z_elecCrrnt_gc)     
 # Current distance between ion and electron; cm:
-         bCrrnt_c[indx]=np.sqrt((z_ionCrrnt_c[0]-z_elecCrrnt_c[0])**2+ \
-                                (z_ionCrrnt_c[2]-z_elecCrrnt_c[2])**2+ \
-                                (z_ionCrrnt_c[4]-z_elecCrrnt_c[4])**2)
+ 	 bCrrnt_c[indx]=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
+	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
+			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
 # Current values of parameters A,B:  
-         arrayA[indx] = math.log10(ro_Larm/bCrrnt_c[indx])     
-         arrayB[indx] = math.log10((q_elec**2/bCrrnt_c[indx])/kinEnergy)
+	 arrayA[indx] = math.log10(ro_Larm/bCrrnt_c[indx])     
+	 arrayB[indx] = math.log10((q_elec**2/bCrrnt_c[indx])/kinEnergy)
          indx += 1
 #
 # Transferred momenta and energy along the track - "classical" approach:
 #
       deltaPx_c[n,i] = abs(dpCrrnt[0,0])                         # dpx, g*cm/sec
 #      if deltaPx_c[n,i] <= 0.: 
-#         print ('deltaPx_c[%2d,%2d] = %e, dpCrrnt[%2d,%2d] = %e' % \
-#	       (n,i,deltaPx_c[n,i],n,i,dpCrrnt[0,0]))
+#         print 'deltaPx_c[%2d,%2d] = %e, dpCrrnt[%2d,%2d] = %e' % \
+#	       (n,i,deltaPx_c[n,i],n,i,dpCrrnt[0,0])
       deltaPy_c[n,i] = abs(dpCrrnt[1,0])                         # dpy, g*cm/sec 
 #      if deltaPy_c[n,i] <= 0.: 
-#         print ('deltaPy_c[%2d,%2d] = %e' % (n,i,deltaPy_c[n,i]))
+#         print 'deltaPy_c[%2d,%2d] = %e' % (n,i,deltaPy_c[n,i])
       deltaPz_c[n,i] = abs(dpCrrnt[2,0])                         # dpz, g*cm/sec 
 #      if deltaPz_c[n,i] <= 0.: 
-#         print ('deltaPz_c[%2d,%2d] = %e' % (n,i,deltaPz_c[n,i]))
+#         print 'deltaPz_c[%2d,%2d] = %e' % (n,i,deltaPz_c[n,i])
       deltaEnrgIon_c[n,i] = (dpCrrnt[0,0]**2+dpCrrnt[1,0]**2+dpCrrnt[2,0]**2)* \
-                             deFactor/eVtoErg                     # eV
+                            deFactor/eVtoErg                     # eV
 #
 # Transferred momenta and energy along the track - "Magnus expansion" approach:
 #
       deltaPx_m[n,i] = abs(dpCrrnt[0,1]*dpFactor)                # dpx, g*cm/sec
 #      if deltaPx_m[n,i] <= 0.: 
-#         print ('deltaPx_m[%2d,%2d] = %e' % (n,i,deltaPx_m[n,i]))
+#         print 'deltaPx_m[%2d,%2d] = %e' % (n,i,deltaPx_m[n,i])
       deltaPy_m[n,i] = abs(dpCrrnt[1,1]*dpFactor) 
 #      if deltaPy_m[n,i] <= 0.: 
-#         print ('deltaPy_m[%2d,%2d] = %e' % (n,i,deltaPy_m[n,i]))
+#         print 'deltaPy_m[%2d,%2d] = %e' % (n,i,deltaPy_m[n,i])
       deltaPz_m[n,i] = abs(dpCrrnt[2,1]*dpFactor) 
 #      if deltaPz_m[n,i] <= 0.: 
-#         print ('deltaPz_m[%2d,%2d] = %e' % (n,i,deltaPz_m[n,i]))
+#         print 'deltaPz_m[%2d,%2d] = %e' % (n,i,deltaPz_m[n,i])
       deltaEnrgIon_m[n,i] = (dpCrrnt[0,1]**2+dpCrrnt[1,1]**2+dpCrrnt[2,1]**2)* \
                             deFactor/eVtoErg                     # eV
-# Comparison of the approaches (%):
-      dEion_c_m[n,i] = 100.*(deltaEnrgIon_c[n,i]/deltaEnrgIon_m[n,i]-1.)
+# Comparison of the approaches:
+      dEion_c_m[n,i] = deltaEnrgIon_c[n,i]/deltaEnrgIon_m[n,i]-1.
 #
 # Integration using Simpson method:
 #
@@ -844,7 +804,7 @@ for i in range(nVion):
 #
 # Plotting of the tests:
 #
-print ('indxTestMax = %d' % indxTestMax)
+print 'indxTestMax = %d' % indxTestMax
 nn=np.arange(0,indxTestMax-1,1)
 
 fig2020=plt.figure (2020)
@@ -855,21 +815,15 @@ plt.title('$C1=[x_{gc}^2+y_{gc}^2+z_e^2+2J/(m_e \cdot \Omega_e)]^{0.5}$', \
           color='m',fontsize=16)
 plt.xlim([-5000,indxTestMax+5000])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2020.savefig('picturesCMA/magnusExpansion_C1_fig2020cma.png')    
-   print ('File "picturesCMA/magnusExpansion_C1_fig2020cma.png" is written')   
 
 fig2030=plt.figure (2030)
 plt.plot(nn,1.e-5*C2test[0:indxTestMax-1],'.r')
 plt.xlabel('Points of Tracks',color='m',fontsize=16)
 plt.ylabel('$C2$, $\cdot 10^5$ $cm^2/s$',color='m',fontsize=16)
 plt.title('$C2=2\cdot[V_{ix}\cdot(x_i-x_{gc})+V_{iy}\cdot(y_i-y_{gc})+(V_{iz}-V_{ez})\cdot(z_i-z_e)]$', \
-          color='m',fontsize=14)
+          color='m',fontsize=16)
 plt.xlim([-5000,indxTestMax+5000])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2030.savefig('picturesCMA/magnusExpansion_C2_fig2030cma.png')    
-   print ('File "picturesCMA/magnusExpansion_C2_fig2030cma.png" is written')   
 
 fig2040=plt.figure (2040)
 plt.plot(nn,1e-11*C3test[0:indxTestMax-1],'.r')
@@ -878,55 +832,26 @@ plt.ylabel('$C3$, $\cdot 10^{11}$ $cm^2/s^2$',color='m',fontsize=16)
 plt.title('$C3=V_{ix}^2+V_{iy}^2+(V_{iz}-V_{ez})^2$',color='m',fontsize=16)
 plt.xlim([-5000,indxTestMax+5000])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2040.savefig('picturesCMA/magnusExpansion_C3_fig2040cma.png')    
-   print ('File "picturesCMA/magnusExpansion_C3_fig2040cma.png" is written')   
-
-fig2025=plt.figure (2025)
-plt.plot(nn,1.e-5*D1test[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$10^{-5}\cdot D1$, $cm/s$',color='m',fontsize=16)
-plt.title('$D1=(2C_3\cdot \Delta t+C_2)/b_{ME}$ $-$ $C_2/C_1^{0.5}$',color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-plt.grid(True)
-# if (saveFilesFlag == 1):
-
-fig2035=plt.figure (2035)
-plt.plot(nn,1.e4*D2test[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$10^4\cdot D2$, $cm$',color='m',fontsize=16)
-plt.title('$D2=(2C_1+C_2\cdot \Delta t)/b_{ME}$ $-$ $2C_1^{0.5}$',color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-plt.grid(True)
-# if (saveFilesFlag == 1):
 
 fig2050=plt.figure (2050)
 plt.plot(nn,b_ME[0:indxTestMax-1],'.r')
 plt.xlabel('Points of Tracks',color='m',fontsize=16)
 plt.ylabel('$b_{ME}$, $cm$',color='m',fontsize=16)
-plt.title('Distance $b_{ME}$ between Particles for "ME" Approach', color='m',fontsize=16)
-plt.text(3500,.4,'$b_{ME}=[C1+C2\cdot \Delta t +C3 \cdot \Delta t^2]^{0.5}$', \
+plt.title('Distance $b_{ME}$ between Particles for "Magnus Expansion" Approach', color='m',fontsize=16)
+plt.text(3500,.425,('$b_{ME}=[C1+C2\cdot \delta t +C3 \cdot \delta t^2]^{0.5} (\delta t=%e$ $s)$' % timeStep_c), \
          color='m',fontsize=16)
-plt.text(33000,.36,('$(\Delta t=%8.2e$ $s)$' % timeStep_c),color='m',fontsize=16)
 plt.xlim([-5000,indxTestMax+5000])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2050.savefig('picturesCMA/particleDistance_me_fig2050cma.png')    
-   print ('File "picturesCMA/particleDistance_me_fig2050cma.png" is written')   
 
 fig2055=plt.figure (2055)
 plt.plot(nn,b_gc[0:indxTestMax-1],'.r')
 plt.xlabel('Points of Tracks',color='m',fontsize=16)
 plt.ylabel('$b_{GC}$, $cm$',color='m',fontsize=16)
-plt.title('Distance $b_{GC}$ between Particles for "GC" Approach', color='m',fontsize=16)
-plt.text(0,.4,'$b_{GC}=[(x_i-x_{gc})^2+(y_i-y_{gc})^2+$',color='m',fontsize=16)
-plt.text(55500,.36,'$+(z_i-z_e)^2+2J/(m_e \cdot \Omega_e)]^{0.5}$', \
+plt.title('Distance $b_{GC}$ between Particles for "Guiding Center" Approach', color='m',fontsize=16)
+plt.text(0,.425,'$b_{GC}=[(x_i-x_{gc})^2+(y_i-y_{gc})^2+(z_i-z_e)^2+2J/(m_e \cdot \Omega_e)]^{0.5}$', \
          color='m',fontsize=16)
 plt.xlim([-5000,indxTestMax+5000])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2055.savefig('picturesCMA/particleDistance_gc_fig2055cma.png')    
-   print ('File "picturesCMA/particleDistance_gc_fig2055cma.png" is written')   
 
 #
 # Comparison of bCrrnt_c from "classical" with bTest from "Magnus expansion" approaches:
@@ -934,15 +859,15 @@ if (saveFilesFlag == 1):
 bCrrnt_cTest = np.zeros(indxTestMax)
 bCrrnt_cTestRel = np.zeros(indxTestMax)
 b_gc_ME_rel = np.zeros(indxTestMax)
-# print ('  k      bCrrnt[2k]  action_gc[k]  action_ME[k]      b_gc       b_ME      b_gc/b_ME  actn_gc_ME_rel\n') 
+print '  k      bCrrnt[2k]  bCrrnt[2k+1]   bCrrntTest       b_gc       b_ME      b_gc/b_ME  actn_gc_ME_rel\n' 
 for k in range(indxTestMax):
    bCrrnt_cTest[k] = .5*(bCrrnt_c[2*k]+bCrrnt_c[2*k+1])
 #   bCrrnt_cTestRel[k] = bCrrnt_cTest[k]/b_ME[k]
    b_gc_ME_rel[k] = b_gc[k]/b_ME[k]
-   actn_gc_ME_rel[k] = 1.e7*(action_gc[k]/action_ME[k]-1.)
-#   if (k < 50):
-#       print ('%6d: %e %e %e %e %e %e %e' % \
-#             (k,bCrrnt_c[k],action_gc[k],action_ME[k],b_gc[k],b_ME[k],b_gc_ME_rel[k],actn_gc_ME_rel[k]))
+   actn_gc_ME_rel[k] = 1.e6*(action_gc[k]/action_ME[k]-1)
+   if (k < 50):
+      print '%6d: %e %e %e %e %e %e %e' % \
+            (k,bCrrnt_c[k],bCrrnt_c[k+1],bCrrnt_cTest[k],b_gc[k],b_ME[k],b_gc_ME_rel[k],actn_gc_ME_rel[k])
    
 fig2060=plt.figure (2060)
 # plt.semilogy(nn,bCrrnt_cTest[0:indxTestMax-1],'.r')
@@ -963,22 +888,16 @@ plt.title('Comparison of Distances $b_{GC}$ and $b_{ME}$ between Particles',colo
 plt.xlim([-5000,indxTestMax+5000])
 # plt.ylim([.9*min(b_gc_ME_rel),1.1*max(b_gc_ME_rel)])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2070.savefig('picturesCMA/particleDistanceComprsn_gc_me_fig2070cma.png')    
-   print ('File "picturesCMA/particleDistanceComprsn_gc_me_fig2070cma.png" is written')   
 
 fig2080=plt.figure (2080)
 # plt.semilogy(nn,actn_gc_ME_rel[0:indxTestMax-1],'.r')
 plt.plot(nn,actn_gc_ME_rel[0:indxTestMax-1],'.r')
 plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$10^7\cdot (J_{GC}/J_{ME}$ $-$ $1)$',color='m',fontsize=16)
+plt.ylabel('$10^6\cdot (J_{GC}/J_{ME}$ $-$ $1)$',color='m',fontsize=16)
 plt.title('Comparison of Actions $J_{GC}$ and $J_{ME}$',color='m',fontsize=16)
 plt.xlim([-5000,indxTestMax+5000])
-plt.ylim([.99*min(actn_gc_ME_rel),1.01*max(actn_gc_ME_rel)])
+plt.ylim([.9*min(actn_gc_ME_rel),1.1*max(actn_gc_ME_rel)])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2080.savefig('picturesCMA/actionComprsn_gc_me_fig2080cma.png')    
-   print ('File "picturesCMA/actionComprsn_gc_me_fig2080cma.png" is written')   
 
 
 nn=np.arange(0,nVion*nImpctPrmtr,1)
@@ -995,9 +914,6 @@ plt.title('Total Length of Interaction: $L_{Intrctn}=2 \cdot [R_{max}^2-rho_{Ini
 plt.xlim([-100,nVion*nImpctPrmtr+100])
 plt.ylim([.9*min(halfLintrTest),1.1*max(halfLintrTest)])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2090.savefig('picturesCMA/totalLengthIntrsctn_fig2090cma.png')    
-   print ('File "picturesCMA/totalLengthIntrsctn_fig2090cma.png" is written')   
 
 #
 # Fitting for figures with deltaEnrgIon_c (my own Least Squares Method - LSM;
@@ -1032,8 +948,8 @@ for i in range(nVion):
          log10rhoInit[indx,i] = np.log10(rhoInit[n,i])
          log10deltaEnrgIon_c[indx,i] = np.log10(deltaEnrgIon_c[n,i])
          indx += 1
-   maxIndx[i] = int(indx)
-#    print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
+   maxIndx[i] = indx
+#    print 'maxIndx(%d) = %d' % (i,maxIndx[i]-1)
 
 #
 # Minimized functional:
@@ -1054,10 +970,10 @@ for i in range(nVion):
    delta = maxIndx[i]*sumRho2[i]-sumRho[i]**2
    fitA1[i] = (sumRho2[i]*sumEnrg[i]-sumRho[i]*sumRhoEnrg[i])/delta
    fitB1[i] = (maxIndx[i]*sumRhoEnrg[i]-sumRho[i]*sumEnrg[i])/delta
-#    print ('fitA1(%d) = %e, fitB1(%d) = %e' % (i,fitA1[i],i,fitB1[i]))
+#    print 'fitA1(%d) = %e, fitB1(%d) = %e' % (i,fitA1[i],i,fitB1[i])
 
-rhoInitFit1 = np.zeros((int(maxIndx[0]),nVion))
-deltaEnrgIon_c_Fit1 = np.zeros((int(maxIndx[0]),nVion))
+rhoInitFit1 = np.zeros((maxIndx[0],nVion))
+deltaEnrgIon_c_Fit1 = np.zeros((maxIndx[0],nVion))
 funcHi2_1 = np.zeros(nVion)
 for i in range(nVion):
    factorA = math.pow(10.,fitA1[i])
@@ -1065,8 +981,8 @@ for i in range(nVion):
       rhoInitFit1[n,i] = math.pow(10.,log10rhoInit[n,i])
       deltaEnrgIon_c_Fit1[n,i] = factorA*math.pow(rhoInitFit1[n,i],fitB1[i])
       funcHi2_1[i] += (np.log10(deltaEnrgIon_c[n,i]-np.log10(deltaEnrgIon_c_Fit1[n,i])))**2  
-#    print ('i=%2d: fitA1 = %e, fitB1 = %e, hi2_1 = %e' % \
-#          (i,fitA1[i],fitB1[i],funcHi2_1[i]))
+#    print 'i=%2d: fitA1 = %e, fitB1 = %e, hi2_1 = %e' % \
+#          (i,fitA1[i],fitB1[i],funcHi2_1[i])
 #
 # Minimized functional:
 #
@@ -1088,10 +1004,10 @@ for i in range(nVion):
    delta = sumEnrg2[i]*sumRho2Enrg2[i]-sumRhoEnrg2[i]**2
    fitA2[i] = (sumRho2Enrg2[i]*sumEnrg[i]-sumRhoEnrg[i]*sumRhoEnrg2[i])/delta
    fitB2[i] = (sumEnrg2[i]*sumRhoEnrg[i]-sumRhoEnrg2[i]*sumEnrg[i])/delta
-#    print ('fitA2(%d) = %e, fitB2(%d) = %e' % (i,fitA2[i],i,fitB2[i]))
+#    print 'fitA2(%d) = %e, fitB2(%d) = %e' % (i,fitA2[i],i,fitB2[i])
 
-rhoInitFit2 = np.zeros((int(maxIndx[0]),nVion))
-deltaEnrgIon_c_Fit2 = np.zeros((int(maxIndx[0]),nVion))
+rhoInitFit2 = np.zeros((maxIndx[0],nVion))
+deltaEnrgIon_c_Fit2 = np.zeros((maxIndx[0],nVion))
 funcHi2_2 = np.zeros(nVion)
 for i in range(nVion):
    factorA = math.pow(10.,fitA2[i])
@@ -1099,8 +1015,8 @@ for i in range(nVion):
       rhoInitFit2[n,i] = math.pow(10.,log10rhoInit[n,i])
       deltaEnrgIon_c_Fit2[n,i] = factorA*math.pow(rhoInitFit2[n,i],fitB2[i])
       funcHi2_2[i] += (1.-np.log10(deltaEnrgIon_c_Fit2[n,i])/np.log10(deltaEnrgIon_c[n,i]))**2  
-#    print ('i=%2d: fitA2 = %e, fitB2 = %e, hi2_2 = %e' % \
-#          (i,fitA2[i],fitB2[i],funcHi2_2[i]))
+#    print 'i=%2d: fitA2 = %e, fitB2 = %e, hi2_2 = %e' % \
+#          (i,fitA2[i],fitB2[i],funcHi2_2[i])
 
 #      
 # Main plotting:      
@@ -1113,9 +1029,6 @@ plt.title('Map of Parameters A,B', color='m',fontsize=16)
 # plt.xlim([minA,maxA])
 # plt.ylim([minB,maxB])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig110.savefig('picturesCMA/mapA-B_fig110cma.png')    
-   print ('File "picturesCMA/mapA-B_fig110cma.png" is written')   
 
 nn=np.arange(0,2*totalPoints-1,1)
 fig20=plt.figure (20)
@@ -1127,9 +1040,6 @@ plt.title('Distance $b_{Lab.Sys}$ between Particles in Lab.System', color='m',fo
 plt.xlim([-5000,2*totalPoints+5000])
 # plt.xlim([0,2000])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig20.savefig('picturesCMA/particleDistance_ls_fig20cma.png')    
-   print ('File "picturesCMA/particleDistance_ls_fig20cma.png" is written')   
 
 nn=np.arange(0,2*totalPoints-1,1)
 fig30=plt.figure (30)
@@ -1141,9 +1051,6 @@ plt.title('$A=log_{10}(q_e^2/b/E_{kin})$, $B=log_{10}(R_{Larm}/b)$', \
 plt.xlim([-5000,2*totalPoints+5000])
 # plt.ylim([minB,maxB])
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig30.savefig('picturesCMA/parametersA-B_fig30cma.png')    
-   print ('File "picturesCMA/parametersA-B_fig30cma.png" is written')   
 
 xVionRel = np.zeros((nImpctPrmtr,nVion))
 for i in range(nVion):
@@ -1161,12 +1068,9 @@ plt.grid(True)
 yLimit=[0.,.405]
 plt.ylim(yLimit)
 plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-plt.text(1.6e-3,-.026,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+plt.text(2.e-3,-.021,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
 plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
 plt.text(3.9e-5,.05,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-if (saveFilesFlag == 1):
-   fig40.savefig('picturesCMA/initialImpactParameter_SM_fig40cma.png')    
-   print ('File "picturesCMA/initialImpactParameter_SM_fig40cma.png" is written')   
 
 
 '''
@@ -1195,18 +1099,18 @@ for n in range(nImpctPrmtr):
    if deltaPx_c[n,0] > 0.:
       xRhoInitPx_c[indx_c] = rhoInit[n,0]
       yDeltaPx_c[indx_c] = deltaPx_c[n,0]
-#      print ('n_c=%2d: xRhoInitPx_c = %e, yDeltaPx_c = %e' % \
-#            (indx_c,xRhoInitPx_c[indx_c],yDeltaPx_c[indx_c])) 
+#      print'n_c=%2d: xRhoInitPx_c = %e, yDeltaPx_c = %e' % \
+#            (indx_c,xRhoInitPx_c[indx_c],yDeltaPx_c[indx_c]) 
       indx_c += 1
    if deltaPx_m[n,0] > 0.:
       xRhoInitPx_m[indx_c] = rhoInit[n,0]
       yDeltaPx_m[indx_c] = deltaPx_m[n,0]
-#      print ('n_m=%2d: xRhoInitPx_m = %e, yDeltaPx_m = %e' % \
-#            (indx_m,xRhoInitPx_m[indx_m],yDeltaPx_m[indx_m])) 
+#      print'n_m=%2d: xRhoInitPx_m = %e, yDeltaPx_m = %e' % \
+#            (indx_m,xRhoInitPx_m[indx_m],yDeltaPx_m[indx_m]) 
       indx_m += 1
 maxIndx_c = indx_c-1
 maxIndx_m = indx_m-1
-# print ('maxIndx_c = %d, maxIndx_m = %d' % (maxIndx_c,maxIndx_m))
+# print 'maxIndx_c = %d, maxIndx_m = %d' % (maxIndx_c,maxIndx_m)
 
 plt.figure (51)
 plt.loglog(xRhoInitPx_c[0:maxIndx_c],yDeltaPx_c[0:maxIndx_c],'-xr', \
@@ -1232,18 +1136,18 @@ for n in range(nImpctPrmtr):
    if deltaPz_c[n,0] > 0.:
       xRhoInitPz_c[indx_c] = rhoInit[n,0]
       yDeltaPz_c[indx_c] = deltaPz_c[n,0]
-#      print ('n_c=%2d: xRhoInitPz_c = %e, yDeltaPz_c = %e' % \
-#            (indx_c,xRhoInitPz_c[indx_c],yDeltaPz_c[indx_c])) 
+#      print'n_c=%2d: xRhoInitPz_c = %e, yDeltaPz_c = %e' % \
+#            (indx_c,xRhoInitPz_c[indx_c],yDeltaPz_c[indx_c]) 
       indx_c += 1
    if deltaPz_m[n,0] > 0.:
       xRhoInitPz_m[indx_c] = rhoInit[n,0]
       yDeltaPz_m[indx_c] = deltaPz_m[n,0]
-#      print ('n_m=%2d: xRhoInitPz_m = %e, yDeltaPz_m = %e' % \
-#            (indx_m,xRhoInitPz_m[indx_m],yDeltaPz_m[indx_m])) 
+#      print'n_m=%2d: xRhoInitPz_m = %e, yDeltaPz_m = %e' % \
+#            (indx_m,xRhoInitPz_m[indx_m],yDeltaPz_m[indx_m]) 
       indx_m += 1
 maxIndx_c = indx_c-1
 maxIndx_m = indx_m-1
-# print ('maxIndx_c = %d, maxIndx_m = %d' % (maxIndx_c,maxIndx_m))
+# print 'maxIndx_c = %d, maxIndx_m = %d' % (maxIndx_c,maxIndx_m)
 
 plt.figure (53)
 plt.loglog(xRhoInitPz_c[0:maxIndx_c],yDeltaPz_c[0:maxIndx_c],'-xr', \
@@ -1327,56 +1231,52 @@ plt.grid(True)
 
 indxFigures = [0,9,12,18,19,23,27,29,31,34,39,49]
 numbrFigures = [500,600,630,660,700,730,760,800,830,860,900,1000]
-xPos = [.00218,.0022,.0024,.0027,.0026,.00265,.00265,.00265,.00265,.0028,.0029,.0035]
+xPos = [.0024,.0024,.0024,.0027,.0028,.0028,.0028,.0028,.0029,.0028,.0029,.0048]
 yPos = [6.4e-9,6.7e-9,6.4e-9,5.9e-9,6.2e-9,5.6e-9,5.8e-9,6.3e-9,5.8e-9,5.9e-9,5.8e-9,4.7e-9]
 
 for i in range(12):
    VionCrrnt = V0*VionRel[indxFigures[i]]
    powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
    mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
-   figCrrnt = plt.figure(numbrFigures[i])
+   plt.figure(numbrFigures[i])
    plt.loglog(rhoInit[0:nImpctPrmtr,indxFigures[i]], \
               deltaEnrgIon_c[0:nImpctPrmtr,indxFigures[i]],'-xr', \
-              rhoInitFit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
-	      deltaEnrgIon_c_Fit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]],'ob', \
-              rhoInitFit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
-	      deltaEnrgIon_c_Fit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
-	      'or',linewidth=2)
-   plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
-   plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=14)
-   titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion:'
-   titleHeader += ' $V_{ion}=%3.1f\cdot10^{%2d}$ $cm/s$'
-   plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
+              rhoInitFit1[0:maxIndx[indxFigures[i]]+1,indxFigures[i]], \
+	      deltaEnrgIon_c_Fit1[0:maxIndx[indxFigures[i]]+1,indxFigures[i]],'ob', \
+              rhoInitFit2[0:maxIndx[indxFigures[i]]+1,indxFigures[i]], \
+	      deltaEnrgIon_c_Fit2[0:maxIndx[indxFigures[i]]+1,indxFigures[i]],'or',linewidth=2)
+   plt.xlabel('Track Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=16)
+   plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
+   titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion for '
+   titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+   plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
    plt.xlim([.95*rhoInit[0,indxFigures[i]],1.05*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
-   plt.ylim([ .9*deltaEnrgIon_c[nImpctPrmtr-1,indxFigures[i]], \
-             1.1*deltaEnrgIon_c_Fit2[0,indxFigures[i]]])
-   plt.legend(['Calculated Data',('Fitted Data (Func1): B = %5.3f' % \
-               abs(fitB1[indxFigures[i]])), \
+   plt.ylim([.9*deltaEnrgIon_c[nImpctPrmtr-1,indxFigures[i]],1.1*deltaEnrgIon_c_Fit2[0,indxFigures[i]]])
+   plt.legend(['Calculated Data',('Fitted Data (Func1): B = %5.3f' % abs(fitB1[indxFigures[i]])), \
               ('Fitted Data (Func2): B = B = %5.3f'% abs(fitB2[indxFigures[i]]))], \
-             loc='lower center',fontsize=14)
-   plt.text(xPos[i],yPos[i],'Fitted $\Delta E_{ion}$ are proportional to $rho_{Init}^{-B}$', \
+             loc='lower center',fontsize=16)
+   plt.text(xPos[i],yPos[i],'Fitted $\Delta E_{ion}$ are proportional to $1/rho_{Init}^B$', \
 	    color='m',fontsize=16)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fileName = 'picturesCMA/deltaEtransf_indxPlot-'+str(indxFigures[i])+'_fig'
-      fileName += str(numbrFigures[i])+'cma.png' 
-      figCrrnt.savefig(fileName) 
-      print ('File "',fileName,'" is written')
 
+
+
+# indxFigures = [0,9,12,18,19,23,27,29,31,34,39,49]
+# numbrFigures = [500,600,630,660,700,730,760,800,830,860,900,1000]
 yPosText = [-2.115,-2.115,-2.115,-2.20,-2.115,-2.115,-2.115,-2.20,-2.115,-2.115,-2.115,-2.115]
 fig1100=plt.figure (1100)
 plt.semilogx(VionRel,fitB1,'-xb',VionRel,fitB2,'-xr',linewidth=2)
-plt.xlabel('Relative Ion Velocity  $V_{ion}/V_0$',color='m',fontsize=14)
-plt.ylabel('$B$', color='m',fontsize=14)
+plt.xlabel('Relative Ion Velocity  $V_{ion}/V_0$',color='m',fontsize=16)
+plt.ylabel('$B$', color='m',fontsize=16)
 titleHeader = 'Dependence of Transferred Energy $\Delta E_{ion}$ to Single Ion on $rho^B$'
-plt.title(titleHeader,color='m',fontsize=12)
-plt.text(1.e-4,-1.93,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)),color='m',fontsize=16)
+plt.title(titleHeader,color='m',fontsize=16)
+plt.text(2.e-4,-1.93,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)),color='m',fontsize=16)
 plt.xlim(xLimit)
 yLimit=[min(fitB1[0],fitB2[0])-.025,max(fitB1[nImpctPrmtr-1],fitB2[nImpctPrmtr-1])+.025]
-# print ('ylim[0] = %e, ylim[1] = %e' % (yLimit[0],yLimit[1]))
+# print 'ylim[0] = %e, ylim[1] = %e' % (yLimit[0],yLimit[1])
 plt.ylim(yLimit)
 plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-plt.text(1.6e-3,yLimit[0]-.028,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+plt.text(2.e-3,yLimit[0]-.021,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
 plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
 # plt.text(4.4e-5,yLimit[0]-.02,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
 plt.text(4.4e-5,-2.35,'$ \Delta V_{e||}/ sV_{e0}$',color='m',fontsize=14)
@@ -1387,9 +1287,7 @@ for k in range(12):
    plt.plot([xPos,xPos],[-2.18,-2.125],'-k',linewidth=1)
    plt.text(xPos,yPosText[k],('%3d' % int(numbrFigures[k])),color='k',fontsize=10)
 plt.grid(True)
-if (saveFilesFlag == 1):
-   fig1100.savefig('picturesCMA/exponentB_on_ionVelocity_fig1100cma.png')    
-   print ('File "picturesCMA/exponentB_on_ionVelocity_fig1100cma.png" is written')
+
 
 # plt.show()
 
@@ -1454,29 +1352,26 @@ for i in range(nVion):
    rhoMaxCrrnt = impctPrmtrMax[i]
 #   log10rhoMax = math.log10(rhoMaxCrrnt)
 #   log10rhoStep = (log10rhoMax-log10rhoMin)/(nPointsGK)
-#   print ('Vion(%d) = %e, rhoMin = %e, rhoMaxCrrnt = %e' % \
-#         (i,Vion[i],rhoMin,rhoMaxCrrnt))
+   print 'Vion(%d) = %e, rhoMin = %e, rhoMaxCrrnt = %e' % \
+         (i,Vion[i],rhoMin,rhoMaxCrrnt)
    for n in range(nPointsGK):
 #      log10rhoCrrntGK = log10rhoMin+(n+0.5)*log10rhoStep 
 #      rhoCrrntGK = math.pow(10.,log10rhoCrrntGK)
       rhoCrrntGK[n,i] = psi16[n]*(rhoMaxCrrnt-rhoMin)/2 + \
                        (rhoMaxCrrnt+rhoMin)/2
-#      print ('    rhoCrrntGK[%2d,%2d] = %e' % (n,i,rhoCrrntGK[n,i]))
+#      print '    rhoCrrntGK[%2d,%2d] = %e' % (n,i,rhoCrrntGK[n,i])
       halfLintrCrrnt = np.sqrt(rhoMaxCrrnt**2-rhoCrrntGK[n,i]**2)   # half length of interaction; cm
       timeHalfPath = halfLintrCrrnt/eVrmsLong     # 0.5 time of interaction; sec
       numbLarmor = int(2.*timeHalfPath/T_larm)             
       pointAlongTrackCrrnt = int(2.*timeHalfPath/timeStep_c)
       totalPointsIntgrtn += pointAlongTrackCrrnt
-      z_ionCrrnt_c = np.zeros(6)      # Zeroing out of vector for ion
-      z_elecCrrnt_c = np.zeros(6)     # Zeroing out of vector for electron
-      z_ionCrrnt_m = np.zeros(6)      # Zeroing out of vector for ion
-      z_elecCrrnt_m = np.zeros(6)     # Zeroing out of vector for electron
+      z_ionCrrnt = np.zeros(6)      # Zeroing out of vector for ion
+      z_elecCrrnt = np.zeros(6)     # Zeroing out of vector for electron
 # Zeroing out of "guiding center" vector for electron:
-      z_elecCrrnt_gc_c = np.zeros(6)  
-      z_elecCrrnt_gc_m = np.zeros(6)  
+      z_elecCrrnt_gc = np.zeros(6)  
 # Current values to transfered momemta 
-# (second index numerates "Guiding Center", if 0, and 
-#                         "Magnus Expansion" (if 1) approaches: 
+# (second index numerates "classical", if 0, and 
+#                         "Magnus expand" (if 1) approaches: 
       dpCrrnt = np.zeros((3,2))
 # Intermediate arrays:
       dpIon_c = np.zeros(3) 
@@ -1484,17 +1379,12 @@ for i in range(nVion):
       dpElec_c = np.zeros(3) 
       dpElec_m = np.zeros(3) 
 # Current initial vector for electron:
-      z_elecCrrnt_c[Ix] = rhoCrrntGK[n,i]              # x, cm
-      z_elecCrrnt_c[Iz] = -halfLintrCrrnt              # z, cm
-      z_elecCrrnt_c[Ipy] = m_elec*eVrmsTran            # py, g*cm/sec
-      z_elecCrrnt_c[Ipz] = m_elec*eVrmsLong            # pz, g*cm/sec
-      z_elecCrrnt_m[Ix] = rhoCrrntGK[n,i]              # x, cm
-      z_elecCrrnt_m[Iz] = -halfLintrCrrnt              # z, cm
-      z_elecCrrnt_m[Ipy] = m_elec*eVrmsTran            # py, g*cm/sec
-      z_elecCrrnt_m[Ipz] = m_elec*eVrmsLong            # pz, g*cm/sec
+      z_elecCrrnt[Ix] = rhoCrrntGK[n,i]              # x, cm
+      z_elecCrrnt[Iz] = -halfLintrCrrnt              # z, cm
+      z_elecCrrnt[Ipy] = m_elec*eVrmsTran            # py, g*cm/sec
+      z_elecCrrnt[Ipz] = m_elec*eVrmsLong            # pz, g*cm/sec
 # transfer to system of guiding center:
-      z_elecCrrnt_gc_c=toGuidingCenter(z_elecCrrnt_c)  
-      z_elecCrrnt_gc_m=toGuidingCenter(z_elecCrrnt_m)  
+      z_elecCrrnt_gc=toGuidingCenter(z_elecCrrnt)  
 #
 # Main loop along the each track:
 #
@@ -1502,62 +1392,53 @@ for i in range(nVion):
 #
 # Dragging both particles through first half of the step of the track:
 #
-         z_elecCrrnt_gc_c = np.dot(matr_elec_c,z_elecCrrnt_gc_c) # electron
-         z_ionCrrnt_c = np.dot(matr_ion_c,z_ionCrrnt_c)          # ion
-         z_elecCrrnt_gc_m = np.dot(matr_elec_c,z_elecCrrnt_gc_m) # electron
-         z_ionCrrnt_m = np.dot(matr_ion_c,z_ionCrrnt_m)          # ion
+  	 z_elecCrrnt_gc = np.dot(matr_elec_c,z_elecCrrnt_gc) # electron
+  	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)          # ion
 # transfer from system of guiding center: 
-         z_elecCrrnt_c=fromGuidingCenter(z_elecCrrnt_gc_c)     
-         z_elecCrrnt_m=fromGuidingCenter(z_elecCrrnt_gc_m)     
+	 z_elecCrrnt=fromGuidingCenter(z_elecCrrnt_gc)     
 # Current distance between ion and electron; cm:
-         bCrrnt_c[indx]=np.sqrt((z_ionCrrnt_c[0]-z_elecCrrnt_c[0])**2+ \
-                          (z_ionCrrnt_c[2]-z_elecCrrnt_c[2])**2+ \
-                          (z_ionCrrnt_c[4]-z_elecCrrnt_c[4])**2)
+ 	 bCrrnt_c[indx]=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
+	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
+			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
          indx += 1
 #
 # Dragging both particles through interaction during this step of track
 # (for both approaches):
 #
-#    "Guiding Center":
-         dpIon_c,dpElec_c,action,b_gc_c = \
-                 guidingCenterCollision(z_elecCrrnt_gc_c,z_ionCrrnt_c,timeStep_c) 
-#    "Magnus Expansion":
-         dpIon_m,dpElec_m,action,dy_gc_m,C1,C2,C3,b,D1,D2,q = \
-                 MagnusExpansionCollision(z_elecCrrnt_gc_m,z_ionCrrnt_m,timeStep_c) 
+#    "Classical":
+	 dpIon_c,dpElec_c,action,b_gc_c = \
+	         guidingCenterCollision(z_elecCrrnt_gc,z_ionCrrnt,timeStep_c) 
+#    "Magnus Expand":
+	 dpIon_m,dpElec_m,action,dy_gc_m,C1,C2,C3,b,D1,D2,q = \
+	         MagnusExpansionCollision(z_elecCrrnt_gc,z_ionCrrnt,timeStep_c) 
 #
 # Taking into account transfer of momentum for both particles
 # (for "classical" only):
 #
          if (dpTransferFlag == 1):
-            for ic in range(3):
-               z_ionCrrnt_c[2*ic+1] += dpIon_c[ic]   
-               z_elecCrrnt_c[2*ic+1] += dpElec_c[ic]
-               z_ionCrrnt_m[2*ic+1] += dpIon_c[ic]   
-               z_elecCrrnt_m[2*ic+1] += dpElec_c[ic]
+	    for ic in range(3):
+	       z_ionCrrnt[2*ic+1] += dpIon_c[ic]   
+	       z_elecCrrnt[2*ic+1] += dpElec_c[ic]
 # transfer to system of guiding center:
-         z_elecCrrnt_gc_c=toGuidingCenter(z_elecCrrnt_c)  
-         z_elecCrrnt_gc_m=toGuidingCenter(z_elecCrrnt_m)  
+         z_elecCrrnt_gc=toGuidingCenter(z_elecCrrnt)  
 # Accumulation of the transfered momenta along the track:  
          for ic in range(3):
 #	    if i == 0:
-#	       print ('dpIon_c[%2d] = %20.14e, dpIon_m[%2d] = %20.14e' % \
-#	             (ic,dpIon_c[ic],ic,dpIon_m[ic]))
-            dpCrrnt[ic,0] += dpIon_c[ic]                      # g*cm/csec  
-            dpCrrnt[ic,1] += dpIon_m[ic]                      # g*cm/csec  
+#	       print 'dpIon_c[%2d] = %20.14e, dpIon_m[%2d] = %20.14e' % \
+#	             (ic,dpIon_c[ic],ic,dpIon_m[ic])
+ 	    dpCrrnt[ic,0] += dpIon_c[ic]                      # g*cm/csec  
+ 	    dpCrrnt[ic,1] += dpIon_m[ic]                      # g*cm/csec  
 #
 # Dragging both particles through second half of the step of the track:
 #
-         z_elecCrrnt_gc_c = np.dot(matr_elec_c,z_elecCrrnt_gc_c)     # electron
-         z_ionCrrnt_c = np.dot(matr_ion_c,z_ionCrrnt_c)              # ion
-         z_elecCrrnt_gc_m = np.dot(matr_elec_c,z_elecCrrnt_gc_m)     # electron
-         z_ionCrrnt_m = np.dot(matr_ion_c,z_ionCrrnt_m)              # ion
+ 	 z_elecCrrnt_gc = np.dot(matr_elec_c,z_elecCrrnt_gc)     # electron
+ 	 z_ionCrrnt = np.dot(matr_ion_c,z_ionCrrnt)              # ion
 # transfer from system of guiding center: 
-         z_elecCrrnt_c=fromGuidingCenter(z_elecCrrnt_gc_c)     
-         z_elecCrrnt_m=fromGuidingCenter(z_elecCrrnt_gc_m)     
+	 z_elecCrrnt=fromGuidingCenter(z_elecCrrnt_gc)     
 # Current distance between ion and electron; cm:
-         bCrrnt_c[indx]=np.sqrt((z_ionCrrnt_c[0]-z_elecCrrnt_c[0])**2+ \
-                          (z_ionCrrnt_c[2]-z_elecCrrnt_c[2])**2+ \
-                          (z_ionCrrnt_c[4]-z_elecCrrnt_c[4])**2)
+ 	 bCrrnt_c[indx]=np.sqrt((z_ionCrrnt[0]-z_elecCrrnt[0])**2+ \
+	                  (z_ionCrrnt[2]-z_elecCrrnt[2])**2+ \
+			  (z_ionCrrnt[4]-z_elecCrrnt[4])**2)
          indx += 1
 #	 
 # Transferred momenta and energy along the entire length of each track
@@ -1566,34 +1447,34 @@ for i in range(nVion):
       deltaPx_cGK[n,i] = abs(dpCrrnt[0,0]) 
       deltaPx_mGK[n,i] = abs(dpCrrnt[0,1]) 
 #      if deltaPx_cGK[n,i] <= 0.: 
-#         print ('deltaPx_cGK[%2d,%2d] = %e, dpCrrnt[%2d,%2d] = %e' % \
-#	       (n,i,deltaPx_cGK[n,i],n,i,dpCrrnt[0,0]))
+#         print 'deltaPx_cGK[%2d,%2d] = %e, dpCrrnt[%2d,%2d] = %e' % \
+#	       (n,i,deltaPx_cGK[n,i],n,i,dpCrrnt[0,0])
 #      if deltaPx_mGK[n,i] <= 0.: 
-#         print ('deltaPx_mGK[%2d,%2d] = %e, dpCrrnt[%2d,%2d] = %e' % \
-#	       (n,i,deltaPx_mGK[n,i],n,i,dpCrrnt[0,1]))
+#         print 'deltaPx_mGK[%2d,%2d] = %e, dpCrrnt[%2d,%2d] = %e' % \
+#	       (n,i,deltaPx_mGK[n,i],n,i,dpCrrnt[0,1])
       deltaPy_cGK[n,i] = abs(dpCrrnt[1,0]) 
       deltaPy_mGK[n,i] = abs(dpCrrnt[1,1]) 
 #      if deltaPy_cGK[n,i] <= 0.: 
-#         print ('deltaPy_cGK[%2d,%2d] = %e' % (n,i,deltaPy_cGK[n,i]))
+#         print 'deltaPy_cGK[%2d,%2d] = %e' % (n,i,deltaPy_cGK[n,i])
 #      if deltaPy_mGK[n,i] <= 0.: 
-#         print ('deltaPy_mGK[%2d,%2d] = %e' % (n,i,deltaPy_mGK[n,i]))
+#         print 'deltaPy_mGK[%2d,%2d] = %e' % (n,i,deltaPy_mGK[n,i])
       deltaPz_cGK[n,i] = abs(dpCrrnt[2,0]) 
       deltaPz_mGK[n,i] = abs(dpCrrnt[2,1]) 
 #      if deltaPz_cGK[n,i] <= 0.: 
-#         print ('deltaPz_cGK[%2d,%2d] = %e' % (n,i,deltaPz_cGK[n,i]))
+#         print 'deltaPz_cGK[%2d,%2d] = %e' % (n,i,deltaPz_cGK[n,i])
 #      if deltaPz_mGK[n,i] <= 0.: 
-#         print ('deltaPz_mGK[%2d,%2d] = %e' % (n,i,deltaPz_MGK[n,i]))
+#         print 'deltaPz_mGK[%2d,%2d] = %e' % (n,i,deltaPz_MGK[n,i])
       deltaEnrgIon_cGK[n,i] = (dpCrrnt[0,0]**2+dpCrrnt[1,0]**2+dpCrrnt[2,0]**2)* \
                             deFactor/eVtoErg                      # eV
       deltaPx_mGK[n,i] = abs(dpCrrnt[0,1]*dpFactor) 
 #      if deltaPx_mGK[n,i] <= 0.: 
-#         print ('deltaPx_mGK[%2d,%2d] = %e' % (n,i,deltaPx_mGK[n,i]))
+#         print 'deltaPx_mGK[%2d,%2d] = %e' % (n,i,deltaPx_mGK[n,i])
       deltaPy_mGK[n,i] = abs(dpCrrnt[1,1]*dpFactor) 
 #      if deltaPy_mGK[n,i] <= 0.: 
-#         print ('deltaPy_mGK[%2d,%2d] = %e' % (n,i,deltaPy_mGK[n,i]))
+#         print 'deltaPy_mGK[%2d,%2d] = %e' % (n,i,deltaPy_mGK[n,i])
       deltaPz_mGK[n,i] = abs(dpCrrnt[2,1]*dpFactor) 
 #      if deltaPz_mGK[n,i] <= 0.: 
-#         print ('deltaPz_mGK[%2d,%2d] = %e' % (n,i,deltaPz_mGK[n,i]))
+#         print 'deltaPz_mGK[%2d,%2d] = %e' % (n,i,deltaPz_mGK[n,i])
       deltaEnrgIon_mGK[n,i] = (dpCrrnt[0,1]**2+dpCrrnt[1,1]**2+dpCrrnt[2,1]**2)* \
                             deFactor/eVtoErg                      # eV
 #
@@ -1604,10 +1485,10 @@ for i in range(nVion):
       frctnForce_mGK[i] += .5*(rhoMaxCrrnt-rhoMin)*w16[n]*deltaEnrgIon_mGK[n,i]* \
                           rhoCrrntGK[n,i]*n_e/100.                # eV/m
 
-print ('\ni          V_i           V_i/V0         ff_cSM          ff_mSM           ff_cGK           ff_mGK\n') 
+print '\ni          V_i           V_i/V0         ff_cSM          ff_mSM           ff_cGK           ff_mGK\n' 
 for i in range(nVion):
-   print (('%2d    %10.6e    %10.6e    %10.6e    %10.6e    %10.6e    %10.6e' % \
-          (i,Vion[i],Vion[i]/V0,frctnForce_cSM[i],frctnForce_mSM[i],frctnForce_cGK[i],frctnForce_mGK[i])))
+   print '%2d    %10.6e    %10.6e    %10.6e    %10.6e    %10.6e    %10.6e' % \
+         (i,Vion[i],Vion[i]/V0,frctnForce_cSM[i],frctnForce_mSM[i],frctnForce_cGK[i],frctnForce_mGK[i])
 
 xVionRelIntgr = np.zeros((nPointsGK,nVion))
 for i in range(nVion):
@@ -1619,8 +1500,8 @@ for i in range(nVion):
     plt.semilogx(xVionRelIntgr[0:nPointsGK,i],rhoCrrntGK[0:nPointsGK,i],'.r')
 plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
 plt.ylabel('$rho_{Init}$, cm',color='m',fontsize=16)
-plt.title('Subdivisions for $rho_{Init}$: Gauss-Kronrod Method Integration', \
-          color='m',fontsize=14)
+plt.title('Subdivisions for $rho_{Init}$ for Integration: Gauss-Kronrod Method', \
+          color='m',fontsize=16)
 plt.grid(True)
 yLimit=[0.,max(rhoCrrntGK[0:nPointsGK,nVion-1])+.01]
 plt.ylim(yLimit)
@@ -1641,50 +1522,81 @@ for i in range(2,10,1):
    plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
    plt.title('Transferred Energy $\Delta E_{ion}$ to Single Ion', color='m',fontsize=16)
    plt.xlim([.95*rhoInit[0,indxFigures[i]],1.1*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
-   yLimit = [0.5*min(deltaEnrgIon_c[nImpctPrmtr-1,indxFigures[i]], \
-                     deltaEnrgIon_m[nImpctPrmtr-1,indxFigures[i]]), \
+   yLimit = [0.5*min(deltaEnrgIon_c[nImpctPrmtr-1,indxFigures[i]],deltaEnrgIon_m[nImpctPrmtr-1,indxFigures[i]]), \
              1.5*max(deltaEnrgIon_c[0,indxFigures[i]],deltaEnrgIon_m[0,indxFigures[i]])]
    plt.ylim(yLimit)
    plt.grid(True)
 '''
 
-
 for i in range(2,10,1):
    VionCrrnt = V0*VionRel[indxFigures[i]]
    powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
    mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
-   figCrrnt = plt.figure (3000+indxFigures[i])
+   plt.figure (3000+indxFigures[i])
    plt.semilogx(rhoInit[:,indxFigures[i]],dEion_c_m[:,indxFigures[i]],'-xr',linewidth=2)
-   plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
-   plt.ylabel('Difference of $\Delta E_{ion}$: "GC"/"ME" $-$ 1, %',color='m',fontsize=14)
+   plt.xlabel('Track Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=16)
+   plt.ylabel('Difference of $\Delta E_{ion}$: "GC"/"ME" - 1', color='m',fontsize=16)
    titleHeader = 'Comparison of Approaches for $\Delta E_{ion}$:'
-   titleHeader += ' $V_{ion}=%3.1f\cdot10^{%2d}$ $cm/s$'
-   plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
+   titleHeader += ' $V_{ion}=%5.3f\cdot10^{%2d}$ $cm/s$'
+   plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=16)
    plt.xlim([.95*rhoInit[0,indxFigures[i]],1.1*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
-#   plt.ylim([min(dEion_c_m[:,indxFigures[i]])-.0005,max(dEion_c_m[:,indxFigures[i]])+.0005])
+   plt.ylim([min(dEion_c_m[:,indxFigures[i]])-.0005,max(dEion_c_m[:,indxFigures[i]])+.0005])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fileName = 'picturesCMA/deltaEcomprsn_indxPlot-'+str(indxFigures[i])+'_fig30'
-      fileName += str(indxFigures[i])+'cma.png' 
-      figCrrnt.savefig(fileName) 
-      print ('File "',fileName,'" is written')
-
 
 plt.show()
 
+'''
+# fig10.savefig('picturesCMA/correctedRmax_fig10cma.jpg')    
+fig20.savefig('picturesCMA/particleDistance_ls_fig20cma.jpg')    
+fig30.savefig('picturesCMA/parametersA-B_fig30cma.jpg')    
+fig40.savefig('picturesCMA/initialImpactParameter_SM_fig40cma.jpg')    
+fig41.savefig('picturesCMA/initialImpactParameter_GK_fig41cma.jpg')    
+fig110.savefig('picturesCMA/mapA-B_fig110cma.jpg')    
+fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.jpg')    
+fig3151.savefig('picturesCMA/impctPrmtr_fig3151cma.jpg')    
+fig500.savefig('picturesCMA/deltaEtransf_indxPlot-0_fig500cma.jpg')    
+fig600.savefig('picturesCMA/deltaEtransf_indxPlot-fig9_600cma.jpg')    
+fig630.savefig('picturesCMA/deltaEtransf_indxPlot-12_fig630cma.jpg')    
+fig660.savefig('picturesCMA/deltaEtransf_indxPlot-18_fig660cma.jpg')    
+fig700.savefig('picturesCMA/deltaEtransf_indxPlot-19_fig700cma.jpg')    
+fig730.savefig('picturesCMA/deltaEtransf_indxPlot-23_fig730cma.jpg')    
+fig760.savefig('picturesCMA/deltaEtransf_indxPlot-27_fig760cma.jpg')    
+fig800.savefig('picturesCMA/deltaEtransf_indxPlot-29_fig800cma.jpg')    
+fig830.savefig('picturesCMA/deltaEtransf_indxPlot-31_fig830cma.jpg')    
+fig860.savefig('picturesCMA/deltaEtransf_indxPlot-34_fig860cma.jpg')    
+fig900.savefig('picturesCMA/deltaEtransf_indxPlot-39_fig900cma.jpg')    
+fig1000.savefig('picturesCMA/deltaEtransf_indxPlot-49_fig1000cma.jpg')    
+fig1100.savefig('picturesCMA/exponentB_on_ionVelocity_fig1100cma.jpg')    
+fig2020.savefig('picturesCMA/magnusExpansion_C1_fig2020cma.jpg')    
+fig2030.savefig('picturesCMA/magnusExpansion_C2_fig2030cma.jpg')    
+fig2040.savefig('picturesCMA/magnusExpansion_C3_fig2040cma.jpg')    
+fig2050.savefig('picturesCMA/particleDistance_me_fig2050cma.jpg')    
+fig2055.savefig('picturesCMA/particleDistance_gc_fig2055cma.jpg')    
+fig2070.savefig('picturesCMA/particleDistanceComprsn_gc_me_fig2070cma.jpg')    
+fig2080.savefig('picturesCMA/actionComprsn_gc_me_fig2080cma.jpg')    
+fig2090.savefig('picturesCMA/totalLengthIntrsctn_fig2090cma.jpg')    
+fig3012.savefig('picturesCMA/deltaEcomprsn_indxPlot-12_fig3012cma.jpg')    
+fig3018.savefig('picturesCMA/deltaEcomprsn_indxPlot-18_fig3018cma.jpg')    
+fig3019.savefig('picturesCMA/deltaEcomprsn_indxPlot-19_fig3019cma.jpg')    
+fig3023.savefig('picturesCMA/deltaEcomprsn_indxPlot-23_fig3023cma.jpg')    
+fig3027.savefig('picturesCMA/deltaEcomprsn_indxPlot-27_fig3027cma.jpg')    
+fig3029.savefig('picturesCMA/deltaEcomprsn_indxPlot-29_fig3029cma.jpg')    
+fig3031.savefig('picturesCMA/deltaEcomprsn_indxPlot-31_fig3031cma.jpg')    
+fig3034.savefig('picturesCMA/deltaEcomprsn_indxPlot-34_fig3034cma.jpg')    
+'''
 
 '''
 #
 # Opening the output file: 
 #
 apprchClsscl_file='resultsClassicalApproach.dat'
-print ('Open output file "%s"...' % apprchClsscl_file)
+print 'Open output file "%s"...' % apprchClsscl_file
 apprchClsscl_flag=0
 try:
    outfile = open(apprchClsscl_file,'w')
    apprchClsscl_file_flag=1
 except:
-   print ('Problem to open output file "%s"' % apprchClsscl_file)
+   print 'Problem to open output file "%s"' % apprchClsscl_file
 
 #
 # Writing the results to output file: 
