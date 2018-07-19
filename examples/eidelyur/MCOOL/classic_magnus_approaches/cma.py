@@ -7,11 +7,15 @@
 # This script based on the previous script
 # threeApproachesComparison_v6.py
 #
-# 07/18/2018: IT IS NOT FINISHED ("classical" approach works appropriate;
-#                                 goog agreement with Magnus Expansion approach)!
+# 07/19/2018: IT IS NOT FINISHED 
+# "Guiding Center" approach works appropriate;
+# goog agreement with "Magnus Expansion" approach.
+# Very visible visualization of the approaches comparison
+# (figures 254,345,4445,545,645,745,845,945).
 # 
 # Upgraded version of python (python3.4): script was rewritten to take into
-# account some differences in the descriptions and using of some functions   
+# account some differences in the descriptions and using of some functions
+# (version cma_v3 and more earlier scripts are written under python2).    
 # 
 #-------------------------------------
 
@@ -330,13 +334,6 @@ def guidingCenter_Matrix(deltaT):
     return gcMtrx
 
 #
-# Factor to calculate transferred momenta for ion;
-# it will be calculed also inside the routines "guidingCenterCollision"
-# and "MagnusExpansionCollision":
-#
-dpFactor = q_elec**2*timeStep_c                              # g*cm^3/sec
-print ('dpFactor = %e g*cm^3/s' % dpFactor)
-#
 # Description of the collision during time interval 'deltaT'
 # in the system coordinates of "guiding center" of electron
 # input - 6-vectors for electron and ion before collision and time step deltaT; 
@@ -364,6 +361,7 @@ def guidingCenterCollision(vectrElec_gc,vectrIon,deltaT):
    dpIon[0]=-dpFactor_gc*deltaT*(vectrIon[0]-x_gc)/b_gc**3               
    dpIon[1]=-dpFactor_gc*deltaT*(vectrIon[2]-vectrElec_gc[2])/b_gc**3  
    dpIon[2]=-dpFactor_gc*deltaT*(vectrIon[4]-vectrElec_gc[4])/b_gc**3
+   dpElec[0]=-dpIon[0] 
    dpElec[1]=-dpIon[1] 
    dpElec[2]=-dpIon[2]
 #    print ('dpIon[0]=%e, dpIon[1]=%e, dpIon[2]=%e' % \
@@ -412,10 +410,11 @@ def MagnusExpansionCollision(vectrElec_gc,vectrIon,deltaT):
    q=4.*C1*C3-C2**2                                                # cm^4/sec^2
 # Dimensions of dpIon, deElec are g*cm/sec:   
    dpIon[0]=-2.*dpFactor_gc/q*((vectrIon[0]-x_gc)*D1-vectrIon[1]/M_ion*D2)
-   dpIon[1]=-2.*dpFactor_gc/q* \
-           ((vectrIon[2]-vectrElec_gc[2])*D1-vectrIon[3]/M_ion*D2)
+   dpIon[1]=-2.*dpFactor_gc/q*((vectrIon[2]-vectrElec_gc[2])*D1- \
+                               vectrIon[3]/M_ion*D2)
    dpIon[2]=-2.*dpFactor_gc/q*((vectrIon[4]-vectrElec_gc[4])*D1- \
                                (vectrIon[5]/M_ion-vectrElec_gc[5]/m_elec)*D2) 
+   dpElec[0]=-dpIon[0] 
    dpElec[1]=-dpIon[1] 
    dpElec[2]=-dpIon[2] 
    dy_gc=dpIon[0]/mOmegaLarm                                        # cm
@@ -440,7 +439,9 @@ impctPrmtrMin=2.*ro_Larm
 # (for "classical" only):
 dpTransferFlag = 1        # no taking into account if = 0!
 #
-saveFilesFlag = 1         # no saving if = 0!
+saveFilesFlag = 0         # no saving if = 0!
+#
+plotFigureFlag = 0        # plot if = 1!
 #
 #========================================================
 nVion=50
@@ -491,29 +492,29 @@ for n in range (4):
 #      
 # First plotting:      
 #   
-   
-fig10 = plt.figure(10)
-plt.semilogx(impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,0],'-r', \
-               impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,1],'-b', \
-               impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,2],'-g', \
-               impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,3],'-m',linewidth=2)
-plt.grid(True)
-hold=True
-plt.xlabel('Maximal Impact parameter $R_{max}$, cm',color='m',fontsize=16)
-plt.ylabel('$R_{max}^{Crrctd}/R_{Max}$',color='m',fontsize=16)
-# plt.xlim([.9*min(impctPrmtrMax),1.1*max(impctPrmtrMax)])
-plt.xlim([1.e-2,1.1*max(impctPrmtrMax)])
-plt.ylim([.986,1.001])
-titleHeader='$R_{max}^{Crrctd}=R_{Max} \cdot [1-(\pi\cdot N_{Larm} \cdot' 
-titleHeader += '\Delta_{e||}/(\omega_{Larm} \cdot R_{max})]^{1/2}$'
-plt.title(titleHeader,color='m',fontsize=16)
-plt.legend([('$N_{Larm}=$%2d' % larmorTurnsMin[0]), \
-            ('$N_{Larm}=$%2d' % larmorTurnsMin[1]), \
-            ('$N_{Larm}=$%2d' % larmorTurnsMin[2]), \
-            ('$N_{Larm}=$%2d' % larmorTurnsMin[3])],loc='lower center',fontsize=16)
-if (saveFilesFlag == 1):
-   fig10.savefig('picturesCMA/correctedRmax_fig10cma.png')  
-   print ('File "picturesCMA/correctedRmax_fig10cma.png" is written')   
+if (plotFigureFlag == 1):   
+   fig10 = plt.figure(10)
+   plt.semilogx(impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,0],'-r', \
+                  impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,1],'-b', \
+                  impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,2],'-g', \
+                  impctPrmtrMax,impctPrmtrMaxCrrctdRel[:,3],'-m',linewidth=2)
+   plt.grid(True)
+   hold=True
+   plt.xlabel('Maximal Impact parameter $R_{max}$, cm',color='m',fontsize=16)
+   plt.ylabel('$R_{max}^{Crrctd}/R_{Max}$',color='m',fontsize=16)
+   # plt.xlim([.9*min(impctPrmtrMax),1.1*max(impctPrmtrMax)])
+   plt.xlim([1.e-2,1.1*max(impctPrmtrMax)])
+   plt.ylim([.986,1.001])
+   titleHeader='$R_{max}^{Crrctd}=R_{Max} \cdot [1-(\pi\cdot N_{Larm} \cdot' 
+   titleHeader += '\Delta_{e||}/(\omega_{Larm} \cdot R_{max})]^{1/2}$'
+   plt.title(titleHeader,color='m',fontsize=16)
+   plt.legend([('$N_{Larm}=$%2d' % larmorTurnsMin[0]), \
+               ('$N_{Larm}=$%2d' % larmorTurnsMin[1]), \
+               ('$N_{Larm}=$%2d' % larmorTurnsMin[2]), \
+               ('$N_{Larm}=$%2d' % larmorTurnsMin[3])],loc='lower center',fontsize=16)
+   if (saveFilesFlag == 1):
+      fig10.savefig('picturesCMA/correctedRmax_fig10cma.png')  
+      print ('File "picturesCMA/correctedRmax_fig10cma.png" is written')   
 
 # plt.show()
 
@@ -524,62 +525,64 @@ if (saveFilesFlag == 1):
 xLimit=[.9*VionRel[0],1.1*VionRel[nVion-1]]
 
 
-fig209=plt.figure (209)
-plt.loglog(VionRel,R_debye,'-r',VionRel,R_pass,'-b', \
-                                VionRel,R_pass_1,'--b',linewidth=2)
-plt.grid(True)
-hold=True
-plt.plot([VionRel[0],VionRel[nVion-1]],[R_e,R_e],color='m',linewidth=2)   
-plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
-plt.ylabel('$R_{Debye}$, $R_{Pass}$, $R_e$, cm',color='m',fontsize=16)
-# titleHeader='Magnetized Collision: $R_{Debye}$, $R_{Pass}$, $R_e$: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
-# plt.title(titleHeader % (mantV0,powV0),color='m',fontsize=16)
-plt.title('Magnetized Collision: $R_{Debye}$, $R_{Pass}$, $R_e$',color='m',fontsize=16)
-plt.xlim(xLimit)
-yLimit=[1.e-3,10.]
-plt.ylim(yLimit)
-plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-plt.text(1.6e-3,5.5e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
-plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
-plt.text(4.4e-5,0.001175,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-plt.text(3.e-5,2.45e-3,'$R_e$',color='k',fontsize=16)
-plt.text(3.e-5,5.e-2,'$R_{Debye}$',color='k',fontsize=16)
-plt.text(3.e-5,1.8e-2,'$R_{Pass}$',color='k',fontsize=16)
-plt.text(4.5e-5,4.8e-3,'$R_{Pass}$ $for$ $T_{e||}=0$',color='k',fontsize=16)
-plt.text(8.3e-5,4.0,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
-         color='m',fontsize=16)
-if (saveFilesFlag == 1):
-   fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.png')    
-   print ('File "picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.png" is written')   
+if (plotFigureFlag == 1):   
+   fig209=plt.figure (209)
+   plt.loglog(VionRel,R_debye,'-r',VionRel,R_pass,'-b', \
+                                   VionRel,R_pass_1,'--b',linewidth=2)
+   plt.grid(True)
+   hold=True
+   plt.plot([VionRel[0],VionRel[nVion-1]],[R_e,R_e],color='m',linewidth=2)   
+   plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
+   plt.ylabel('$R_{Debye}$, $R_{Pass}$, $R_e$, cm',color='m',fontsize=16)
+   # titleHeader='Magnetized Collision: $R_{Debye}$, $R_{Pass}$, $R_e$: $V_{e0}=%5.3f\cdot10^{%2d}$cm/s'
+   # plt.title(titleHeader % (mantV0,powV0),color='m',fontsize=16)
+   plt.title('Magnetized Collision: $R_{Debye}$, $R_{Pass}$, $R_e$',color='m',fontsize=16)
+   plt.xlim(xLimit)
+   yLimit=[1.e-3,10.]
+   plt.ylim(yLimit)
+   plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+   plt.text(1.6e-3,5.5e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
+   plt.text(4.4e-5,0.001175,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(3.e-5,2.45e-3,'$R_e$',color='k',fontsize=16)
+   plt.text(3.e-5,5.e-2,'$R_{Debye}$',color='k',fontsize=16)
+   plt.text(3.e-5,1.8e-2,'$R_{Pass}$',color='k',fontsize=16)
+   plt.text(4.5e-5,4.8e-3,'$R_{Pass}$ $for$ $T_{e||}=0$',color='k',fontsize=16)
+   plt.text(8.3e-5,4.0,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
+            color='m',fontsize=16)
+   if (saveFilesFlag == 1):
+      fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.png')    
+      print ('File "picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.png" is written')   
 
-fig3151=plt.figure (3151)
-plt.loglog(VionRel,impctPrmtrMax,'-r', VionRel,impctPrmtrMax_1,'--r', \
-   [VionRel[0],VionRel[nVion-1]],[impctPrmtrMin,impctPrmtrMin],'-r',linewidth=2)
-plt.grid(True)
-hold=True
-plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=14)
-plt.ylabel('Impact Parameter, cm',color='m',fontsize=14)
-titleHeader= \
-          'Types of Collisions: $V_{e0}=%4.2f\cdot10^{%2d}$ cm/s, $B=%6.1f$ Gs'
-plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
-plt.xlim(xLimit)
-yLimit=[8.e-4,.6]
-plt.ylim(yLimit)
-plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-plt.text(1.6e-3,5.e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
-plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
-plt.text(4.4e-5,.0018,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-plt.text(3.e-4,1.75e-3,'$R_{min}=2\cdot<rho_\perp>$',color='k',fontsize=16)
-plt.text(7.e-4,5.e-2,'$R_{max}$',color='k',fontsize=16)
-plt.text(2.85e-5,3.3e-3,'$R_{max}$ $for$ $T_{e||}=0$',color='k',fontsize=16)
-plt.plot([VionRel[0],VionRel[nVion-1]],[20.*rhoCrit,20.*rhoCrit],color='k')   
-plt.text(1.e-4,7.e-3,'Magnetized Collisions',color='r',fontsize=20)
-plt.text(1.e-4,10.e-4,'Adiabatic or Fast Collisions',color='r',fontsize=20)
-plt.text(2.25e-5,.275,'Collisions are Screened',color='r',fontsize=20)
-plt.text(1.6e-5,1.e-3,'$ \cong 20\cdot R_{Crit}$',color='k',fontsize=16)
-if (saveFilesFlag == 1):
-   fig3151.savefig('picturesCMA/impctPrmtr_fig3151cma.png')    
-   print ('File "picturesCMA/impctPrmtr_fig3151cma.png" is written')   
+if (plotFigureFlag == 1):   
+   fig3151=plt.figure (3151)
+   plt.loglog(VionRel,impctPrmtrMax,'-r', VionRel,impctPrmtrMax_1,'--r', \
+      [VionRel[0],VionRel[nVion-1]],[impctPrmtrMin,impctPrmtrMin],'-r',linewidth=2)
+   plt.grid(True)
+   hold=True
+   plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=14)
+   plt.ylabel('Impact Parameter, cm',color='m',fontsize=14)
+   titleHeader= \
+             'Types of Collisions: $V_{e0}=%4.2f\cdot10^{%2d}$ cm/s, $B=%6.1f$ Gs'
+   plt.title(titleHeader % (mantV0,powV0,fieldB[0]),color='m',fontsize=16)
+   plt.xlim(xLimit)
+   yLimit=[8.e-4,.6]
+   plt.ylim(yLimit)
+   plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+   plt.text(1.6e-3,5.e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
+   plt.text(4.4e-5,.0018,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(3.e-4,1.75e-3,'$R_{min}=2\cdot<rho_\perp>$',color='k',fontsize=16)
+   plt.text(7.e-4,5.e-2,'$R_{max}$',color='k',fontsize=16)
+   plt.text(2.85e-5,3.3e-3,'$R_{max}$ $for$ $T_{e||}=0$',color='k',fontsize=16)
+   plt.plot([VionRel[0],VionRel[nVion-1]],[20.*rhoCrit,20.*rhoCrit],color='k')   
+   plt.text(1.e-4,7.e-3,'Magnetized Collisions',color='r',fontsize=20)
+   plt.text(1.e-4,10.e-4,'Adiabatic or Fast Collisions',color='r',fontsize=20)
+   plt.text(2.25e-5,.275,'Collisions are Screened',color='r',fontsize=20)
+   plt.text(1.6e-5,1.e-3,'$ \cong 20\cdot R_{Crit}$',color='k',fontsize=16)
+   if (saveFilesFlag == 1):
+      fig3151.savefig('picturesCMA/impctPrmtr_fig3151cma.png')    
+      print ('File "picturesCMA/impctPrmtr_fig3151cma.png" is written')   
 
 
 #
@@ -661,7 +664,17 @@ deltaEnrgIon_m = np.zeros((nImpctPrmtr,nVion))
 #   
 # Comparison of approaches (ratio deltaEnrgIon_c/deltaEnrgIon_m):
 #
-dEion_c_m = np.zeros((nImpctPrmtr,nVion)) 
+deltaPx_c_m = np.zeros((nImpctPrmtr,nVion)) 
+deltaPy_c_m = np.zeros((nImpctPrmtr,nVion)) 
+deltaPz_c_m = np.zeros((nImpctPrmtr,nVion)) 
+dEion_c_m = np.zeros((nImpctPrmtr,nVion))
+#
+# To see deltaPz_c_m with different cut off values: 
+#
+deltaPz_c_m_1 = np.zeros((nImpctPrmtr,nVion)) 
+deltaPz_c_m_2 = np.zeros((nImpctPrmtr,nVion)) 
+deltaPz_c_m_3 = np.zeros((nImpctPrmtr,nVion)) 
+deltaPz_c_m_4 = np.zeros((nImpctPrmtr,nVion)) 
 #
 # Factor to calculate transferred energy to ion
 # (the friction force is defined by this transfered energy): 
@@ -800,16 +813,16 @@ for i in range(nVion):
          arrayB[indx] = math.log10((q_elec**2/bCrrnt_c[indx])/kinEnergy)
          indx += 1
 #
-# Transferred momenta and energy along the track - "classical" approach:
+# Transferred momenta and energy along the track - "Guiding Center" approach:
 #
-      deltaPx_c[n,i] = abs(dpCrrnt[0,0])                         # dpx, g*cm/sec
+      deltaPx_c[n,i] = dpCrrnt[0,0]                         # dpx, g*cm/sec
 #      if deltaPx_c[n,i] <= 0.: 
 #         print ('deltaPx_c[%2d,%2d] = %e, dpCrrnt[%2d,%2d] = %e' % \
 #	       (n,i,deltaPx_c[n,i],n,i,dpCrrnt[0,0]))
-      deltaPy_c[n,i] = abs(dpCrrnt[1,0])                         # dpy, g*cm/sec 
+      deltaPy_c[n,i] = dpCrrnt[1,0]                        # dpy, g*cm/sec 
 #      if deltaPy_c[n,i] <= 0.: 
 #         print ('deltaPy_c[%2d,%2d] = %e' % (n,i,deltaPy_c[n,i]))
-      deltaPz_c[n,i] = abs(dpCrrnt[2,0])                         # dpz, g*cm/sec 
+      deltaPz_c[n,i] = dpCrrnt[2,0]                         # dpz, g*cm/sec 
 #      if deltaPz_c[n,i] <= 0.: 
 #         print ('deltaPz_c[%2d,%2d] = %e' % (n,i,deltaPz_c[n,i]))
       deltaEnrgIon_c[n,i] = (dpCrrnt[0,0]**2+dpCrrnt[1,0]**2+dpCrrnt[2,0]**2)* \
@@ -817,19 +830,49 @@ for i in range(nVion):
 #
 # Transferred momenta and energy along the track - "Magnus expansion" approach:
 #
-      deltaPx_m[n,i] = abs(dpCrrnt[0,1]*dpFactor)                # dpx, g*cm/sec
+      deltaPx_m[n,i] = dpCrrnt[0,1]                # dpx, g*cm/sec
 #      if deltaPx_m[n,i] <= 0.: 
 #         print ('deltaPx_m[%2d,%2d] = %e' % (n,i,deltaPx_m[n,i]))
-      deltaPy_m[n,i] = abs(dpCrrnt[1,1]*dpFactor) 
+      deltaPy_m[n,i] = dpCrrnt[1,1]
 #      if deltaPy_m[n,i] <= 0.: 
 #         print ('deltaPy_m[%2d,%2d] = %e' % (n,i,deltaPy_m[n,i]))
-      deltaPz_m[n,i] = abs(dpCrrnt[2,1]*dpFactor) 
+      deltaPz_m[n,i] = dpCrrnt[2,1] 
 #      if deltaPz_m[n,i] <= 0.: 
 #         print ('deltaPz_m[%2d,%2d] = %e' % (n,i,deltaPz_m[n,i]))
       deltaEnrgIon_m[n,i] = (dpCrrnt[0,1]**2+dpCrrnt[1,1]**2+dpCrrnt[2,1]**2)* \
                             deFactor/eVtoErg                     # eV
 # Comparison of the approaches (%):
-      dEion_c_m[n,i] = 100.*(deltaEnrgIon_c[n,i]/deltaEnrgIon_m[n,i]-1.)
+      if (deltaPx_m[n,i] != 0.):
+         deltaPx_c_m[n,i] = 100.*(deltaPx_c[n,i]/deltaPx_m[n,i]-1.)
+      else:
+         print ('Bad value (=0.) of deltaPx_m[%d,%d] = ' % (n,i))
+      if (deltaPy_m[n,i] != 0.):
+         deltaPy_c_m[n,i] = 100.*(deltaPy_c[n,i]/deltaPy_m[n,i]-1.)
+      else:
+         print ('Bad value (=0.) of deltaPy_m[%d,%d] = ' % (n,i))
+      if (deltaPz_m[n,i] != 0.):
+         deltaPz_c_m[n,i] = 100.*(deltaPz_c[n,i]/deltaPz_m[n,i]-1.)
+      else:
+         print ('Bad value (=0.) of deltaPz_m[%d,%d] = ' % (n,i))
+#
+# deltaPz_c_m in more details with corresponding cut off values:
+#	 
+      deltaPz_c_m_1[n,i] = deltaPz_c_m[n,i]
+      if (deltaPz_c_m[n,i] < -400.):
+         deltaPz_c_m_1[n,i] = -400.
+      deltaPz_c_m_2[n,i] = deltaPz_c_m[n,i]
+      if (deltaPz_c_m[n,i] < -200.):
+         deltaPz_c_m_2[n,i] = -200.
+      deltaPz_c_m_3[n,i] = deltaPz_c_m[n,i]
+      if (deltaPz_c_m[n,i] < -100.):
+         deltaPz_c_m_3[n,i] = -100.
+      deltaPz_c_m_4[n,i] = deltaPz_c_m[n,i]
+      if (deltaPz_c_m[n,i] < -50.):
+         deltaPz_c_m_4[n,i] = -50.
+      if (deltaEnrgIon_m[n,i] != 0.):
+         dEion_c_m[n,i] = 100.*(deltaEnrgIon_c[n,i]/deltaEnrgIon_m[n,i]-1.)
+      else:
+         print ('Bad value (=0.) of deltaEnrgIon_m[%d,%d] = ' % (n,i))
 #
 # Integration using Simpson method:
 #
@@ -842,94 +885,113 @@ for i in range(nVion):
                                (rhoInit[n,i]-rhoInit[n-1,i])*n_e/100  # eV/m 
 
 #
-# Plotting of the tests:
+# For checking:
 #
+# print \
+# ('n     Px_c          Px_m         Py_c          Py_m         Pz_c        Pz_m         Pz_c_m')  
+# for i in range(10,11,1):     
+#    for n in range(nImpctPrmtr):
+#       print ('%d: %e %e %e %e %e %e %e' % \
+#              (n,deltaPx_c[n,i],deltaPx_m[n,i],deltaPy_c[n,i], \
+# 	        deltaPy_m[n,i],deltaPz_c[n,i],deltaPz_m[n,i],deltaPz_c_m[n,i]))
+# print ('n     dEion_c      dEion_m')  
+# for i in range(10,11,1):     
+#    for n in range(nImpctPrmtr):
+#       print ('%d: %e %e ' % (n,deltaEnrgIon_c[n,i],deltaEnrgIon_m[n,i]))
+
 print ('indxTestMax = %d' % indxTestMax)
 nn=np.arange(0,indxTestMax-1,1)
 
-fig2020=plt.figure (2020)
-plt.plot(nn,C1test[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$C1$, $cm^2$',color='m',fontsize=16)
-plt.title('$C1=[x_{gc}^2+y_{gc}^2+z_e^2+2J/(m_e \cdot \Omega_e)]^{0.5}$', \
-          color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2020.savefig('picturesCMA/magnusExpansion_C1_fig2020cma.png')    
-   print ('File "picturesCMA/magnusExpansion_C1_fig2020cma.png" is written')   
+#
+# Plotting of the tests:
+#
+if (plotFigureFlag == 1):   
+   fig2020=plt.figure (2020)
+   plt.plot(nn,C1test[0:indxTestMax-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$C1$, $cm^2$',color='m',fontsize=16)
+   plt.title('$C1=[x_{gc}^2+y_{gc}^2+z_e^2+2J/(m_e \cdot \Omega_e)]^{0.5}$', \
+             color='m',fontsize=16)
+   plt.xlim([-5000,indxTestMax+5000])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig2020.savefig('picturesCMA/magnusExpansion_C1_fig2020cma.png')    
+      print ('File "picturesCMA/magnusExpansion_C1_fig2020cma.png" is written')   
 
-fig2030=plt.figure (2030)
-plt.plot(nn,1.e-5*C2test[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$C2$, $\cdot 10^5$ $cm^2/s$',color='m',fontsize=16)
-plt.title('$C2=2\cdot[V_{ix}\cdot(x_i-x_{gc})+V_{iy}\cdot(y_i-y_{gc})+(V_{iz}-V_{ez})\cdot(z_i-z_e)]$', \
-          color='m',fontsize=14)
-plt.xlim([-5000,indxTestMax+5000])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2030.savefig('picturesCMA/magnusExpansion_C2_fig2030cma.png')    
-   print ('File "picturesCMA/magnusExpansion_C2_fig2030cma.png" is written')   
+if (plotFigureFlag == 1):   
+   fig2030=plt.figure (2030)
+   plt.plot(nn,1.e-5*C2test[0:indxTestMax-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$C2$, $\cdot 10^5$ $cm^2/s$',color='m',fontsize=16)
+   plt.title('$C2=2\cdot[V_{ix}\cdot(x_i-x_{gc})+V_{iy}\cdot(y_i-y_{gc})+(V_{iz}-V_{ez})\cdot(z_i-z_e)]$', \
+             color='m',fontsize=14)
+   plt.xlim([-5000,indxTestMax+5000])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig2030.savefig('picturesCMA/magnusExpansion_C2_fig2030cma.png')    
+      print ('File "picturesCMA/magnusExpansion_C2_fig2030cma.png" is written')   
 
-fig2040=plt.figure (2040)
-plt.plot(nn,1e-11*C3test[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$C3$, $\cdot 10^{11}$ $cm^2/s^2$',color='m',fontsize=16)
-plt.title('$C3=V_{ix}^2+V_{iy}^2+(V_{iz}-V_{ez})^2$',color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2040.savefig('picturesCMA/magnusExpansion_C3_fig2040cma.png')    
-   print ('File "picturesCMA/magnusExpansion_C3_fig2040cma.png" is written')   
+if (plotFigureFlag == 1):   
+   fig2040=plt.figure (2040)
+   plt.plot(nn,1e-11*C3test[0:indxTestMax-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$C3$, $\cdot 10^{11}$ $cm^2/s^2$',color='m',fontsize=16)
+   plt.title('$C3=V_{ix}^2+V_{iy}^2+(V_{iz}-V_{ez})^2$',color='m',fontsize=16)
+   plt.xlim([-5000,indxTestMax+5000])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig2040.savefig('picturesCMA/magnusExpansion_C3_fig2040cma.png')    
+      print ('File "picturesCMA/magnusExpansion_C3_fig2040cma.png" is written')   
 
-fig2025=plt.figure (2025)
-plt.plot(nn,1.e-5*D1test[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$10^{-5}\cdot D1$, $cm/s$',color='m',fontsize=16)
-plt.title('$D1=(2C_3\cdot \Delta t+C_2)/b_{ME}$ $-$ $C_2/C_1^{0.5}$',color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-plt.grid(True)
-# if (saveFilesFlag == 1):
+if (plotFigureFlag == 1):   
+   fig2025=plt.figure (2025)
+   plt.plot(nn,1.e-5*D1test[0:indxTestMax-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$10^{-5}\cdot D1$, $cm/s$',color='m',fontsize=16)
+   plt.title('$D1=(2C_3\cdot \Delta t+C_2)/b_{ME}$ $-$ $C_2/C_1^{0.5}$',color='m',fontsize=16)
+   plt.xlim([-5000,indxTestMax+5000])
+   plt.grid(True)
 
-fig2035=plt.figure (2035)
-plt.plot(nn,1.e4*D2test[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$10^4\cdot D2$, $cm$',color='m',fontsize=16)
-plt.title('$D2=(2C_1+C_2\cdot \Delta t)/b_{ME}$ $-$ $2C_1^{0.5}$',color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-plt.grid(True)
-# if (saveFilesFlag == 1):
+if (plotFigureFlag == 1):   
+   fig2035=plt.figure (2035)
+   plt.plot(nn,1.e4*D2test[0:indxTestMax-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$10^4\cdot D2$, $cm$',color='m',fontsize=16)
+   plt.title('$D2=(2C_1+C_2\cdot \Delta t)/b_{ME}$ $-$ $2C_1^{0.5}$',color='m',fontsize=16)
+   plt.xlim([-5000,indxTestMax+5000])
+   plt.grid(True)
 
-fig2050=plt.figure (2050)
-plt.plot(nn,b_ME[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$b_{ME}$, $cm$',color='m',fontsize=16)
-plt.title('Distance $b_{ME}$ between Particles for "ME" Approach', color='m',fontsize=16)
-plt.text(3500,.4,'$b_{ME}=[C1+C2\cdot \Delta t +C3 \cdot \Delta t^2]^{0.5}$', \
-         color='m',fontsize=16)
-plt.text(33000,.36,('$(\Delta t=%8.2e$ $s)$' % timeStep_c),color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2050.savefig('picturesCMA/particleDistance_me_fig2050cma.png')    
-   print ('File "picturesCMA/particleDistance_me_fig2050cma.png" is written')   
+   fig2050=plt.figure (2050)
+   plt.plot(nn,b_ME[0:indxTestMax-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$b_{ME}$, $cm$',color='m',fontsize=16)
+   plt.title('Distance $b_{ME}$ between Particles for "ME" Approach', color='m',fontsize=16)
+   plt.text(3500,.4,'$b_{ME}=[C1+C2\cdot \Delta t +C3 \cdot \Delta t^2]^{0.5}$', \
+            color='m',fontsize=16)
+   plt.text(33000,.36,('$(\Delta t=%8.2e$ $s)$' % timeStep_c),color='m',fontsize=16)
+   plt.xlim([-5000,indxTestMax+5000])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig2050.savefig('picturesCMA/particleDistance_me_fig2050cma.png')    
+      print ('File "picturesCMA/particleDistance_me_fig2050cma.png" is written')   
 
-fig2055=plt.figure (2055)
-plt.plot(nn,b_gc[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$b_{GC}$, $cm$',color='m',fontsize=16)
-plt.title('Distance $b_{GC}$ between Particles for "GC" Approach', color='m',fontsize=16)
-plt.text(0,.4,'$b_{GC}=[(x_i-x_{gc})^2+(y_i-y_{gc})^2+$',color='m',fontsize=16)
-plt.text(55500,.36,'$+(z_i-z_e)^2+2J/(m_e \cdot \Omega_e)]^{0.5}$', \
-         color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2055.savefig('picturesCMA/particleDistance_gc_fig2055cma.png')    
-   print ('File "picturesCMA/particleDistance_gc_fig2055cma.png" is written')   
+if (plotFigureFlag == 1):   
+   fig2055=plt.figure (2055)
+   plt.plot(nn,b_gc[0:indxTestMax-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$b_{GC}$, $cm$',color='m',fontsize=16)
+   plt.title('Distance $b_{GC}$ between Particles for "GC" Approach', color='m',fontsize=16)
+   plt.text(0,.4,'$b_{GC}=[(x_i-x_{gc})^2+(y_i-y_{gc})^2+$',color='m',fontsize=16)
+   plt.text(55500,.36,'$+(z_i-z_e)^2+2J/(m_e \cdot \Omega_e)]^{0.5}$', \
+            color='m',fontsize=16)
+   plt.xlim([-5000,indxTestMax+5000])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig2055.savefig('picturesCMA/particleDistance_gc_fig2055cma.png')    
+      print ('File "picturesCMA/particleDistance_gc_fig2055cma.png" is written')   
 
 #
-# Comparison of bCrrnt_c from "classical" with bTest from "Magnus expansion" approaches:
+# Comparison of bCrrnt_c from "Guiding Center" with bTest from "Magnus expansion" approaches:
 #
 bCrrnt_cTest = np.zeros(indxTestMax)
 bCrrnt_cTestRel = np.zeros(indxTestMax)
@@ -944,41 +1006,44 @@ for k in range(indxTestMax):
 #       print ('%6d: %e %e %e %e %e %e %e' % \
 #             (k,bCrrnt_c[k],action_gc[k],action_ME[k],b_gc[k],b_ME[k],b_gc_ME_rel[k],actn_gc_ME_rel[k]))
    
-fig2060=plt.figure (2060)
-# plt.semilogy(nn,bCrrnt_cTest[0:indxTestMax-1],'.r')
-plt.plot(nn,bCrrnt_cTest[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('Test $b_{crrntTest}$, $cm$',color='m',fontsize=16)
-plt.title('Test $b_{crrntTest} = .5 \cdot [b_{crrnt}(k)+b_{crrnt}(k+1)]$',color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-# plt.ylim([.9*min(bCrrnt_cTest),1.1*max(bCrrnt_cTest)])
-plt.grid(True)
+if (plotFigureFlag == 2):   
+   fig2060=plt.figure (2060)
+   # plt.semilogy(nn,bCrrnt_cTest[0:indxTestMax-1],'.r')
+   plt.plot(nn,bCrrnt_cTest[0:indxTestMax-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('Test $b_{crrntTest}$, $cm$',color='m',fontsize=16)
+   plt.title('Test $b_{crrntTest} = .5 \cdot [b_{crrnt}(k)+b_{crrnt}(k+1)]$',color='m',fontsize=16)
+   plt.xlim([-5000,indxTestMax+5000])
+   # plt.ylim([.9*min(bCrrnt_cTest),1.1*max(bCrrnt_cTest)])
+   plt.grid(True)
 
-fig2070=plt.figure (2070)
-# plt.semilogy(nn,b_gc_ME_rel[0:indxTestMax-1],'.r')
-plt.plot(nn,b_gc_ME_rel[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$b_{GC}/b_{ME}$',color='m',fontsize=16)
-plt.title('Comparison of Distances $b_{GC}$ and $b_{ME}$ between Particles',color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-# plt.ylim([.9*min(b_gc_ME_rel),1.1*max(b_gc_ME_rel)])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2070.savefig('picturesCMA/particleDistanceComprsn_gc_me_fig2070cma.png')    
-   print ('File "picturesCMA/particleDistanceComprsn_gc_me_fig2070cma.png" is written')   
+if (plotFigureFlag == 1):   
+   fig2070=plt.figure (2070)
+   # plt.semilogy(nn,b_gc_ME_rel[0:indxTestMax-1],'.r')
+   plt.plot(nn,b_gc_ME_rel[0:indxTestMax-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$b_{GC}/b_{ME}$',color='m',fontsize=16)
+   plt.title('Comparison of Distances $b_{GC}$ and $b_{ME}$ between Particles',color='m',fontsize=16)
+   plt.xlim([-5000,indxTestMax+5000])
+   # plt.ylim([.9*min(b_gc_ME_rel),1.1*max(b_gc_ME_rel)])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig2070.savefig('picturesCMA/particleDistanceComprsn_gc_me_fig2070cma.png')    
+      print ('File "picturesCMA/particleDistanceComprsn_gc_me_fig2070cma.png" is written')   
 
-fig2080=plt.figure (2080)
-# plt.semilogy(nn,actn_gc_ME_rel[0:indxTestMax-1],'.r')
-plt.plot(nn,actn_gc_ME_rel[0:indxTestMax-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$10^7\cdot (J_{GC}/J_{ME}$ $-$ $1)$',color='m',fontsize=16)
-plt.title('Comparison of Actions $J_{GC}$ and $J_{ME}$',color='m',fontsize=16)
-plt.xlim([-5000,indxTestMax+5000])
-plt.ylim([.99*min(actn_gc_ME_rel),1.01*max(actn_gc_ME_rel)])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2080.savefig('picturesCMA/actionComprsn_gc_me_fig2080cma.png')    
-   print ('File "picturesCMA/actionComprsn_gc_me_fig2080cma.png" is written')   
+if (plotFigureFlag == 1):   
+   fig2080=plt.figure (2080)
+   # plt.semilogy(nn,actn_gc_ME_rel[0:indxTestMax-1],'.r')
+   plt.plot(nn,actn_gc_ME_rel[0:indxTestMax-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$10^7\cdot (J_{GC}/J_{ME}$ $-$ $1)$',color='m',fontsize=16)
+   plt.title('Comparison of Actions $J_{GC}$ and $J_{ME}$',color='m',fontsize=16)
+   plt.xlim([-5000,indxTestMax+5000])
+   plt.ylim([.99*min(actn_gc_ME_rel),1.01*max(actn_gc_ME_rel)])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig2080.savefig('picturesCMA/actionComprsn_gc_me_fig2080cma.png')    
+      print ('File "picturesCMA/actionComprsn_gc_me_fig2080cma.png" is written')   
 
 
 nn=np.arange(0,nVion*nImpctPrmtr,1)
@@ -987,17 +1052,18 @@ for i in range(nVion):
    for n in range(nImpctPrmtr):
      halfLintrTest[nVion*i+n] = halfLintr[i,n] 
 
-fig2090=plt.figure (2090)
-plt.semilogy(nn,halfLintrTest,'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$0.5 \cdot L_{Intrctn}$, $cm$',color='m',fontsize=16)
-plt.title('Total Length of Interaction: $L_{Intrctn}=2 \cdot [R_{max}^2-rho_{Init}^2)]^{0.5}$',color='m',fontsize=16)
-plt.xlim([-100,nVion*nImpctPrmtr+100])
-plt.ylim([.9*min(halfLintrTest),1.1*max(halfLintrTest)])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig2090.savefig('picturesCMA/totalLengthIntrsctn_fig2090cma.png')    
-   print ('File "picturesCMA/totalLengthIntrsctn_fig2090cma.png" is written')   
+if (plotFigureFlag == 1):   
+   fig2090=plt.figure (2090)
+   plt.semilogy(nn,halfLintrTest,'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$0.5 \cdot L_{Intrctn}$, $cm$',color='m',fontsize=16)
+   plt.title('Total Length of Interaction: $L_{Intrctn}=2 \cdot [R_{max}^2-rho_{Init}^2)]^{0.5}$',color='m',fontsize=16)
+   plt.xlim([-100,nVion*nImpctPrmtr+100])
+   plt.ylim([.9*min(halfLintrTest),1.1*max(halfLintrTest)])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig2090.savefig('picturesCMA/totalLengthIntrsctn_fig2090cma.png')    
+      print ('File "picturesCMA/totalLengthIntrsctn_fig2090cma.png" is written')   
 
 #
 # Fitting for figures with deltaEnrgIon_c (my own Least Squares Method - LSM;
@@ -1105,69 +1171,71 @@ for i in range(nVion):
 #      
 # Main plotting:      
 #      
-fig110=plt.figure (110)
-plt.plot(arrayA,arrayB,'.r')
-plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
-plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
-plt.title('Map of Parameters A,B', color='m',fontsize=16)
-# plt.xlim([minA,maxA])
-# plt.ylim([minB,maxB])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig110.savefig('picturesCMA/mapA-B_fig110cma.png')    
-   print ('File "picturesCMA/mapA-B_fig110cma.png" is written')   
+if (plotFigureFlag == 1):   
+   fig110=plt.figure (110)
+   plt.plot(arrayA,arrayB,'.r')
+   plt.xlabel('$A=log_{10}(q_e^2/b/E_{kin})$',color='m',fontsize=16)
+   plt.ylabel('$B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   plt.title('Map of Parameters A,B', color='m',fontsize=16)
+   # plt.xlim([minA,maxA])
+   # plt.ylim([minB,maxB])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig110.savefig('picturesCMA/mapA-B_fig110cma.png')    
+      print ('File "picturesCMA/mapA-B_fig110cma.png" is written')   
 
-nn=np.arange(0,2*totalPoints-1,1)
-fig20=plt.figure (20)
-plt.plot(nn,bCrrnt_c[0:2*totalPoints-1],'.r')
-# plt.semilogy(nn,bCrrnt_c[0:2*totalPoints-1],'.r')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$b_{Lab.Sys}$, $cm$',color='m',fontsize=16)
-plt.title('Distance $b_{Lab.Sys}$ between Particles in Lab.System', color='m',fontsize=16)
-plt.xlim([-5000,2*totalPoints+5000])
-# plt.xlim([0,2000])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig20.savefig('picturesCMA/particleDistance_ls_fig20cma.png')    
-   print ('File "picturesCMA/particleDistance_ls_fig20cma.png" is written')   
+if (plotFigureFlag == 1):   
+   nn=np.arange(0,2*totalPoints-1,1)
+   fig20=plt.figure (20)
+   plt.plot(nn,bCrrnt_c[0:2*totalPoints-1],'.r')
+   # plt.semilogy(nn,bCrrnt_c[0:2*totalPoints-1],'.r')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$b_{Lab.Sys}$, $cm$',color='m',fontsize=16)
+   plt.title('Distance $b_{Lab.Sys}$ between Particles in Lab.System', color='m',fontsize=16)
+   plt.xlim([-5000,2*totalPoints+5000])
+   # plt.xlim([0,2000])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig20.savefig('picturesCMA/particleDistance_ls_fig20cma.png')    
+      print ('File "picturesCMA/particleDistance_ls_fig20cma.png" is written')   
 
-nn=np.arange(0,2*totalPoints-1,1)
-fig30=plt.figure (30)
-plt.plot(nn,arrayA[0:2*totalPoints-1],'.r',nn,arrayB[0:2*totalPoints-1],'.b')
-plt.xlabel('Points of Tracks',color='m',fontsize=16)
-plt.ylabel('$A$, $B$',color='m',fontsize=16)
-plt.title('$A=log_{10}(q_e^2/b/E_{kin})$, $B=log_{10}(R_{Larm}/b)$', \
-          color='m',fontsize=16)
-plt.xlim([-5000,2*totalPoints+5000])
-# plt.ylim([minB,maxB])
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig30.savefig('picturesCMA/parametersA-B_fig30cma.png')    
-   print ('File "picturesCMA/parametersA-B_fig30cma.png" is written')   
+if (plotFigureFlag == 1):   
+   nn=np.arange(0,2*totalPoints-1,1)
+   fig30=plt.figure (30)
+   plt.plot(nn,arrayA[0:2*totalPoints-1],'.r',nn,arrayB[0:2*totalPoints-1],'.b')
+   plt.xlabel('Points of Tracks',color='m',fontsize=16)
+   plt.ylabel('$A$, $B$',color='m',fontsize=16)
+   plt.title('$A=log_{10}(q_e^2/b/E_{kin})$, $B=log_{10}(R_{Larm}/b)$',color='m',fontsize=16)
+   plt.xlim([-5000,2*totalPoints+5000])
+   # plt.ylim([minB,maxB])
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig30.savefig('picturesCMA/parametersA-B_fig30cma.png')    
+      print ('File "picturesCMA/parametersA-B_fig30cma.png" is written')   
 
 xVionRel = np.zeros((nImpctPrmtr,nVion))
 for i in range(nVion):
    for n in range(nImpctPrmtr):
        xVionRel[n,i] = VionRel[i]
 
-fig40=plt.figure (40)
-for i in range(nVion):
-    plt.semilogx(xVionRel[0:nImpctPrmtr,i],rhoInit[0:nImpctPrmtr,i],'.r')
-plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
-plt.ylabel('$rho_{Init}$, cm',color='m',fontsize=16)
-plt.title('Subdivisions for $rho_{Init}$ for Integration: Simpson Method', \
-          color='m',fontsize=16)
-plt.grid(True)
-yLimit=[0.,.405]
-plt.ylim(yLimit)
-plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-plt.text(1.6e-3,-.026,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
-plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
-plt.text(3.9e-5,.05,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-if (saveFilesFlag == 1):
-   fig40.savefig('picturesCMA/initialImpactParameter_SM_fig40cma.png')    
-   print ('File "picturesCMA/initialImpactParameter_SM_fig40cma.png" is written')   
-
+if (plotFigureFlag == 1):   
+   fig40=plt.figure (40)
+   for i in range(nVion):
+       plt.semilogx(xVionRel[0:nImpctPrmtr,i],rhoInit[0:nImpctPrmtr,i],'.r')
+   plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
+   plt.ylabel('$rho_{Init}$, cm',color='m',fontsize=16)
+   plt.title('Subdivisions for $rho_{Init}$ for Integration: Simpson Method', \
+             color='m',fontsize=16)
+   plt.grid(True)
+   yLimit=[0.,.405]
+   plt.ylim(yLimit)
+   plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+   plt.text(1.6e-3,-.026,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
+   plt.text(3.9e-5,.05,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   if (saveFilesFlag == 1):
+      fig40.savefig('picturesCMA/initialImpactParameter_SM_fig40cma.png')    
+      print ('File "picturesCMA/initialImpactParameter_SM_fig40cma.png" is written')   
 
 '''
 VionCrrnt = V0*VionRel[0]
@@ -1329,67 +1397,71 @@ indxFigures = [0,9,12,18,19,23,27,29,31,34,39,49]
 numbrFigures = [500,600,630,660,700,730,760,800,830,860,900,1000]
 xPos = [.00218,.0022,.0024,.0027,.0026,.00265,.00265,.00265,.00265,.0028,.0029,.0035]
 yPos = [6.4e-9,6.7e-9,6.4e-9,5.9e-9,6.2e-9,5.6e-9,5.8e-9,6.3e-9,5.8e-9,5.9e-9,5.8e-9,4.7e-9]
+yPosText = [-2.115,-2.115,-2.115,-2.20,-2.115,-2.115,-2.115,-2.20,-2.115,-2.115,-2.115,-2.115]
 
-for i in range(12):
-   VionCrrnt = V0*VionRel[indxFigures[i]]
-   powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
-   mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
-   figCrrnt = plt.figure(numbrFigures[i])
-   plt.loglog(rhoInit[0:nImpctPrmtr,indxFigures[i]], \
-              deltaEnrgIon_c[0:nImpctPrmtr,indxFigures[i]],'-xr', \
-              rhoInitFit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
-	      deltaEnrgIon_c_Fit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]],'ob', \
-              rhoInitFit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
-	      deltaEnrgIon_c_Fit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
-	      'or',linewidth=2)
-   plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
-   plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=14)
-   titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion:'
-   titleHeader += ' $V_{ion}=%3.1f\cdot10^{%2d}$ $cm/s$'
-   plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
-   plt.xlim([.95*rhoInit[0,indxFigures[i]],1.05*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
-   plt.ylim([ .9*deltaEnrgIon_c[nImpctPrmtr-1,indxFigures[i]], \
-             1.1*deltaEnrgIon_c_Fit2[0,indxFigures[i]]])
-   plt.legend(['Calculated Data',('Fitted Data (Func1): B = %5.3f' % \
-               abs(fitB1[indxFigures[i]])), \
-              ('Fitted Data (Func2): B = B = %5.3f'% abs(fitB2[indxFigures[i]]))], \
-             loc='lower center',fontsize=14)
-   plt.text(xPos[i],yPos[i],'Fitted $\Delta E_{ion}$ are proportional to $rho_{Init}^{-B}$', \
-	    color='m',fontsize=16)
+
+if (plotFigureFlag == 1):   
+   for i in range(12):
+      VionCrrnt = V0*VionRel[indxFigures[i]]
+      powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
+      mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
+      figCrrnt = plt.figure(numbrFigures[i])
+      plt.loglog(rhoInit[0:nImpctPrmtr,indxFigures[i]], \
+                 deltaEnrgIon_c[0:nImpctPrmtr,indxFigures[i]],'-xr', \
+                 rhoInitFit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         deltaEnrgIon_c_Fit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]],'ob', \
+                 rhoInitFit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         deltaEnrgIon_c_Fit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         'or',linewidth=2)
+      plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
+      plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=14)
+      titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion:'
+      titleHeader += ' $V_{ion}=%3.1f\cdot10^{%2d}$ $cm/s$'
+      plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
+      plt.xlim([.95*rhoInit[0,indxFigures[i]],1.05*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
+      plt.ylim([ .9*deltaEnrgIon_c[nImpctPrmtr-1,indxFigures[i]], \
+                1.1*deltaEnrgIon_c_Fit2[0,indxFigures[i]]])
+      plt.legend(['Calculated Data',('Fitted Data (Func1): B = %5.3f' % \
+                  abs(fitB1[indxFigures[i]])), \
+                 ('Fitted Data (Func2): B = B = %5.3f'% abs(fitB2[indxFigures[i]]))], \
+                loc='lower center',fontsize=14)
+      plt.text(xPos[i],yPos[i],'Fitted $\Delta E_{ion}$ are proportional to $rho_{Init}^{-B}$', \
+	       color='m',fontsize=16)
+      plt.grid(True)
+      if (saveFilesFlag == 1):
+         fileName = 'picturesCMA/deltaEtransf_indxPlot-'+str(indxFigures[i])+'_fig'
+         fileName += str(numbrFigures[i])+'cma.png' 
+         figCrrnt.savefig(fileName) 
+         print ('File "',fileName,'" is written')
+
+if (plotFigureFlag == 1):   
+   fig1100=plt.figure (1100)
+   plt.semilogx(VionRel,fitB1,'-xb',VionRel,fitB2,'-xr',linewidth=2)
+   plt.xlabel('Relative Ion Velocity  $V_{ion}/V_0$',color='m',fontsize=14)
+   plt.ylabel('$B$', color='m',fontsize=14)
+   titleHeader = 'Dependence of Transferred Energy $\Delta E_{ion}$ to Single Ion on $rho^B$'
+   plt.title(titleHeader,color='m',fontsize=12)
+   plt.text(1.e-4,-1.93,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)),color='m',fontsize=16)
+   plt.xlim(xLimit)
+   yLimit=[min(fitB1[0],fitB2[0])-.025,max(fitB1[nImpctPrmtr-1],fitB2[nImpctPrmtr-1])+.025]
+   # print ('ylim[0] = %e, ylim[1] = %e' % (yLimit[0],yLimit[1]))
+   plt.ylim(yLimit)
+   plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+   plt.text(1.6e-3,yLimit[0]-.028,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
+   # plt.text(4.4e-5,yLimit[0]-.02,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(4.4e-5,-2.35,'$ \Delta V_{e||}/ sV_{e0}$',color='m',fontsize=14)
+   plt.legend(['Func1','Func2'],loc='lower right',fontsize=16)
+   plt.text(5.4e-4,-2.22,'Figures',color='k',fontsize=14)
+   for k in range(12):
+      xPos = VionRel[indxFigures[k]]
+      plt.plot([xPos,xPos],[-2.18,-2.125],'-k',linewidth=1)
+      plt.text(xPos,yPosText[k],('%3d' % int(numbrFigures[k])),color='k',fontsize=10)
    plt.grid(True)
    if (saveFilesFlag == 1):
-      fileName = 'picturesCMA/deltaEtransf_indxPlot-'+str(indxFigures[i])+'_fig'
-      fileName += str(numbrFigures[i])+'cma.png' 
-      figCrrnt.savefig(fileName) 
-      print ('File "',fileName,'" is written')
+      fig1100.savefig('picturesCMA/exponentB_on_ionVelocity_fig1100cma.png')    
+      print ('File "picturesCMA/exponentB_on_ionVelocity_fig1100cma.png" is written')
 
-yPosText = [-2.115,-2.115,-2.115,-2.20,-2.115,-2.115,-2.115,-2.20,-2.115,-2.115,-2.115,-2.115]
-fig1100=plt.figure (1100)
-plt.semilogx(VionRel,fitB1,'-xb',VionRel,fitB2,'-xr',linewidth=2)
-plt.xlabel('Relative Ion Velocity  $V_{ion}/V_0$',color='m',fontsize=14)
-plt.ylabel('$B$', color='m',fontsize=14)
-titleHeader = 'Dependence of Transferred Energy $\Delta E_{ion}$ to Single Ion on $rho^B$'
-plt.title(titleHeader,color='m',fontsize=12)
-plt.text(1.e-4,-1.93,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)),color='m',fontsize=16)
-plt.xlim(xLimit)
-yLimit=[min(fitB1[0],fitB2[0])-.025,max(fitB1[nImpctPrmtr-1],fitB2[nImpctPrmtr-1])+.025]
-# print ('ylim[0] = %e, ylim[1] = %e' % (yLimit[0],yLimit[1]))
-plt.ylim(yLimit)
-plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-plt.text(1.6e-3,yLimit[0]-.028,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
-plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
-# plt.text(4.4e-5,yLimit[0]-.02,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-plt.text(4.4e-5,-2.35,'$ \Delta V_{e||}/ sV_{e0}$',color='m',fontsize=14)
-plt.legend(['Func1','Func2'],loc='lower right',fontsize=16)
-plt.text(5.4e-4,-2.22,'Figures',color='k',fontsize=14)
-for k in range(12):
-   xPos = VionRel[indxFigures[k]]
-   plt.plot([xPos,xPos],[-2.18,-2.125],'-k',linewidth=1)
-   plt.text(xPos,yPosText[k],('%3d' % int(numbrFigures[k])),color='k',fontsize=10)
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fig1100.savefig('picturesCMA/exponentB_on_ionVelocity_fig1100cma.png')    
-   print ('File "picturesCMA/exponentB_on_ionVelocity_fig1100cma.png" is written')
 
 # plt.show()
 
@@ -1563,35 +1635,35 @@ for i in range(nVion):
 # Transferred momenta and energy along the entire length of each track
 # for both approaches:
 #
-      deltaPx_cGK[n,i] = abs(dpCrrnt[0,0]) 
-      deltaPx_mGK[n,i] = abs(dpCrrnt[0,1]) 
+      deltaPx_cGK[n,i] = dpCrrnt[0,0] 
+      deltaPx_mGK[n,i] = dpCrrnt[0,1] 
 #      if deltaPx_cGK[n,i] <= 0.: 
 #         print ('deltaPx_cGK[%2d,%2d] = %e, dpCrrnt[%2d,%2d] = %e' % \
 #	       (n,i,deltaPx_cGK[n,i],n,i,dpCrrnt[0,0]))
 #      if deltaPx_mGK[n,i] <= 0.: 
 #         print ('deltaPx_mGK[%2d,%2d] = %e, dpCrrnt[%2d,%2d] = %e' % \
 #	       (n,i,deltaPx_mGK[n,i],n,i,dpCrrnt[0,1]))
-      deltaPy_cGK[n,i] = abs(dpCrrnt[1,0]) 
-      deltaPy_mGK[n,i] = abs(dpCrrnt[1,1]) 
+      deltaPy_cGK[n,i] = dpCrrnt[1,0] 
+      deltaPy_mGK[n,i] = dpCrrnt[1,1] 
 #      if deltaPy_cGK[n,i] <= 0.: 
 #         print ('deltaPy_cGK[%2d,%2d] = %e' % (n,i,deltaPy_cGK[n,i]))
 #      if deltaPy_mGK[n,i] <= 0.: 
 #         print ('deltaPy_mGK[%2d,%2d] = %e' % (n,i,deltaPy_mGK[n,i]))
-      deltaPz_cGK[n,i] = abs(dpCrrnt[2,0]) 
-      deltaPz_mGK[n,i] = abs(dpCrrnt[2,1]) 
+      deltaPz_cGK[n,i] = dpCrrnt[2,0] 
+      deltaPz_mGK[n,i] = dpCrrnt[2,1] 
 #      if deltaPz_cGK[n,i] <= 0.: 
 #         print ('deltaPz_cGK[%2d,%2d] = %e' % (n,i,deltaPz_cGK[n,i]))
 #      if deltaPz_mGK[n,i] <= 0.: 
 #         print ('deltaPz_mGK[%2d,%2d] = %e' % (n,i,deltaPz_MGK[n,i]))
       deltaEnrgIon_cGK[n,i] = (dpCrrnt[0,0]**2+dpCrrnt[1,0]**2+dpCrrnt[2,0]**2)* \
                             deFactor/eVtoErg                      # eV
-      deltaPx_mGK[n,i] = abs(dpCrrnt[0,1]*dpFactor) 
+      deltaPx_mGK[n,i] = dpCrrnt[0,1]
 #      if deltaPx_mGK[n,i] <= 0.: 
 #         print ('deltaPx_mGK[%2d,%2d] = %e' % (n,i,deltaPx_mGK[n,i]))
-      deltaPy_mGK[n,i] = abs(dpCrrnt[1,1]*dpFactor) 
+      deltaPy_mGK[n,i] = dpCrrnt[1,1]
 #      if deltaPy_mGK[n,i] <= 0.: 
 #         print ('deltaPy_mGK[%2d,%2d] = %e' % (n,i,deltaPy_mGK[n,i]))
-      deltaPz_mGK[n,i] = abs(dpCrrnt[2,1]*dpFactor) 
+      deltaPz_mGK[n,i] = dpCrrnt[2,1]
 #      if deltaPz_mGK[n,i] <= 0.: 
 #         print ('deltaPz_mGK[%2d,%2d] = %e' % (n,i,deltaPz_mGK[n,i]))
       deltaEnrgIon_mGK[n,i] = (dpCrrnt[0,1]**2+dpCrrnt[1,1]**2+dpCrrnt[2,1]**2)* \
@@ -1604,74 +1676,229 @@ for i in range(nVion):
       frctnForce_mGK[i] += .5*(rhoMaxCrrnt-rhoMin)*w16[n]*deltaEnrgIon_mGK[n,i]* \
                           rhoCrrntGK[n,i]*n_e/100.                # eV/m
 
-print ('\ni          V_i           V_i/V0         ff_cSM          ff_mSM           ff_cGK           ff_mGK\n') 
-for i in range(nVion):
-   print (('%2d    %10.6e    %10.6e    %10.6e    %10.6e    %10.6e    %10.6e' % \
-          (i,Vion[i],Vion[i]/V0,frctnForce_cSM[i],frctnForce_mSM[i],frctnForce_cGK[i],frctnForce_mGK[i])))
+# print ('\ni          V_i           V_i/V0         ff_cSM          ff_mSM           ff_cGK           ff_mGK\n') 
+# for i in range(nVion):
+#    print (('%2d    %10.6e    %10.6e    %10.6e    %10.6e    %10.6e    %10.6e' % \
+#           (i,Vion[i],Vion[i]/V0,frctnForce_cSM[i],frctnForce_mSM[i],frctnForce_cGK[i],frctnForce_mGK[i])))
 
 xVionRelIntgr = np.zeros((nPointsGK,nVion))
 for i in range(nVion):
    for n in range(nPointsGK):
        xVionRelIntgr[n,i] = VionRel[i]
 
-fig41=plt.figure (41)
-for i in range(nVion):
-    plt.semilogx(xVionRelIntgr[0:nPointsGK,i],rhoCrrntGK[0:nPointsGK,i],'.r')
-plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
-plt.ylabel('$rho_{Init}$, cm',color='m',fontsize=16)
-plt.title('Subdivisions for $rho_{Init}$: Gauss-Kronrod Method Integration', \
-          color='m',fontsize=14)
-plt.grid(True)
-yLimit=[0.,max(rhoCrrntGK[0:nPointsGK,nVion-1])+.01]
-plt.ylim(yLimit)
-plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-plt.text(2.e-3,-.02,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
-plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
-plt.text(4.4e-5,.05,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+if (plotFigureFlag == 1):   
+   fig41=plt.figure (41)
+   for i in range(nVion):
+      plt.semilogx(xVionRelIntgr[0:nPointsGK,i],rhoCrrntGK[0:nPointsGK,i],'.r')
+   plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
+   plt.ylabel('$rho_{Init}$, cm',color='m',fontsize=16)
+   plt.title('Subdivisions for $rho_{Init}$: Gauss-Kronrod Method Integration', \
+             color='m',fontsize=14)
+   plt.grid(True)
+   yLimit=[0.,max(rhoCrrntGK[0:nPointsGK,nVion-1])+.01]
+   plt.ylim(yLimit)
+   plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+   plt.text(1.6e-3,-.03,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
+   plt.text(4.4e-5,.05,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   if (saveFilesFlag == 1):
+      fig41.savefig('picturesCMA/initialImpactParameter_GK_fig41cma.png') 
+      print ('File "picturesCMA/initialImpactParameter_GK_fig41cma.png" is written')
 
 
 indxFigures = [0,9,12,18,19,23,27,29,31,34,39,49]
 
-'''
-for i in range(2,10,1):
-   plt.figure (2000+indxFigures[i])
-   plt.loglog(rhoInit[:,indxFigures[i]],deltaEnrgIon_c[:,indxFigures[i]],'-xr', \
-              rhoInit[:,indxFigures[i]],deltaEnrgIon_m[:,indxFigures[i]],'-xb',linewidth=2)
-   plt.xlabel('Track Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=16)
-   plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=16)
-   plt.title('Transferred Energy $\Delta E_{ion}$ to Single Ion', color='m',fontsize=16)
-   plt.xlim([.95*rhoInit[0,indxFigures[i]],1.1*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
-   yLimit = [0.5*min(deltaEnrgIon_c[nImpctPrmtr-1,indxFigures[i]], \
-                     deltaEnrgIon_m[nImpctPrmtr-1,indxFigures[i]]), \
-             1.5*max(deltaEnrgIon_c[0,indxFigures[i]],deltaEnrgIon_m[0,indxFigures[i]])]
+if (plotFigureFlag == 1):   
+   for i in range(2,10,1):
+      VionCrrnt = V0*VionRel[indxFigures[i]]
+      powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
+      mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
+      figCrrnt = plt.figure (3000+indxFigures[i])
+      plt.semilogx(rhoInit[:,indxFigures[i]],dEion_c_m[:,indxFigures[i]],'-xr',linewidth=2)
+      plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
+      plt.ylabel('Difference of $\Delta E_{ion}$: "GC"/"ME" $-$ 1, %',color='m',fontsize=14)
+      titleHeader = 'Comparison of Approaches for $\Delta E_{ion}$:'
+      titleHeader += ' $V_{ion}=%3.1f\cdot10^{%2d}$ $cm/s$'
+      plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
+      plt.xlim([.95*rhoInit[0,indxFigures[i]],1.1*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
+   #   plt.ylim([min(dEion_c_m[:,indxFigures[i]])-.0005,max(dEion_c_m[:,indxFigures[i]])+.0005])
+      plt.grid(True)
+      if (saveFilesFlag == 1):
+         fileName = 'picturesCMA/deltaEcomprsn_indxPlot-'+str(indxFigures[i])+'_fig30'
+         fileName += str(indxFigures[i])+'cma.png' 
+         figCrrnt.savefig(fileName) 
+         print ('File "',fileName,'" is written')
+
+#
+# Map for relative difference of the energies dEion_c_m:
+#
+X = np.zeros((nVion,nImpctPrmtr))
+Y = np.zeros((nImpctPrmtr,nVion))
+Zpx = np.zeros((nVion,nImpctPrmtr))
+Zpy = np.zeros((nVion,nImpctPrmtr))
+Zpz = np.zeros((nVion,nImpctPrmtr))
+Ze = np.zeros((nVion,nImpctPrmtr))
+#
+# Draw deltaPz_c_m with different cut off values:
+#
+Zpz1 = np.zeros((nVion,nImpctPrmtr))
+Zpz2 = np.zeros((nVion,nImpctPrmtr))
+Zpz3 = np.zeros((nVion,nImpctPrmtr))
+Zpz4 = np.zeros((nVion,nImpctPrmtr))
+ZpzCutoff = np.zeros((nVion,nImpctPrmtr,4))
+
+for i in range(nVion):
+   for n in range(nImpctPrmtr):
+      X[i,n] = np.log10(VionRel[i])
+      Y[n,i] = np.log10(rhoInit[i,n])
+      Ze[i,n] = dEion_c_m[i,n]
+      Zpx[i,n] = deltaPx_c_m[i,n]
+      Zpy[i,n] = deltaPy_c_m[i,n]
+      Zpz[i,n] = deltaPz_c_m[i,n]
+      Zpz1[i,n] = deltaPz_c_m_1[i,n]
+      Zpz2[i,n] = deltaPz_c_m_2[i,n]
+      Zpz3[i,n] = deltaPz_c_m_3[i,n]
+      Zpz4[i,n] = deltaPz_c_m_4[i,n]
+      ZpzCutoff[i,n,0] = deltaPz_c_m_1[i,n]
+      ZpzCutoff[i,n,1] = deltaPz_c_m_2[i,n]
+      ZpzCutoff[i,n,2] = deltaPz_c_m_3[i,n]
+      ZpzCutoff[i,n,3] = deltaPz_c_m_4[i,n]
+
+yLimit = [-2.92,-0.26]
+
+if (plotFigureFlag == 1):   
+   fig245 = plt.figure(245)
+   ax = fig245.add_subplot(111)                                       # for contours plotting
+   mapDenrg = ax.contourf(X,Y,Ze,cmap='jet') 
+   plt.plot(np.log10(VionRel),np.log10(impctPrmtrMax),'-r',linewidth=2)
+   plt.plot([np.log10(VionRel[0]),np.log10(VionRel[nVion-1])], \
+            [np.log10(impctPrmtrMin),np.log10(impctPrmtrMin)],'-r',linewidth=2)
+   plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
+   plt.plot([np.log10(relVeLong), np.log10(relVeLong)], yLimit,'--m',linewidth=1)
+   plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=16)
+   plt.ylabel('Initial Impact Parameter, $log_{10}(rho_{Init})$',color='m',fontsize=16)
+   plt.title('Difference of $\Delta E_{ion}$: "GC"/"ME" $-$ 1, %',color='m',fontsize=16)
+   plt.text(-4.14,-.45,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-3.25,-1.3,'$R_{max}$',color='k',fontsize=16)
+   plt.text(-3.25,-2.89,'$R_{min}$',color='k',fontsize=16)
+   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
    plt.ylim(yLimit)
-   plt.grid(True)
-'''
-
-
-for i in range(2,10,1):
-   VionCrrnt = V0*VionRel[indxFigures[i]]
-   powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
-   mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
-   figCrrnt = plt.figure (3000+indxFigures[i])
-   plt.semilogx(rhoInit[:,indxFigures[i]],dEion_c_m[:,indxFigures[i]],'-xr',linewidth=2)
-   plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
-   plt.ylabel('Difference of $\Delta E_{ion}$: "GC"/"ME" $-$ 1, %',color='m',fontsize=14)
-   titleHeader = 'Comparison of Approaches for $\Delta E_{ion}$:'
-   titleHeader += ' $V_{ion}=%3.1f\cdot10^{%2d}$ $cm/s$'
-   plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
-   plt.xlim([.95*rhoInit[0,indxFigures[i]],1.1*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
-#   plt.ylim([min(dEion_c_m[:,indxFigures[i]])-.0005,max(dEion_c_m[:,indxFigures[i]])+.0005])
+   fig245.colorbar(mapDenrg)
    plt.grid(True)
    if (saveFilesFlag == 1):
-      fileName = 'picturesCMA/deltaEcomprsn_indxPlot-'+str(indxFigures[i])+'_fig30'
-      fileName += str(indxFigures[i])+'cma.png' 
-      figCrrnt.savefig(fileName) 
-      print ('File "',fileName,'" is written')
+      fig245.savefig('picturesCMA/deltaEcomprsnMap_fig245cma.png') 
+      print ('File "picturesCMA/deltaEcomprsnMap_fig245cma.png" is written')
+
+if (plotFigureFlag == 1):   
+   fig345 = plt.figure(345)
+   ax = fig345.add_subplot(111)                                       # for contours plotting
+   mapDpx = ax.contourf(X,Y,Zpx,cmap='jet') 
+   plt.plot(np.log10(VionRel),np.log10(impctPrmtrMax),'-r',linewidth=2)
+   plt.plot([np.log10(VionRel[0]),np.log10(VionRel[nVion-1])], \
+            [np.log10(impctPrmtrMin),np.log10(impctPrmtrMin)],'-r',linewidth=2)
+   plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
+   plt.plot([np.log10(relVeLong), np.log10(relVeLong)], yLimit,'--m',linewidth=1)
+   plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=16)
+   plt.ylabel('Initial Impact Parameter, $log_{10}(rho_{Init})$',color='m',fontsize=16)
+   plt.title('Difference of $\Delta p_x$: "GC"/"ME" $-$ 1, %',color='m',fontsize=16)
+   plt.text(-4.14,-.45,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-3.25,-1.3,'$R_{max}$',color='k',fontsize=16)
+   plt.text(-3.25,-2.89,'$R_{min}$',color='k',fontsize=16)
+   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.ylim(yLimit)
+   fig345.colorbar(mapDpx)
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig345.savefig('picturesCMA/deltaPXcomprsnMap_fig345cma.png') 
+      print ('File "picturesCMA/deltaPXcomprsnMap_fig345cma.png" is written')
 
 
+if (plotFigureFlag == 1):   
+   fig445 = plt.figure(445)
+   ax = fig445.add_subplot(111)                                       # for contours plotting
+   mapDpy = ax.contourf(X,Y,Zpy,cmap='jet') 
+   plt.plot(np.log10(VionRel),np.log10(impctPrmtrMax),'-r',linewidth=2)
+   plt.plot([np.log10(VionRel[0]),np.log10(VionRel[nVion-1])], \
+            [np.log10(impctPrmtrMin),np.log10(impctPrmtrMin)],'-r',linewidth=2)
+   plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
+   plt.plot([np.log10(relVeLong), np.log10(relVeLong)], yLimit,'--m',linewidth=1)
+   plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=16)
+   plt.ylabel('Initial Impact Parameter, $log_{10}(rho_{Init})$',color='m',fontsize=16)
+   plt.title('Difference of $\Delta p_y$: "GC"/"ME" $-$ 1, %',color='m',fontsize=16)
+   plt.text(-4.14,-.45,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-3.25,-1.3,'$R_{max}$',color='k',fontsize=16)
+   plt.text(-3.25,-2.89,'$R_{min}$',color='k',fontsize=16)
+   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.ylim(yLimit)
+   fig445.colorbar(mapDpy)
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig445.savefig('picturesCMA/deltaPYcomprsnMap_fig445cma.png') 
+      print ('File "picturesCMA/deltaPYcomprsnMap_fig445cma.png" is written')
+
+if (plotFigureFlag == 1):   
+   fig545 = plt.figure(545)
+   ax = fig545.add_subplot(111)                                       # for contours plotting
+   mapDpz = ax.contourf(X,Y,Zpz,cmap='jet') 
+   plt.plot(np.log10(VionRel),np.log10(impctPrmtrMax),'-r',linewidth=2)
+   plt.plot([np.log10(VionRel[0]),np.log10(VionRel[nVion-1])], \
+            [np.log10(impctPrmtrMin),np.log10(impctPrmtrMin)],'-r',linewidth=2)
+   plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
+   plt.plot([np.log10(relVeLong), np.log10(relVeLong)], yLimit,'--m',linewidth=1)
+   plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=16)
+   plt.ylabel('Initial Impact Parameter, $log_{10}(rho_{Init})$',color='m',fontsize=16)
+   plt.title('Difference of $\Delta p_z$: "GC"/"ME" $-$ 1, %',color='m',fontsize=16)
+   plt.text(-4.14,-.45,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-3.25,-1.3,'$R_{max}$',color='k',fontsize=16)
+   plt.text(-3.25,-2.89,'$R_{min}$',color='k',fontsize=16)
+   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.ylim(yLimit)
+   fig545.colorbar(mapDpz)
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fig545.savefig('picturesCMA/deltaPZcomprsnMap_fig545cma.png') 
+      print ('File "picturesCMA/deltaPZcomprsnMap_fig545cma.png" is written')
+
+
+cutoffValues = [-400,-200,-100,-50]
+
+if (plotFigureFlag == 0):   
+   for k in range(4):
+      figCutoff = plt.figure(645+100*k)
+      ax = figCutoff.add_subplot(111)                                       # for contours plotting
+      mapDpzCutoff = ax.contourf(X,Y,ZpzCutoff[:,:,k],cmap='jet') 
+      plt.plot(np.log10(VionRel),np.log10(impctPrmtrMax),'-r',linewidth=2)
+      plt.plot([np.log10(VionRel[0]),np.log10(VionRel[nVion-1])], \
+               [np.log10(impctPrmtrMin),np.log10(impctPrmtrMin)],'-r',linewidth=2)
+      plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
+      plt.plot([np.log10(relVeLong), np.log10(relVeLong)], yLimit,'--m',linewidth=1)
+      plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=16)
+      plt.ylabel('Initial Impact Parameter, $log_{10}(rho_{Init})$',color='m',fontsize=16)
+      titleHeader = 'Difference of $\Delta p_z$: "GC"/"ME" $-$ 1, %\n($\Delta p_z$ = '
+      titleHeader += str(cutoffValues[k])
+      titleHeader += '%, if $\Delta p_z$ < '
+      titleHeader += str(cutoffValues[k])
+      titleHeader += '%)'
+      plt.title(titleHeader,color='m',fontsize=16)
+      plt.text(-4.14,-.45,'Screened Collisions',color='r',fontsize=16)
+      plt.text(-3.25,-1.3,'$R_{max}$',color='k',fontsize=16)
+      plt.text(-3.25,-2.89,'$R_{min}$',color='k',fontsize=16)
+      plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+      plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+      plt.ylim(yLimit)
+      figCutoff.colorbar(mapDpzCutoff)
+      plt.grid(True)
+      if (saveFilesFlag == 1):
+         nameFile = 'picturesCMA/deltaPZcomprsnMap'
+         nameFile += str(cutoffValues[k])+'_fig'+str(645+100*k)+'cma.png'
+         figCutoff.savefig(nameFile) 
+         print ('File "',nameFile,'" is written')
+   
 plt.show()
-
 
 '''
 #
