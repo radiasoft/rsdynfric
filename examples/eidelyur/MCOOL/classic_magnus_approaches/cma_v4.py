@@ -1344,6 +1344,7 @@ if (plotFigureFlag == 1):
    plt.xlim([-5000,2*totalPoints+5000])
    # plt.ylim([minB,maxB])
    plt.grid(True)
+   plt.legend(['A','B'],loc='lower left',fontsize=14)
 if (saveFilesFlag == 1):
    fig30.savefig('picturesCMA/parametersA-B_fig30cma.png')    
    print ('File "picturesCMA/parametersA-B_fig30cma.png" is written')   
