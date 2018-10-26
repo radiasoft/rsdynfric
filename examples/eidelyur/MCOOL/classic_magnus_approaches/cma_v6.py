@@ -74,16 +74,20 @@
 # 7) For taking into account the velocity distribution of the
 #    electrons it is necessary to repeat these calculations for
 #    each value of the electron's velocity and then integrate result
-#    over distribution of the velocities.
-#
-# 10/26/2018:  
-#
-# 8) Item 6 is wrong and correct expression for transfered
-#    energy delta_E will be used;
-# 9) Method (my own) Least Squares Method - LSM is used to fit the
-#    dependence of transferred momenta on impact parameter;
+#    over distribution of the velocities.     
 #
 #########################################################
+#========================================================
+#
+# This version includes all investigations concerning the 
+# choice of the fitted functional, cacculations of the errors
+# for fitting parameters and etc. Results are as follows: 
+# it is enough to use the standard functional like
+# summa(function-fittedFunction)**2. So, in the next version 
+# all unwanted issues will be excluded (10/23/2018)
+#
+#========================================================
+
 import os, sys
 import numpy as np
 import math
@@ -453,22 +457,37 @@ def MagnusExpansionCollision(vectrElec_gc,vectrIon,deltaT):
    return dpIon,dpElec,action,dy_gc,C1,C2,C3,b,D1,D2,q                                      
 
 #
-# Minimized functional (my own Least Squares Method - LSM;
-# Python has own routine for LSM - see site  
-#     http://scipy-cookbook.readthedocs.io/items/FittingData.html):
+# First minimized functional:
 #
-# Funcional = {log10(funcY) - [fitB*log10(argX) + fitA]}^2
+# Func1 = {log10(funcY) - [fitB*log10(argX) + fitA]}^2
 #
+def fitFunc1(nPar1,nPar2,argX,funcY):
 
-def fitting(nPar1,nPar2,argX,funcY):
-
+   maxIndx = np.zeros(nPar2)
    log10argX = np.zeros((nPar1,nPar2))
    log10funcY = np.zeros((nPar1,nPar2))
+#   log10argXnorm = np.zeros((nPar1,nPar2))
+#   log10funcYnorm = np.zeros((nPar1,nPar2))
+#   normFactrX = np.zeros(nPar2)
+#   normFactrY = np.zeros(nPar2)
+   
+#   for i in range(nPar2):
+#      normFactrX[i] = min(argX[:,i])
+#      normFactrY[i] = min(funcY[:,i])
    
    for i in range(nVion):
+      indx = 0
       for n in range(nPar1):
-         log10argX[n,i] = np.log10(argX[n,i])
-         log10funcY[n,i] = np.log10(funcY[n,i])
+         if ((argX[n,i] > 0.) and (funcY[n,i] > 0.)):
+            log10argX[indx,i] = np.log10(argX[n,i])
+            log10funcY[indx,i] = np.log10(funcY[n,i])
+#            log10argXnorm[indx,i] = np.log10(argX[n,i]/normFactrX[i])
+#            log10funcYnorm[indx,i] = np.log10(funcY[n,i]/normFactrY[i])
+            indx += 1
+         else:
+            print ('i = %d, n = %d: argX = %e, funcY = %e' % (i,n,argX[n,i],funcY[n,i]))	 
+      maxIndx[i] = int(indx)
+#    print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
 
    sumArgX = np.zeros(nPar2)
    sumArgX2 = np.zeros(nPar2)
@@ -477,129 +496,440 @@ def fitting(nPar1,nPar2,argX,funcY):
    fitA = np.zeros(nPar2) 
    fitB = np.zeros(nPar2)
 
+#   sumArgXnorm = np.zeros(nPar2)
+#   sumArgX2norm = np.zeros(nPar2)
+#   sumFuncYnorm = np.zeros(nPar2) 
+#   sumArgXfuncYnorm= np.zeros(nPar2)
+#   fitAnorm = np.zeros(nPar2) 
+#   fitBnorm = np.zeros(nPar2)
+
    for i in range(nPar2):
-      for n in range(nPar1):
+      for n in range(int(maxIndx[i])):
          sumArgX[i] += log10argX[n,i]
          sumArgX2[i] += log10argX[n,i]**2
          sumFuncY[i] += log10funcY[n,i]
          sumArgXfuncY[i] += log10argX[n,i]*log10funcY[n,i]
 
-      delta = sumArgX[i]**2-nPar1*sumArgX2[i]
+#         sumArgXnorm[i] += log10argXnorm[n,i]
+#         sumArgX2norm[i] += log10argXnorm[n,i]**2
+#         sumFuncYnorm[i] += log10funcYnorm[n,i]
+#         sumArgXfuncYnorm[i] += log10argXnorm[n,i]*log10funcYnorm[n,i]
+
+      delta = sumArgX[i]**2-maxIndx[i]*sumArgX2[i]
       fitA[i] = (sumArgX[i]*sumArgXfuncY[i]-sumArgX2[i]*sumFuncY[i])/delta
-      fitB[i] = (sumArgX[i]*sumFuncY[i]-nPar1*sumArgXfuncY[i])/delta
+      fitB[i] = (sumArgX[i]*sumFuncY[i]-maxIndx[i]*sumArgXfuncY[i])/delta
 #      print ('fitA(%d) = %e, fitB(%d) = %e' % (i,fitA[i],i,fitB[i]))
 
-   argXfit = np.zeros((nPar1,nPar2))
-   funcYfit = np.zeros((nPar1,nPar2))
+#      deltaNorm = sumArgXnorm[i]**2-maxIndx[i]*sumArgX2norm[i]
+#      fitAnorm[i] = (sumArgXnorm[i]*sumArgXfuncYnorm[i]-sumArgX2norm[i]*sumFuncYnorm[i])/deltaNorm
+#      fitBnorm[i] = (sumArgXnorm[i]*sumFuncYnorm[i]-maxIndx[i]*sumArgXfuncYnorm[i])/deltaNorm
+#      print ('fitAnorm(%d) = %e, fitBnorm(%d) = %e' % (i,fitAnorm[i],i,fitBnorm[i]))
+
+   argXfit = np.zeros((int(maxIndx[0]),nPar2))
+   funcYfit = np.zeros((int(maxIndx[0]),nPar2))
    funcHi2 = np.zeros(nPar2)
+
+#   argXfitNorm = np.zeros((int(maxIndx[0]),nPar2))
+#   funcYfitNorm = np.zeros((int(maxIndx[0]),nPar2))
+#   funcHi2norm = np.zeros(nPar2)
 
    for i in range(nPar2):
       factorA = math.pow(10.,fitA[i])
-      for n in range(nPar1):
+#      factorAnorm = math.pow(10.,fitAnorm[i])
+      for n in range(int(maxIndx[i])):
          argXfit[n,i] = math.pow(10.,log10argX[n,i])
          funcYfit[n,i] = factorA*math.pow(argXfit[n,i],fitB[i])
          funcHi2[i] += (np.log10(abs(funcY[n,i])) - np.log10(abs(funcYfit[n,i])))**2  
+#      print ('i=%2d: fitA = %e, fitB = %e, hi2 = %e' % (i,fitA[i],fitB[i],funcHi2[i]))
 
+#         argXfitNorm[n,i] = math.pow(10.,log10argXnorm[n,i])
+#         funcYfitNorm[n,i] = factorAnorm*math.pow(argXfitNorm[n,i],fitBnorm[i])
+#         funcHi2norm[i] += (np.log10(abs(funcY[n,i]/normFactrY[i])) - \
+#	                    np.log10(abs(funcYfitNorm[n,i])))**2  
+#      print ('i=%2d: fitAnorm =  %e, fitBnorm = %e, hi2 = %e; X0 = %e, Y0 = %e' % \
+#             (i,fitAnorm[i],fitBnorm[i],funcHi2norm[i],normFactrX[i],normFactrY[i]))
+   return fitA,fitB,funcHi2,argXfit,funcYfit
+
+
+#
+#
+#
+def fitFunction2(A,B,X):
+   return A+B*X
+
+#
+#
+#
+def functional2(A,B,X,Y):
+   return 1.-fitFunction2(A,B,X)/Y
+
+#
+# Second minimized functional:
+#
+# Func2 = {1 - [fitB*log10(argX) + fitA]/log10(funcY)}^2
+#
+def fitFunc2(nPar1,nPar2,argX,funcY):
+
+   maxIndx = np.zeros(nPar2)
+   log10argX = np.zeros((nPar1,nPar2))
+   log10funcY = np.zeros((nPar1,nPar2))
+   for i in range(nPar2):
+      indx = 0
+      for n in range(nPar1):
+         if ((argX[n,i] > 0.) and (funcY[n,i] > 0.)):
+            log10argX[indx,i] = np.log10(argX[n,i])
+            log10funcY[indx,i] = np.log10(funcY[n,i])
+            indx += 1
+         else:
+            print ('i = %d, n = %d: argX = %e, funcY = %e' % (i,n,argX[n,i],funcY[n,i]))	 
+      maxIndx[i] = int(indx)
+#    print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
+
+   sumArgXfuncY= np.zeros(nPar2)
+   sumArgXfuncY2= np.zeros(nPar2)
+   sumArgX2funcY2= np.zeros(nPar2)
+   sumFuncY = np.zeros(nPar2) 
+   sumFuncY2 = np.zeros(nPar2) 
+   fitA = np.zeros(nPar2) 
+   fitB = np.zeros(nPar2)
+#
+# The same using optimize.leastsq method from python:
+#   fitApy = np.zeros(nPar2) 
+#   fitBpy = np.zeros(nPar2)
+
+   for i in range(nPar2):
+      for n in range(int(maxIndx[i])):
+         sumArgXfuncY[i] += log10argX[n,i]/log10funcY[n,i]
+         sumArgXfuncY2[i] += log10argX[n,i]/log10funcY[n,i]**2
+         sumArgX2funcY2[i] += (log10argX[n,i]/log10funcY[n,i])**2
+         sumFuncY[i] += 1./log10funcY[n,i]
+         sumFuncY2[i] += 1./log10funcY[n,i]**2
+#       print ('%d: sumArgXfuncY=%e, sumArgXfuncY2=%e, sumArgX2funcY2=%e, sumFuncY=%e, sumFuncY2=%e' % \
+#           (i,sumArgXfuncY[i],sumArgXfuncY2[i],sumArgX2funcY2[i],sumFuncY[i],sumFuncY2[i]))
+
+      delta = sumFuncY2[i]*sumArgX2funcY2[i]-sumArgXfuncY2[i]**2
+      fitA[i] = (sumArgX2funcY2[i]*sumFuncY[i]-sumArgXfuncY[i]*sumArgXfuncY2[i])/delta
+      fitB[i] = (sumFuncY2[i]*sumArgXfuncY[i]-sumArgXfuncY2[i]*sumFuncY[i])/delta
+#      fitApy[i],fitBpy[i],success = \
+#      optimize.leastsq(functional2,[-20.,-1.], args=(log10argX[:,i],log10funcY[:,i]))
+#      print ('   ==>  fitA(%d) = %e (from py: %e), fitB(%d) = %e (from py: %e)' % \
+#             (i,fitA[i],fitApy[i],i,fitB[i],fitBpy[i]))
+
+   argXfit = np.zeros((int(maxIndx[0]),nPar2))
+   funcYfit = np.zeros((int(maxIndx[0]),nPar2))
+   funcHi2 = np.zeros(nPar2)
+   for i in range(nVion):
+      factorA = math.pow(10.,fitA[i])
+      for n in range(int(maxIndx[i])):
+         argXfit[n,i] = math.pow(10.,log10argX[n,i])
+         funcYfit[n,i] = factorA*math.pow(argXfit[n,i],fitB[i])
+         funcHi2[i] += (1.-np.log10(funcYfit[n,i]) / log10funcY[n,i])**2  
+#      print ('i=%2d: fitA = %e, fitB = %e, hi2 = %e' % (i,fitA[i],fitB[i],funcHi2[i]))
    return fitA,fitB,funcHi2,argXfit,funcYfit
 
 #
-# +-Errors for fitied parameters fitA and fitB:
+# +-Errors for fitied parameter fitA from first functional:
 #
-def errFitAB(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2,errVar,errType):
- 
+def errFitAfunc1(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2):
+
+   maxIndx = np.zeros(nPar2)
    log10argX = np.zeros((nPar1,nPar2))
    log10funcY = np.zeros((nPar1,nPar2))
    sumArgX = np.zeros(nPar2)
    sumArgX2 = np.zeros(nPar2)
 
-   stepA = 5.e-4*mean(funcHi2)
-   stepB = 1.e-4*mean(funcHi2)
-#   print ('errFitAB: mean(funcHi2) = %e, stepA = %e, stepB = %e'  % (mean(funcHi2),stepA,stepB))
+   stepA = 0.001
    for i in range(nPar2):
+      indx = 0
       for n in range(nPar1):
-         log10argX[n,i] = np.log10(argX[n,i])
-         log10funcY[n,i] = np.log10(funcY[n,i])
-         sumArgX[i] += log10argX[n,i]
-         sumArgX2[i] += log10argX[n,i]**2
+         if ((argX[n,i] > 0.) and (funcY[n,i] > 0.)):
+            log10argX[indx,i] = np.log10(argX[n,i])
+            log10funcY[indx,i] = np.log10(funcY[n,i])
+            sumArgX[i] += log10argX[indx,i]
+            sumArgX2[i] += log10argX[indx,i]**2
+            indx += 1
+         else:
+            print ('i = %d, n = %d: rhoInit = %e, deltaPz_m = %e' % (i,n,argX[n,i],funcY[n,i]))	 
+      maxIndx[i] = int(indx)
+#    print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
 
-   posErrFit = np.zeros(nPar2)
+   posErrFitA = np.zeros(nPar2)
    for i in range(nPar2):
       k = 0
       deltaFuncHi2 = 0.
       while (deltaFuncHi2 < 1.):
          k += 1 
          if k > 2000:
-            print ('Break in errFitAB (Fit funcY: case %d); positive error) for %d' % (errVar,i))
+            print ('Break (Fit A for funcY; positive error) for %d' % i)
             break
 #         print ('i=%d: fitParamtr = %e, funcHi2 = %e' % (i,fitParamtr[i], funcHi2[i]))
-         curFitA = fitA[i]
-         if (int(errVar) == 1):
-            curFitA = fitA[i] + k*stepA
+         curFitA = fitA[i] + k*stepA
          curFuncHi2 = 0.
          factorA = math.pow(10.,curFitA)
-         curFitB = fitB[i]
-         if (int(errVar) == 2):
-            curFitB = fitB[i] + k*stepB
-         curFuncHi2 = 0.
-         for n in range(nPar1):
+         for n in range(int(maxIndx[i])):
             curArgX = math.pow(10.,log10argX[n,i])
-            curFuncYfit = factorA*math.pow(curArgX,curFitB)
+            curFuncYfit = factorA*math.pow(curArgX,fitB[i])
             curFuncHi2 += (np.log10(abs(curFuncYfit)) - log10funcY[n,i])**2 
-         deltaFuncHi2 = curFuncHi2 - funcHi2[i]
-      if (int(errVar) == 1):	  
-         posErrFit[i] = abs(curFitA - fitA[i])
-      else:
-         posErrFit[i] = abs(curFitB - fitB[i])
+         deltaFuncHi2 = curFuncHi2 - funcHi2[i] 
+      posErrFitA[i] = abs(curFitA - fitA[i])
       func1sigma2 = funcHi2[i]/(nPar2-3)
-      if (int(errVar) == 1):	  
-         fitSigma = np.sqrt(sumArgX2[i]/(nPar2*sumArgX2[i]-sumArgX[i]**2)*func1sigma2)
-      else:
-         fitSigma = np.sqrt(nPar2/(nPar2*sumArgX2[i]-sumArgX[i]**2)*func1sigma2) 
-      if (int(errType) == 2):
-         posErrFit[i] = fitSigma
-#      if (int(errVar) == 1):	  
-#         print ('i=%d: fitA  = %e + %e (%e), funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
-#                (i,fitA[i],posErrFit[i],fitSigma,funcHi2[i],k,curFuncHi2))
-#      else:
-#         print ('i=%d: fitB  = %e + %e (%e), funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
-#                (i,fitB[i],posErrFit[i],fitSigma,funcHi2[i],k,curFuncHi2))
+      fitAsigma = np.sqrt(sumArgX2[i]/(nPar2*sumArgX2[i]-sumArgX[i]**2)*func1sigma2)
+      print ('i=%d: fitA = %e + %e (%e), funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
+             (i,fitA[i],posErrFitA[i],fitAsigma,funcHi2[i],k,curFuncHi2))
 
-   negErrFit = np.zeros(nPar2)
+   negErrFitA = np.zeros(nPar2)
    for i in range(nPar2):
       k = 0
       deltaFuncHi2 = 0.
       while (deltaFuncHi2 < 1.):
          k += 1 
          if k > 2000:
-            print ('Break in errFitAB (Fit funcY: case %d); negative error) for %d' % (errVar,i))
+            print ('Break (Fit A for funcY; negative error) for %d' % i)
             break
-         curFitA = fitA[i]
-         if (int(errVar) == 1):
-            curFitA = fitA[i] - k*stepA
-         factorA = math.pow(10.,curFitA)
-         curFitB = fitB[i]
-         if (int(errVar) == 2):
-            curFitB = fitB[i] - k*stepB
+         curFitA = fitA[i] - k*stepA
          curFuncHi2 = 0.
-         for n in range(nPar1):
+         factorA = math.pow(10.,curFitA)
+         for n in range(int(maxIndx[i])):
+            curArgX = math.pow(10.,log10argX[n,i])
+            curFuncYfit = factorA*math.pow(curArgX,fitB[i])
+            curFuncHi2 += (np.log10(abs(curFuncYfit)) - log10funcY[n,i])**2 
+         deltaFuncHi2 = curFuncHi2 - funcHi2[i] 
+      negErrFitA[i] = abs(curFitA - fitA[i])
+#      print ('i=%d: fitA = %e - %e , funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
+#             (i,fitA[i],negErrFitA[i],funcHi2[i],k,curFuncHi2))
+   return posErrFitA,negErrFitA
+
+#
+# +-Errors for fitied parameter fitA from second functional:
+#
+def errFitAfunc2(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2):
+
+   maxIndx = np.zeros(nPar2)
+   log10argX = np.zeros((nPar1,nPar2))
+   log10funcY = np.zeros((nPar1,nPar2))
+
+   stepA = 0.01
+   for i in range(nPar2):
+      indx = 0
+      for n in range(nPar1):
+         if ((argX[n,i] > 0.) and (funcY[n,i] > 0.)):
+            log10argX[indx,i] = np.log10(argX[n,i])
+            log10funcY[indx,i] = np.log10(funcY[n,i])
+            indx += 1
+         else:
+            print ('i = %d, n = %d: rhoInit = %e, deltaPz_m = %e' % (i,n,argX[n,i],funcY[n,i]))	 
+      maxIndx[i] = int(indx)
+#    print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
+
+   posErrFitA = np.zeros(nPar2)
+   for i in range(nPar2):
+      k = 0
+      deltaFuncHi2 = 0.
+      while (deltaFuncHi2 < 1.):
+         k += 1 
+         if k > 2000:
+            print ('Break (Fit A for funcY; positive error) for %d' % i)
+            break
+#         print ('i=%d: fitParamtr = %e, funcHi2 = %e' % (i,fitParamtr[i], funcHi2[i]))
+         curFitA = fitA[i] + k*stepA
+         curFuncHi2 = 0.
+         factorA = math.pow(10.,curFitA)
+         for n in range(int(maxIndx[i])):
+            curArgX = math.pow(10.,log10argX[n,i])
+            curFuncYfit = factorA*math.pow(curArgX,fitB[i])
+            curFuncHi2 += (1.-np.log10(abs(curFuncYfit)) / log10funcY[n,i])**2 
+         deltaFuncHi2 = curFuncHi2 - funcHi2[i] 
+      posErrFitA[i] = abs(curFitA - fitA[i])
+#      print ('i=%d: fitA = %e + %e , funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
+#             (i,fitA[i],posErrFitA[i],funcHi2[i],k,curFuncHi2))
+
+   negErrFitA = np.zeros(nPar2)
+   for i in range(nPar2):
+      k = 0
+      deltaFuncHi2 = 0.
+      while (deltaFuncHi2 < 1.):
+         k += 1 
+         if k > 2000:
+            print ('Break (Fit A for funcY; negative error) for %d' % i)
+            break
+         curFitA = fitA[i] - k*stepA
+         curFuncHi2 = 0.
+         factorA = math.pow(10.,curFitA)
+         for n in range(int(maxIndx[i])):
+            curArgX = math.pow(10.,log10argX[n,i])
+            curFuncYfit = factorA*math.pow(curArgX,fitB[i])
+            curFuncHi2 += (1.-np.log10(abs(curFuncYfit)) / log10funcY[n,i])**2 
+         deltaFuncHi2 = curFuncHi2 - funcHi2[i] 
+      negErrFitA[i] = abs(curFitA - fitA[i])
+#      print ('i=%d: fitA = %e - %e , funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
+#             (i,fitA[i],negErrFitA[i],funcHi2[i],k,curFuncHi2))
+   return posErrFitA,negErrFitA
+
+#
+# +-Errors for fitied parameter fitB from first functional:
+#
+def errFitBfunc1(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2):
+
+   maxIndx = np.zeros(nPar2)
+   log10argX = np.zeros((nPar1,nPar2))
+   log10funcY = np.zeros((nPar1,nPar2))
+   sumArgX = np.zeros(nPar2)
+   sumArgX2 = np.zeros(nPar2)
+
+   stepB = 0.00025
+   for i in range(nPar2):
+      indx = 0
+      for n in range(nPar1):
+         if ((argX[n,i] > 0.) and (funcY[n,i] > 0.)):
+            log10argX[indx,i] = np.log10(argX[n,i])
+            log10funcY[indx,i] = np.log10(funcY[n,i])
+            sumArgX[i] += log10argX[indx,i]
+            sumArgX2[i] += log10argX[indx,i]**2
+            indx += 1
+         else:
+            print ('i = %d, n = %d: rhoInit = %e, deltaPz_m = %e' % (i,n,argX[n,i],funcY[n,i]))	 
+      maxIndx[i] = int(indx)
+#    print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
+
+   posErrFitB = np.zeros(nPar2)
+   for i in range(nPar2):
+      k = 0
+      deltaFuncHi2 = 0.
+      factorA = math.pow(10.,fitA[i])
+      while (deltaFuncHi2 < 1.):
+         k += 1 
+         if k > 2000:
+            print ('Break (Fit A for funcY; positive error) for %d' % i)
+            break
+#         print ('i=%d: fitParamtr = %e, funcHi2 = %e' % (i,fitParamtr[i], funcHi2[i]))
+         curFitB = fitB[i] + k*stepB
+         curFuncHi2 = 0.
+         for n in range(int(maxIndx[i])):
             curArgX = math.pow(10.,log10argX[n,i])
             curFuncYfit = factorA*math.pow(curArgX,curFitB)
             curFuncHi2 += (np.log10(abs(curFuncYfit)) - log10funcY[n,i])**2 
          deltaFuncHi2 = curFuncHi2 - funcHi2[i] 
-      if (int(errVar) == 1):	  
-         negErrFit[i] = abs(curFitA - fitA[i])
-      else:
-         negErrFit[i] = abs(curFitB - fitB[i])
-      if (int(errType) == 2):
-         negErrFit[i] = posErrFit[i]
-#      if (errVar == 1):	  
-#         print ('i=%d: fitA  = %e - %e, funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
-#                (i,fitA[i],posErrFit[i],funcHi2[i],k,curFuncHi2))
-#      else:
-#         print ('i=%d: fitB  = %e - %e, funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
-#                (i,fitB[i],negErrFit[i],funcHi2[i],k,curFuncHi2))
-   return posErrFit,negErrFit
+      posErrFitB[i] = abs(curFitB - fitB[i])
+      func1sigma2 = funcHi2[i]/(nPar2-3)
+      fitBsigma = np.sqrt(nPar2/(nPar2*sumArgX2[i]-sumArgX[i]**2)*func1sigma2)
+      print ('i=%d: fitB = %e + %e (%e), funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
+             (i,fitB[i],posErrFitB[i],fitBsigma,funcHi2[i],k,curFuncHi2))
 
+   negErrFitB = np.zeros(nPar2)
+   for i in range(nPar2):
+      k = 0
+      deltaFuncHi2 = 0.
+      factorA = math.pow(10.,fitA[i])
+      while (deltaFuncHi2 < 1.):
+         k += 1 
+         if k > 2000:
+            print ('Break (Fit B for funcY; negative error) for %d' % i)
+            break
+         curFitB = fitB[i] - k*stepB
+         curFuncHi2 = 0.
+         for n in range(int(maxIndx[i])):
+            curArgX = math.pow(10.,log10argX[n,i])
+            curFuncYfit = factorA*math.pow(curArgX,curFitB)
+            curFuncHi2 += (np.log10(abs(curFuncYfit)) - log10funcY[n,i])**2 
+         deltaFuncHi2 = curFuncHi2 - funcHi2[i] 
+      negErrFitB[i] = abs(curFitB - fitB[i])
+#      print ('i=%d: fitB = %e - %e , funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
+#             (i,fitB[i],negErrFitB[i],funcHi2[i],k,curFuncHi2))
+   return posErrFitB,negErrFitB
+
+#
+# +-Errors for fitied parameter fitB from second functional:
+#
+def errFitBfunc2(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2):
+
+   maxIndx = np.zeros(nPar2)
+   log10argX = np.zeros((nPar1,nPar2))
+   log10funcY = np.zeros((nPar1,nPar2))
+
+   stepB = 0.05
+   for i in range(nPar2):
+      indx = 0
+      for n in range(nPar1):
+         if ((argX[n,i] > 0.) and (funcY[n,i] > 0.)):
+            log10argX[indx,i] = np.log10(argX[n,i])
+            log10funcY[indx,i] = np.log10(funcY[n,i])
+            indx += 1
+         else:
+            print ('i = %d, n = %d: rhoInit = %e, deltaPz_m = %e' % (i,n,argX[n,i],funcY[n,i]))	 
+      maxIndx[i] = int(indx)
+#    print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
+
+   posErrFitB = np.zeros(nPar2)
+   for i in range(nPar2):
+      k = 0
+      deltaFuncHi2 = 0.
+      factorA = math.pow(10.,fitA[i])
+      while (deltaFuncHi2 < 1.):
+         k += 1 
+         if k > 2000:
+            print ('Break (Fit A for funcY; positive error) for %d' % i)
+            break
+#         print ('i=%d: fitParamtr = %e, funcHi2 = %e' % (i,fitParamtr[i], funcHi2[i]))
+         curFitB = fitB[i] + k*stepB
+         curFuncHi2 = 0.
+         for n in range(int(maxIndx[i])):
+            curArgX = math.pow(10.,log10argX[n,i])
+            curFuncYfit = factorA*math.pow(curArgX,curFitB)
+            curFuncHi2 += (1.-np.log10(abs(curFuncYfit)) / log10funcY[n,i])**2 
+         deltaFuncHi2 = curFuncHi2 - funcHi2[i] 
+      posErrFitB[i] = abs(curFitB - fitB[i])
+#      print ('i=%d: fitB = %e + %e , funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
+#             (i,fitB[i],posErrFitB[i],funcHi2[i],k,curFuncHi2))
+
+   negErrFitB = np.zeros(nPar2)
+   for i in range(nPar2):
+      k = 0
+      deltaFuncHi2 = 0.
+      factorA = math.pow(10.,fitA[i])
+      while (deltaFuncHi2 < 1.):
+         k += 1 
+         if k > 2000:
+            print ('Break (Fit B for funcY; negative error) for %d' % i)
+            break
+         curFitB = fitB[i] - k*stepB
+         curFuncHi2 = 0.
+         for n in range(int(maxIndx[i])):
+            curArgX = math.pow(10.,log10argX[n,i])
+            curFuncYfit = factorA*math.pow(curArgX,curFitB)
+            curFuncHi2 += (1.-np.log10(abs(curFuncYfit)) / log10funcY[n,i])**2 
+         deltaFuncHi2 = curFuncHi2 - funcHi2[i] 
+      negErrFitB[i] = abs(curFitB - fitB[i])
+#      print ('i=%d: fitB = %e - %e , funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
+#             (i,fitB[i],negErrFitB[i],funcHi2[i],k,curFuncHi2))
+   return posErrFitB,negErrFitB
+
+### stepB2_vz_pz = 0.001
+### dPosB2_vz_pz = np.zeros(nVion)
+### for i in range(nVion):
+### #    print ('i=%d: fitB2_vz_pz = %e, funcHi2_2_vz_pz = %e' % (i,fitB2_vz_pz[i], funcHi2_2_vz_pz[i]))
+###    factorA2_vz_pz = math.pow(10.,fitA2_vz_pz[i])
+###    deltaFuncHi2_2_vz_pz = 0.
+###    k = 0
+###    curFuncHi2_2_vz_pz = 0.
+###    while (deltaFuncHi2_2_vz_pz < 1.):
+###       k += 1 
+###       if k > 2000:
+###          print ('Break (Fit B for ionVz_dPz_m; positive) for %d' % i)
+###          break
+###       curFitB2_vz_pz = fitB2_vz_pz[i] + k*stepB2_vz_pz
+###       for n in range(int(maxIndx[i])):
+###          rhoInitFit2_vz_pz[n,i] = math.pow(10.,log10rhoInit[n,i])
+###          curIonVz_Pz_m_Fit2 = factorA2_vz_pz*math.pow(rhoInitFit2_vz_pz[n,i],curFitB2_vz_pz)
+###          curFuncHi2_2_vz_pz += (1.-np.log10(abs(curIonVz_Pz_m_Fit2))/ \
+###                                 np.log10(abs(ionVz_dPz_m[n,i])))**2 
+###       deltaFuncHi2_2_vz_pz = curFuncHi2_2_vz_pz - funcHi2_2_vz_pz[i] 
+### #       if i == 0:
+### #          print ('    step %2d ==> curfitB2_vz_pz = %e, curHi2_2_vz_pz = %e, deltaFuncHi2_2_vz_pz=%e' % \
+### #                 (k,curFitB2_vz_pz,curFuncHi2_2_vz_pz,deltaFuncHi2_2_vz_pz))
+###    dPosB2_vz_pz[i] = abs(curFitB2_pz - fitB2_pz[i])
+### #    print('Result:dPosB2_vz_pz(%d) = %e' % (i,dPosB2_vz_pz[i])) 
+### #   print ('i=%d: fitB2_vz_pz = %e + %e , funcHi2_2_vz_pz = %e (for %d steps funcHi2_2_vz_pz = %e)' % \
+### #          (i,fitB2_vz_pz[i],dPosB2_vz_pz[i],funcHi2_2_vz_pz[i],k,curFuncHi2_2_vz_pz))
 
 sphereNe=3.
 R_e=math.pow(sphereNe/n_e,1./3)                                     # cm
@@ -696,9 +1026,9 @@ if (plotFigureFlag == 0):
                ('$N_{Larm}=$%2d' % larmorTurnsMin[1]), \
                ('$N_{Larm}=$%2d' % larmorTurnsMin[2]), \
                ('$N_{Larm}=$%2d' % larmorTurnsMin[3])],loc='lower center',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig10.savefig('picturesCMA/correctedRmax_fig10cma.png')  
-      print ('File "picturesCMA/correctedRmax_fig10cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig10.savefig('picturesCMA/correctedRmax_fig10cma.png')  
+   print ('File "picturesCMA/correctedRmax_fig10cma.png" is written')   
 
 # plt.show()
 
@@ -734,9 +1064,9 @@ if (plotFigureFlag == 0):
    plt.text(4.5e-5,4.8e-3,'$R_{Pass}$ $for$ $T_{e||}=0$',color='k',fontsize=16)
    plt.text(8.3e-5,4.0,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
             color='m',fontsize=16)
-   if (saveFilesFlag == 1):
-      fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.png')    
-      print ('File "picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig209.savefig('picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.png')    
+   print ('File "picturesCMA/rDebye_rLikeDebye_rPass_fig209cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig3151=plt.figure (3151)
@@ -764,9 +1094,9 @@ if (plotFigureFlag == 0):
    plt.text(1.e-4,10.e-4,'Adiabatic or Fast Collisions',color='r',fontsize=20)
    plt.text(2.25e-5,.275,'Collisions are Screened',color='r',fontsize=20)
    plt.text(1.6e-5,1.e-3,'$ \cong 20\cdot R_{Crit}$',color='k',fontsize=16)
-   if (saveFilesFlag == 1):
-      fig3151.savefig('picturesCMA_v7/impctPrmtr_fig3151cma.png')    
-      print ('File "picturesCMA_v7/impctPrmtr_fig3151cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig3151.savefig('picturesCMA/impctPrmtr_fig3151cma.png')    
+   print ('File "picturesCMA/impctPrmtr_fig3151cma.png" is written')   
 
 #
 # Coulomb logarithm evaluation:
@@ -790,9 +1120,9 @@ if (plotFigureFlag == 0):
    plt.text(1.6e-3,5.,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
    plt.text(3.4e-5,5.,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig3155.savefig('picturesCMA_v7/coulombLogrthm_fig3155cma.png')    
-      print ('File "picturesCMA_v7/coulombLogrthm_fig3155cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig3155.savefig('picturesCMA/coulombLogrthm_fig3155cma.png')    
+   print ('File "picturesCMA/coulombLogrthm_fig3155cma.png" is written')   
 
 # plt.show()
 
@@ -845,7 +1175,7 @@ arrayA=np.zeros(2*totalPoints)
 arrayB=np.zeros(2*totalPoints)     
 bCrrnt_c = np.zeros(2*totalPoints)
 #
-# Variables for testing:
+# Variables for resting:
 #
 b_gc = np.zeros(totalPoints)
 action_gc = np.zeros(totalPoints)
@@ -1221,8 +1551,8 @@ if (plotFigureFlag == 0):
    plt.xlim([-5000,indxTestMax+5000])
    plt.grid(True)
 if (saveFilesFlag == 1):
-   fig2020.savefig('picturesCMA_v7/magnusExpansion_C1_fig2020cma.png')    
-   print ('File "picturesCMA_v7/magnusExpansion_C1_fig2020cma.png" is written')   
+   fig2020.savefig('picturesCMA/magnusExpansion_C1_fig2020cma.png')    
+   print ('File "picturesCMA/magnusExpansion_C1_fig2020cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig2030=plt.figure (2030)
@@ -1233,9 +1563,9 @@ if (plotFigureFlag == 0):
              color='m',fontsize=14)
    plt.xlim([-5000,indxTestMax+5000])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig2030.savefig('picturesCMA_v7/magnusExpansion_C2_fig2030cma.png')    
-      print ('File "picturesCMA_v7/magnusExpansion_C2_fig2030cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig2030.savefig('picturesCMA/magnusExpansion_C2_fig2030cma.png')    
+   print ('File "picturesCMA/magnusExpansion_C2_fig2030cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig2040=plt.figure (2040)
@@ -1245,9 +1575,9 @@ if (plotFigureFlag == 0):
    plt.title('$C3=V_{ix}^2+V_{iy}^2+(V_{iz}-V_{ez})^2$',color='m',fontsize=16)
    plt.xlim([-5000,indxTestMax+5000])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig2040.savefig('picturesCMA_v7/magnusExpansion_C3_fig2040cma.png')    
-      print ('File "picturesCMA_v7/magnusExpansion_C3_fig2040cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig2040.savefig('picturesCMA/magnusExpansion_C3_fig2040cma.png')    
+   print ('File "picturesCMA/magnusExpansion_C3_fig2040cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig2025=plt.figure (2025)
@@ -1257,9 +1587,6 @@ if (plotFigureFlag == 0):
    plt.title('$D1=(2C_3\cdot \Delta t+C_2)/b_{ME}$ $-$ $C_2/C_1^{0.5}$',color='m',fontsize=16)
    plt.xlim([-5000,indxTestMax+5000])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig2025.savefig('picturesCMA_v7/magnusExpansion_D1_fig2025cma.png')    
-      print ('File "picturesCMA_v7/magnusExpansion_D1_fig2025cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig2035=plt.figure (2035)
@@ -1269,11 +1596,7 @@ if (plotFigureFlag == 0):
    plt.title('$D2=(2C_1+C_2\cdot \Delta t)/b_{ME}$ $-$ $2C_1^{0.5}$',color='m',fontsize=16)
    plt.xlim([-5000,indxTestMax+5000])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig2035.savefig('picturesCMA_v7/magnusExpansion_D2_fig2035cma.png')    
-      print ('File "picturesCMA_v7/magnusExpansion_D2_fig2035cma.png" is written')   
 
-if (plotFigureFlag == 0):   
    fig2050=plt.figure (2050)
    plt.plot(nn,b_ME[0:indxTestMax-1],'.r')
    plt.xlabel('Points of Tracks',color='m',fontsize=16)
@@ -1284,9 +1607,9 @@ if (plotFigureFlag == 0):
    plt.text(33000,.36,('$(\Delta t=%8.2e$ $s)$' % timeStep_c),color='m',fontsize=16)
    plt.xlim([-5000,indxTestMax+5000])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig2050.savefig('picturesCMA_v7/particleDistance_me_fig2050cma.png')    
-      print ('File "picturesCMA_v7/particleDistance_me_fig2050cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig2050.savefig('picturesCMA/particleDistance_me_fig2050cma.png')    
+   print ('File "picturesCMA/particleDistance_me_fig2050cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig2055=plt.figure (2055)
@@ -1299,9 +1622,9 @@ if (plotFigureFlag == 0):
             color='m',fontsize=16)
    plt.xlim([-5000,indxTestMax+5000])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig2055.savefig('picturesCMA/particleDistance_gc_fig2055cma.png')    
-      print ('File "picturesCMA/particleDistance_gc_fig2055cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig2055.savefig('picturesCMA/particleDistance_gc_fig2055cma.png')    
+   print ('File "picturesCMA/particleDistance_gc_fig2055cma.png" is written')   
 
 #
 # Comparison of bCrrnt_c from "Guiding Center" with bTest from
@@ -1345,9 +1668,9 @@ if (plotFigureFlag == 0):
    plt.xlim([-5000,indxTestMax+5000])
    # plt.ylim([.9*min(b_gc_ME_rel),1.1*max(b_gc_ME_rel)])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig2070.savefig('picturesCMA_v7/particleDistanceComprsn_gc_me_fig2070cma.png')    
-      print ('File "picturesCMA_v7/particleDistanceComprsn_gc_me_fig2070cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig2070.savefig('picturesCMA/particleDistanceComprsn_gc_me_fig2070cma.png')    
+   print ('File "picturesCMA/particleDistanceComprsn_gc_me_fig2070cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig2080=plt.figure (2080)
@@ -1359,9 +1682,9 @@ if (plotFigureFlag == 0):
    plt.xlim([-5000,indxTestMax+5000])
    plt.ylim([.99*min(actn_gc_ME_rel),1.01*max(actn_gc_ME_rel)])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig2080.savefig('picturesCMA_v7/actionComprsn_gc_me_fig2080cma.png')    
-      print ('File "picturesCMA_v7/actionComprsn_gc_me_fig2080cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig2080.savefig('picturesCMA/actionComprsn_gc_me_fig2080cma.png')    
+   print ('File "picturesCMA/actionComprsn_gc_me_fig2080cma.png" is written')   
 
 
 nn=np.arange(0,nVion*nImpctPrmtr,1)
@@ -1380,9 +1703,9 @@ if (plotFigureFlag == 0):
    plt.xlim([-100,nVion*nImpctPrmtr+100])
    plt.ylim([.9*min(halfLintrTest),1.1*max(halfLintrTest)])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig2090.savefig('picturesCMA/totalLengthIntrsctn_fig2090cma.png')    
-      print ('File "picturesCMA/totalLengthIntrsctn_fig2090cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig2090.savefig('picturesCMA/totalLengthIntrsctn_fig2090cma.png')    
+   print ('File "picturesCMA/totalLengthIntrsctn_fig2090cma.png" is written')   
 
 # plt.show()
 
@@ -1618,6 +1941,75 @@ for i in range(nVion):
    maxIndx[i] = int(indx)
 #   print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
 
+#
+# First minimized functional:
+#
+# Func1 = {log10(|deltaEnrgIon_m|) - [fitB*log10(rho) + fitA]}^2
+#
+sumRho = np.zeros(nVion)
+sumRho2 = np.zeros(nVion)
+sumEnrg = np.zeros(nVion) 
+sumRhoEnrg = np.zeros(nVion)
+for i in range(nVion):
+   for n in range(int(maxIndx[i])):
+      sumRho[i] += log10rhoInit[n,i]
+      sumRho2[i] += log10rhoInit[n,i]**2
+      sumEnrg[i] += log10deltaEnrgIon_m[n,i]
+      sumRhoEnrg[i] += log10rhoInit[n,i]*log10deltaEnrgIon_m[n,i]
+
+   delta = maxIndx[i]*sumRho2[i]-sumRho[i]**2
+   fitA1[i] = (sumRho2[i]*sumEnrg[i]-sumRho[i]*sumRhoEnrg[i])/delta
+   fitB1[i] = (maxIndx[i]*sumRhoEnrg[i]-sumRho[i]*sumEnrg[i])/delta
+#    print ('fitA1(%d) = %e, fitB1(%d) = %e' % (i,fitA1[i],i,fitB1[i]))
+
+rhoInitFit1 = np.zeros((int(maxIndx[0]),nVion))
+deltaEnrgIon_m_Fit1 = np.zeros((int(maxIndx[0]),nVion))
+funcHi2_1 = np.zeros(nVion)
+for i in range(nVion):
+   factorA = math.pow(10.,fitA1[i])
+   for n in range(int(maxIndx[i])):
+      rhoInitFit1[n,i] = math.pow(10.,log10rhoInit[n,i])
+      deltaEnrgIon_m_Fit1[n,i] = factorA*math.pow(rhoInitFit1[n,i],fitB1[i])
+      funcHi2_1[i] += (np.log10(abs(deltaEnrgIon_m[n,i])-\
+                       np.log10(deltaEnrgIon_m_Fit1[n,i])))**2  
+#    print ('i=%2d: fitA1 = %e, fitB1 = %e, hi2_1 = %e' % \
+#          (i,fitA1[i],fitB1[i],funcHi2_1[i]))
+
+#
+# Second minimized functional:
+#
+# Func2 = {1 - [fitB*log10(rho) + fitA]/log10(|deltaEnrgIon_m|)}^2
+#
+sumRhoEnrg = np.zeros(nVion)
+sumRhoEnrg2 = np.zeros(nVion)
+sumRho2Enrg2 = np.zeros(nVion)
+sumEnrg = np.zeros(nVion) 
+sumEnrg2 = np.zeros(nVion) 
+for i in range(nVion):
+   for n in range(int(maxIndx[i])):
+      sumRhoEnrg[i] += log10rhoInit[n,i]/log10deltaEnrgIon_m[n,i]
+      sumRhoEnrg2[i] += log10rhoInit[n,i]/log10deltaEnrgIon_m[n,i]**2
+      sumRho2Enrg2[i] += (log10rhoInit[n,i]/log10deltaEnrgIon_m[n,i])**2
+      sumEnrg[i] += 1./log10deltaEnrgIon_m[n,i]
+      sumEnrg2[i] += 1./log10deltaEnrgIon_m[n,i]**2
+
+   delta = sumEnrg2[i]*sumRho2Enrg2[i]-sumRhoEnrg2[i]**2
+   fitA2[i] = (sumRho2Enrg2[i]*sumEnrg[i]-sumRhoEnrg[i]*sumRhoEnrg2[i])/delta
+   fitB2[i] = (sumEnrg2[i]*sumRhoEnrg[i]-sumRhoEnrg2[i]*sumEnrg[i])/delta
+#    print ('fitA2(%d) = %e, fitB2(%d) = %e' % (i,fitA2[i],i,fitB2[i]))
+
+rhoInitFit2 = np.zeros((int(maxIndx[0]),nVion))
+deltaEnrgIon_m_Fit2 = np.zeros((int(maxIndx[0]),nVion))
+funcHi2_2 = np.zeros(nVion)
+for i in range(nVion):
+   factorA = math.pow(10.,fitA2[i])
+   for n in range(int(maxIndx[i])):
+      rhoInitFit2[n,i] = math.pow(10.,log10rhoInit[n,i])
+      deltaEnrgIon_m_Fit2[n,i] = factorA*math.pow(rhoInitFit2[n,i],fitB2[i])
+      funcHi2_2[i] += (1.-np.log10(deltaEnrgIon_m_Fit2[n,i])/ \
+                      np.log10(abs(deltaEnrgIon_m[n,i])))**2  
+#    print ('i=%2d: fitA2 = %e, fitB2 = %e, hi2_2 = %e' % \
+#          (i,fitA2[i],fitB2[i],funcHi2_2[i]))
 
 #
 # Analytical Integration of the fitted dependence 10**A*rho**B.
@@ -1640,11 +2032,11 @@ for i in range(nVion):
 #   frctnForce_cAI[i] = 2.*pi*n_e*100.*factorA1/factorB1* \
 #                       (math.pow(impctPrmtrMax_1[i],factorB1)- \
 #                        math.pow(impctPrmtrMin,factorB1))             # eV/m
-###   factorA2 = math.pow(10.,fitA2[i])
-###   factorB2 = 2.+fitB2[i]
-###   frctnForce_mAI[i] = 2.*pi*n_e*100.*factorA2/factorB2* \
-###                       (math.pow(impctPrmtrMax[i],factorB2)- \
-###                        math.pow(impctPrmtrMin,factorB2))             # eV/m  
+   factorA2 = math.pow(10.,fitA2[i])
+   factorB2 = 2.+fitB2[i]
+   frctnForce_mAI[i] = 2.*pi*n_e*100.*factorA2/factorB2* \
+                       (math.pow(impctPrmtrMax[i],factorB2)- \
+                        math.pow(impctPrmtrMin,factorB2))             # eV/m  
 # For checking:
 #   frctnForce_mAI[i] = 2.*pi*n_e*100.factorA2/factorB2* \
 #                       (math.pow(impctPrmtrMax_1[i],factorB2)- \
@@ -1704,26 +2096,238 @@ for k in range(nRhoSlctd):
 # as deltaPz_m,  i.e. eV
 #
 
-fitA_pz = np.zeros(nVion)            # dimensionless 
-fitB_pz = np.zeros(nVion)            # dimensionless
-rhoInitFit_pz = np.zeros(nVion)
-deltaPz_m_fit = np.zeros(nVion)
-fitA_pz,fitB_pz,funcHi2_pz,rhoInitFit_pz, deltaPz_m_fit = \
-fitting(nImpctPrmtr,nVion,rhoInit,deltaPz_m)
+maxIndx = np.zeros(nVion)
+fitA1_pz = np.zeros(nVion)            # dimensionless 
+fitB1_pz = np.zeros(nVion)            # dimensionless
+fitA2_pz = np.zeros(nVion)            # dimensionless 
+fitB2_pz = np.zeros(nVion)            # dimensionless
 
-dPosA_pz = np.zeros(nVion)
-dNegA_pz = np.zeros(nVion)
-dPosA_pz,dNegA_pz = \
-errFitAB(nImpctPrmtr,nVion,rhoInit,deltaPz_m_fit,fitA_pz,fitB_pz,funcHi2_pz,1,2)
-dPosB_pz = np.zeros(nVion)
-dNegB_pz = np.zeros(nVion)
-dPosB_pz,dNegB_pz = \
-errFitAB(nImpctPrmtr,nVion,rhoInit,deltaPz_m_fit,fitA_pz,fitB_pz,funcHi2_pz,2,2)
-# print ('Fitting fordeltaPz_m:')
+#
+# Preparing of the initial data:
+# 
+log10rhoInit = np.zeros((nImpctPrmtr,nVion))
+log10deltaPz_m = np.zeros((nImpctPrmtr,nVion))
+
+timeStart = os.times()
+for i in range(nVion):
+   indx = 0
+   for n in range(nImpctPrmtr):
+      if ((rhoInit[n,i] > 0.) and (deltaPz_m[n,i] > 0.)):
+         log10rhoInit[indx,i] = np.log10(rhoInit[n,i])
+         log10deltaPz_m[indx,i] = np.log10(deltaPz_m[n,i])
+         indx += 1
+      else:
+         print ('i = %d, n = %d: rhoInit = %e, deltaPz_m = %e' % \
+	        (i,n,rhoInit[n,i],deltaPz_m[n,i]))	 
+   maxIndx[i] = int(indx)
+#    print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
+
+#
+# First minimized functional:
+#
+# Func1_pz = {log10(deltaPz_m) - [fitB1_pz*log10(rho) + fitA1_pz]}^2
+#
+sumRho = np.zeros(nVion)
+sumRho2 = np.zeros(nVion)
+sumPz = np.zeros(nVion) 
+sumRhoPz= np.zeros(nVion)
+for i in range(nVion):
+   for n in range(int(maxIndx[i])):
+      sumRho[i] += log10rhoInit[n,i]
+      sumRho2[i] += log10rhoInit[n,i]**2
+      sumPz[i] += log10deltaPz_m[n,i]
+      sumRhoPz[i] += log10rhoInit[n,i]*log10deltaPz_m[n,i]
+
+   delta = maxIndx[i]*sumRho2[i]-sumRho[i]**2
+   fitA1_pz[i] = (sumRho2[i]*sumPz[i]-sumRho[i]*sumRhoPz[i])/delta
+   fitB1_pz[i] = (maxIndx[i]*sumRhoPz[i]-sumRho[i]*sumPz[i])/delta
+#    print ('fitA1_pz(%d) = %e, fitB1_pz(%d) = %e' % (i,fitA1_pz[i],i,fitB1_pz[i]))
+
+rhoInitFit1_pz = np.zeros((int(maxIndx[0]),nVion))
+deltaPz_m_Fit1 = np.zeros((int(maxIndx[0]),nVion))
+funcHi2_1_pz = np.zeros(nVion)
+for i in range(nVion):
+   factorA1_pz = math.pow(10.,fitA1_pz[i])
+   for n in range(int(maxIndx[i])):
+      rhoInitFit1_pz[n,i] = math.pow(10.,log10rhoInit[n,i])
+      deltaPz_m_Fit1[n,i] = factorA1_pz*math.pow(rhoInitFit1_pz[n,i],fitB1_pz[i])
+      funcHi2_1_pz[i] += (np.log10(abs(deltaPz_m[n,i])-\
+                       np.log10(deltaPz_m_Fit1[n,i])))**2  
+#     print ('i=%2d: fitA1_pz = %e, fitB1_pz = %e, hi2_1 = %e' % \
+#            (i,fitA1_pz[i],fitB1_pz[i],funcHi2_1_pz[i]))
+
+#
+# Second minimized functional:
+#
+# Func2_pz = {1 - [fitB2_pz*log10(rho) + fitA2_pz]/log10(deltaPz_m)}^2
+#
+sumRhoPz = np.zeros(nVion)
+sumRhoPz2 = np.zeros(nVion)
+sumRho2Pz2 = np.zeros(nVion)
+sumPz = np.zeros(nVion) 
+sumPz2 = np.zeros(nVion) 
+for i in range(nVion):
+   for n in range(int(maxIndx[i])):
+      sumRhoPz[i] += log10rhoInit[n,i]/log10deltaPz_m[n,i]
+      sumRhoPz2[i] += log10rhoInit[n,i]/log10deltaPz_m[n,i]**2
+      sumRho2Pz2[i] += (log10rhoInit[n,i]/log10deltaPz_m[n,i])**2
+      sumPz[i] += 1./log10deltaPz_m[n,i]
+      sumPz2[i] += 1./log10deltaPz_m[n,i]**2
+#    print ('%d: sumRhoPz=%e, sumRhoPz2=%e, sumRho2Pz2=%e, sumPz=%e, sumPz2=%e' % \
+#           (i,sumRhoPz[i],sumRhoPz2[i],sumRho2Pz2[i],sumPz[i],sumPz2[i]))
+
+   delta = sumPz2[i]*sumRho2Pz2[i]-sumRhoPz2[i]**2
+   fitA2_pz[i] = (sumRho2Pz2[i]*sumPz[i]-sumRhoPz[i]*sumRhoPz2[i])/delta
+   fitB2_pz[i] = (sumPz2[i]*sumRhoPz[i]-sumRhoPz2[i]*sumPz[i])/delta
+#    print ('   ==>  fitA2_pz(%d) = %e, fitB2_pz(%d) = %e' % (i,fitA2_pz[i],i,fitB2_pz[i]))
+
+rhoInitFit2_pz = np.zeros((int(maxIndx[0]),nVion))
+deltaPz_m_Fit2 = np.zeros((int(maxIndx[0]),nVion))
+funcHi2_2_pz = np.zeros(nVion)
+for i in range(nVion):
+   factorA2_pz = math.pow(10.,fitA2_pz[i])
+   for n in range(int(maxIndx[i])):
+      rhoInitFit2_pz[n,i] = math.pow(10.,log10rhoInit[n,i])
+      deltaPz_m_Fit2[n,i] = factorA2_pz*math.pow(rhoInitFit2_pz[n,i],fitB2_pz[i])
+      funcHi2_2_pz[i] += (1.-np.log10(deltaPz_m_Fit2[n,i])/ \
+                      np.log10(abs(deltaPz_m[n,i])))**2  
+#    print ('i=%2d: fitA2_pz = %e, fitB2_pz = %e, hi2_2_pz = %e' % \
+#           (i,fitA2_pz[i],fitB2_pz[i],funcHi2_2_pz[i]))
+
+#
+# Calculation of +-deltaA for second functional
+#
+stepA2_pz = 0.1
+
+dPosA2_pz = np.zeros(nVion)
+for i in range(nVion):
+   k = 0
+   deltaFuncHi2_2_pz = 0.
+   while (deltaFuncHi2_2_pz < 1.):
+      k += 1 
+      if k > 2000:
+         print ('Break (Fit A for deltaPz; positive) for %d' % i)
+         break
+#    print ('i=%d: fitA2_pz = %e, funcHi2_2_pz = %e' % (i,fitBA_pz[i], funcHi2_2_pz[i]))
+      curFitA2_pz = fitA2_pz[i] + k*stepA2_pz
+      factorA2_pz = math.pow(10.,curFitA2_pz)
+      curFuncHi2_2_pz = 0.
+      for n in range(int(maxIndx[i])):
+         rhoInitFit2_pz[n,i] = math.pow(10.,log10rhoInit[n,i])
+         curDeltaPz_m_Fit2 = factorA2_pz*math.pow(rhoInitFit2_pz[n,i],fitB2_pz[i])
+         curFuncHi2_2_pz += (1.-np.log10(abs(curDeltaPz_m_Fit2))/ \
+                                np.log10(abs(deltaPz_m[n,i])))**2 
+      deltaFuncHi2_2_pz = curFuncHi2_2_pz - funcHi2_2_pz[i] 
+#       if i == 0:
+#          print ('    step %2d ==> curfitB2_pz = %e, curHi2_2_pz = %e, deltaFuncHi2_2_pz=%e' % \
+#                 (k,curFitB2_pz,curFuncHi2_2_pz,deltaFuncHi2_2_pz))
+   dPosA2_pz[i] = abs(curFitA2_pz - fitA2_pz[i])
+#    print('Result:dPosA2_pz(%d) = %e' % (i,dPosA2_pz[i])) 
+#    print ('i=%d: fitA2_pz = %e + %e , funcHi2_2_pz = %e (for %d steps funcHi2_2_pz = %e)' % \
+#           (i,fitA2_pz[i],dPosA2_pz[i],funcHi2_2_pz[i],k,curFuncHi2_2_pz))
+
+dNegA2_pz = np.zeros(nVion)
+for i in range(nVion):
+   deltaFuncHi2_2_pz = 0.
+   k = 0
+   curFuncHi2_2_pz = 0.
+   while (deltaFuncHi2_2_pz < 1.):
+      k += 1 
+      if k > 2000:
+         print ('Break (Fit A for deltaPz; negative) for %d' % i)
+         break
+#    print ('i=%d: fitA2_pz = %e, funcHi2_2_pz = %e' % (i,fitBA_pz[i], funcHi2_2_pz[i]))
+      curFitA2_pz = fitA2_pz[i] - k*stepA2_pz
+      factorA2_pz = math.pow(10.,curFitA2_pz)
+      curFuncHi2_2_pz = 0.
+      for n in range(int(maxIndx[i])):
+         rhoInitFit2_pz[n,i] = math.pow(10.,log10rhoInit[n,i])
+         curDeltaPz_m_Fit2 = factorA2_pz*math.pow(rhoInitFit2_pz[n,i],fitB2_pz[i])
+         curFuncHi2_2_pz += (1.-np.log10(abs(curDeltaPz_m_Fit2))/ \
+                                np.log10(abs(deltaPz_m[n,i])))**2 
+      deltaFuncHi2_2_pz = curFuncHi2_2_pz - funcHi2_2_pz[i] 
+#       if i == 0:
+#          print ('    step %2d ==> curfitB2_pz = %e, curHi2_2_pz = %e, deltaFuncHi2_2_pz=%e' % \
+#                 (k,curFitB2_pz,curFuncHi2_2_pz,deltaFuncHi2_2_pz))
+   dNegA2_pz[i] = abs(curFitA2_pz - fitA2_pz[i])
+#    print('Result:dPosA2_pz(%d) = %e' % (i,dPosA2_pz[i])) 
+#    print ('i=%d: fitA2_pz = %e - %e , funcHi2_2_pz = %e (for %d steps funcHi2_2_pz = %e)' % \
+#           (i,fitA2_pz[i],dNegA2_pz[i],funcHi2_2_pz[i],k,curFuncHi2_2_pz))
+
+# print ('\nResults for exponent A in deltaPz fitting:\n')
 # for i in range(nVion):
-#    print ('i=%2d: fitA_pz = %e (+%e,-%e), fitB_pz = %e (+%e,-%e), hi2_1 = %e'  % \
-#           (i,fitA_pz[i],dPosA_pz[i],dNegA_pz[i], \
-# 	     fitB_pz[i],dPosB_pz[i],dNegB_pz[i],funcHi2_pz[i]))
+#    print ('i=%d: A = %7.3f + %7.3f - %7.3f, (funcHi2_2_pz = %e)' % \
+#           (i,fitA2_pz[i],dPosA2_pz[i],abs(dNegA2_pz[i]),funcHi2_2_pz[i]))
+# print ('Exponent A for deltaPz: <NegError> = %e, <PosError> =%e' % \
+#        (abs(mean(dNegA2_pz)),mean(dPosA2_pz)))
+
+#
+# Calculation of +-deltaB for second functional
+#
+stepB2_pz = 0.05
+dPosB2_pz = np.zeros(nVion)
+for i in range(nVion):
+#    print ('i=%d: fitB2_pz = %e, funcHi2_2_pz = %e' % (i,fitB2_pz[i], funcHi2_2_pz[i]))
+   factorA2_pz = math.pow(10.,fitA2_pz[i])
+   deltaFuncHi2_2_pz = 0.
+   k = 0
+   curFuncHi2_2_pz = 0.
+   while (deltaFuncHi2_2_pz < 1.):
+      k += 1 
+      if k > 2000:
+         print ('Break (Fit B for deltaPz; positive) for %d' % i)
+         break
+      curFitB2_pz = fitB2_pz[i] + k*stepB2_pz
+      curFuncHi2_2_pz = 0.
+      for n in range(int(maxIndx[i])):
+         rhoInitFit2_pz[n,i] = math.pow(10.,log10rhoInit[n,i])
+         curDeltaPz_m_Fit2 = factorA2_pz*math.pow(rhoInitFit2_pz[n,i],curFitB2_pz)
+         curFuncHi2_2_pz += (1.-np.log10(abs(curDeltaPz_m_Fit2))/ \
+                                np.log10(abs(deltaPz_m[n,i])))**2 
+      deltaFuncHi2_2_pz = curFuncHi2_2_pz - funcHi2_2_pz[i] 
+#       if i == 0:
+#          print ('    step %2d ==> curfitB2_pz = %e, curHi2_2_pz = %e, deltaFuncHi2_2_pz=%e' % \
+#                 (k,curFitB2_pz,curFuncHi2_2_pz,deltaFuncHi2_2_pz))
+   dPosB2_pz[i] = abs(curFitB2_pz - fitB2_pz[i])
+#    print('Result:dPosB2_pz(%d) = %e' % (i,dPosB2_pz[i])) 
+#    print ('i=%d: fitB2_pz = %e + %e , funcHi2_2_pz = %e (for %d steps funcHi2_2_pz = %e)' % \
+#           (i,fitB2_pz[i],dPosB2_pz[i],funcHi2_2_pz[i],k,curFuncHi2_2_pz))
+
+dNegB2_pz = np.zeros(nVion)
+for i in range(nVion):
+#    print ('i=%d: fitB2_pz = %e, funcHi2_2_pz = %e' % (i,fitB2_pz[i], funcHi2_2_pz[i]))
+   factorA2_pz = math.pow(10.,fitA2_pz[i])
+   deltaFuncHi2_2_pz = 0.
+   k = 0
+   curFuncHi2_2_pz = 0.
+   while (deltaFuncHi2_2_pz < 1.):
+      k += 1 
+      if k > 2000:
+         print ('Break (Fit B for deltaPz; negative) for %d' % i)
+         break
+      curFitB2_pz = fitB2_pz[i] - k*stepB2_pz
+      curFuncHi2_2_pz = 0.
+      for n in range(int(maxIndx[i])):
+         rhoInitFit2_pz[n,i] = math.pow(10.,log10rhoInit[n,i])
+         curDeltaPz_m_Fit2 = factorA2_pz*math.pow(rhoInitFit2_pz[n,i],curFitB2_pz)
+         curFuncHi2_2_pz += (1.-np.log10(abs(curDeltaPz_m_Fit2))/ \
+                                np.log10(abs(deltaPz_m[n,i])))**2 
+      deltaFuncHi2_2_pz = curFuncHi2_2_pz - funcHi2_2_pz[i] 
+#       if i == 0:
+#          print ('    step %2d ==> curfitB2_pz = %e, curHi2_2_pz = %e, deltaFuncHi2_2_pz=%e' % \
+#                 (k,curFitB2_pz,curFuncHi2_2_pz,deltaFuncHi2_2_pz))
+   dNegB2_pz[i] = abs(curFitB2_pz - fitB2_pz[i])
+#    print('Result:dPosB2_pz(%d) = %e' % (i,dPosB2_pz[i])) 
+#    print ('i=%d: fitB2_pz = %e - %e , funcHi2_2_pz = %e (for %d steps funcHi2_2_pz = %e)' % \
+#           (i,fitB2_pz[i],dNegB2_pz[i],funcHi2_2_pz[i],k,curFuncHi2_2_pz))
+
+# print ('\nResults for exponent B in deltaPz fitting:\n')
+# for i in range(nVion):
+#    print ('i=%d: B = %5.3f + %5.3f - %5.3f, (funcHi2_2_px = %e)' % \
+#           (i,fitB2_pz[i],dPosB2_pz[i],abs(dNegB2_pz[i]),funcHi2_2_pz[i]))
+# print ('Exponent B for deltaPz: <NegError> = %e, <PosError> =%e' % \
+#        (abs(mean(dNegB2_pz)),mean(dPosB2_pz)))
+
 
 #===================================================
 #
@@ -1731,174 +2335,370 @@ errFitAB(nImpctPrmtr,nVion,rhoInit,deltaPz_m_fit,fitA_pz,fitB_pz,funcHi2_pz,2,2)
 #
 #===================================================
 #
+# Fitting for figures with deltaPz_m (my own Least Squares Method - LSM;
+# Python has own routine for LSM - see site  
+#     http://scipy-cookbook.readthedocs.io/items/FittingData.html):
+#
+#
+# Fittied function: 
+#   
+#  deltaPx_m = 10^fitA_px * rho^fitB_px,
+#  so that
+#
+# log10(deltaPx_m) = fitB_px*log10(rho) + fitA_px
+#
+# So, the dimension of expression (10^fitA_px * rho^fitB_px) is the same
+# as deltaPz_x,  i.e. eV
+#
 
-rhoInitFit_px = np.zeros((nImpctPrmtr,nVion))
-deltaPx_m_fit = np.zeros((nImpctPrmtr,nVion))
-funcHi2__px = np.zeros(nVion)
-fitA_px = np.zeros(nVion)            # dimensionless 
-fitB_px = np.zeros(nVion)            # dimensionless
+maxIndx = np.zeros(nVion)
+fitA1_px = np.zeros(nVion)            # dimensionless 
+fitB1_px = np.zeros(nVion)            # dimensionless
+fitA2_px = np.zeros(nVion)            # dimensionless 
+fitB2_px = np.zeros(nVion)            # dimensionless
 
-fitA_px,fitB_px,funcHi2_px,rhoInitFit_px, deltaPx_m_fit = \
-fitting(nImpctPrmtr,nVion,rhoInit,deltaPx_m)
+#
+# Preparing of the initial data:
+# 
+log10rhoInit = np.zeros((nImpctPrmtr,nVion))
+log10deltaPx_m = np.zeros((nImpctPrmtr,nVion))
 
-dPosA_px = np.zeros(nVion)
-dNegA_px = np.zeros(nVion)
-dPosA_px,dNegA_px = \
-errFitAB(nImpctPrmtr,nVion,rhoInit,deltaPx_m_fit,fitA_px,fitB_px,funcHi2_px,1,2)
-dPosB_px = np.zeros(nVion)
-dNegB_px = np.zeros(nVion)
-dPosB_px,dNegB_px = \
-errFitAB(nImpctPrmtr,nVion,rhoInit,deltaPx_m_fit,fitA_px,fitB_px,funcHi2_px,2,2)
-# print ('Fitting for deltaPx_m:')
+timeStart = os.times()
+for i in range(nVion):
+   indx = 0
+   for n in range(nImpctPrmtr):
+      if ((rhoInit[n,i] > 0.) and (deltaPx_m[n,i] > 0.)):
+         log10rhoInit[indx,i] = np.log10(rhoInit[n,i])
+         log10deltaPx_m[indx,i] = np.log10(deltaPx_m[n,i])
+         indx += 1
+      else:
+         print ('i = %d, n = %d: rhoInit = %e, deltaPx_m = %e' % \
+	        (i,n,rhoInit[n,i],deltaPx_m[n,i]))	 
+   maxIndx[i] = int(indx)
+#    print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
+
+#
+# First minimized functional:
+#
+# Func1_px = {log10(deltaPx_m) - [fitB1_px*log10(rho) + fitA1_px]}^2
+#
+sumRho = np.zeros(nVion)
+sumRho2 = np.zeros(nVion)
+sumPx = np.zeros(nVion) 
+sumRhoPx= np.zeros(nVion)
+for i in range(nVion):
+   for n in range(int(maxIndx[i])):
+      sumRho[i] += log10rhoInit[n,i]
+      sumRho2[i] += log10rhoInit[n,i]**2
+      sumPx[i] += log10deltaPx_m[n,i]
+      sumRhoPx[i] += log10rhoInit[n,i]*log10deltaPx_m[n,i]
+
+   delta = maxIndx[i]*sumRho2[i]-sumRho[i]**2
+   fitA1_px[i] = (sumRho2[i]*sumPx[i]-sumRho[i]*sumRhoPx[i])/delta
+   fitB1_px[i] = (maxIndx[i]*sumRhoPx[i]-sumRho[i]*sumPx[i])/delta
+#    print ('fitA1_px(%d) = %e, fitB1_px(%d) = %e' % (i,fitA1_px[i],i,fitB1_px[i]))
+
+rhoInitFit1_px = np.zeros((int(maxIndx[0]),nVion))
+deltaPx_m_Fit1 = np.zeros((int(maxIndx[0]),nVion))
+funcHi2_1_px = np.zeros(nVion)
+for i in range(nVion):
+   factorA1_px = math.pow(10.,fitA1_px[i])
+   for n in range(int(maxIndx[i])):
+      rhoInitFit1_px[n,i] = math.pow(10.,log10rhoInit[n,i])
+      deltaPx_m_Fit1[n,i] = factorA1_px*math.pow(rhoInitFit1_px[n,i],fitB1_px[i])
+      funcHi2_1_px[i] += (np.log10(abs(deltaPx_m[n,i])-\
+                       np.log10(deltaPx_m_Fit1[n,i])))**2  
+#    print ('i=%2d: fitA1_px = %e, fitB1_px = %e, hi2_1 = %e' % \
+#           (i,fitA1_px[i],fitB1_px[i],funcHi2_1_px[i]))
+
+#
+# Second minimized functional:
+#
+# Func2_px = {1 - [fitB2_px*log10(rho) + fitA2_px]/log10(deltaPx_m)}^2
+#
+sumRhoPx = np.zeros(nVion)
+sumRhoPx2 = np.zeros(nVion)
+sumRho2Px2 = np.zeros(nVion)
+sumPx = np.zeros(nVion) 
+sumPx2 = np.zeros(nVion) 
+for i in range(nVion):
+   for n in range(int(maxIndx[i])):
+      sumRhoPx[i] += log10rhoInit[n,i]/log10deltaPx_m[n,i]
+      sumRhoPx2[i] += log10rhoInit[n,i]/log10deltaPx_m[n,i]**2
+      sumRho2Px2[i] += (log10rhoInit[n,i]/log10deltaPx_m[n,i])**2
+      sumPx[i] += 1./log10deltaPx_m[n,i]
+      sumPx2[i] += 1./log10deltaPx_m[n,i]**2
+#    print ('%d: sumRhoPx=%e, sumRhoPx2=%e, sumRho2Px2=%e, sumPx=%e, sumPx2=%e' % \
+#           (i,sumRhoPx[i],sumRhoPx2[i],sumRho2Px2[i],sumPx[i],sumPx2[i]))
+
+   delta = sumPx2[i]*sumRho2Px2[i]-sumRhoPx2[i]**2
+   fitA2_px[i] = (sumRho2Px2[i]*sumPx[i]-sumRhoPx[i]*sumRhoPx2[i])/delta
+   fitB2_px[i] = (sumPx2[i]*sumRhoPx[i]-sumRhoPx2[i]*sumPx[i])/delta
+#    print ('   ==>  fitA2_px(%d) = %e, fitB2_px(%d) = %e' % (i,fitA2_px[i],i,fitB2_px[i]))
+
+rhoInitFit2_px = np.zeros((int(maxIndx[0]),nVion))
+deltaPx_m_Fit2 = np.zeros((int(maxIndx[0]),nVion))
+funcHi2_2_px = np.zeros(nVion)
+for i in range(nVion):
+   factorA2_px = math.pow(10.,fitA2_px[i])
+   for n in range(int(maxIndx[i])):
+      rhoInitFit2_px[n,i] = math.pow(10.,log10rhoInit[n,i])
+      deltaPx_m_Fit2[n,i] = factorA2_px*math.pow(rhoInitFit2_px[n,i],fitB2_px[i])
+      funcHi2_2_px[i] += (1.-np.log10(deltaPx_m_Fit2[n,i])/ \
+                             np.log10(abs(deltaPx_m[n,i])))**2  
+#    print ('i=%2d: fitA2_px = %e, fitB2_px = %e, hi2_2_px = %e' % \
+#           (i,fitA2_px[i],fitB2_px[i],funcHi2_2_px[i]))
+
+#
+# Calculation of +-deltaA for second functional
+#
+stepA2_px = 0.1
+
+dPosA2_px = np.zeros(nVion)
+for i in range(nVion):
+   k = 0
+   deltaFuncHi2_2_px = 0.
+   while (deltaFuncHi2_2_px < 1.):
+      k += 1 
+      if k > 2000:
+         print ('Break (Fit A for deltaPx; positive) for %d' % i)
+         break
+#    print ('i=%d: fitA2_px = %e, funcHi2_2_px = %e' % (i,fitBA_px[i], funcHi2_2_px[i]))
+      curFitA2_px = fitA2_px[i] + k*stepA2_px
+      curFuncHi2_2_px = 0.
+      factorA2_px = math.pow(10.,curFitA2_px)
+      for n in range(int(maxIndx[i])):
+         rhoInitFit2_px[n,i] = math.pow(10.,log10rhoInit[n,i])
+         curDeltaPx_m_Fit2 = factorA2_px*math.pow(rhoInitFit2_px[n,i],fitB2_px[i])
+         curFuncHi2_2_px += (1.-np.log10(abs(curDeltaPx_m_Fit2))/ \
+                                np.log10(abs(deltaPx_m[n,i])))**2 
+      deltaFuncHi2_2_px = curFuncHi2_2_px - funcHi2_2_px[i] 
+#       if i == 0:
+#          print ('    step %2d ==> curfitB2_px = %e, curHi2_2_px = %e, deltaFuncHi2_2_px=%e' % \
+#                 (k,curFitB2_px,curFuncHi2_2_px,deltaFuncHi2_2_px))
+   dPosA2_px[i] = abs(curFitA2_px - fitA2_px[i])
+#    print('Result:dPosA2_px(%d) = %e' % (i,dPosA2_px[i])) 
+#    print ('i=%d: fitA2_px = %e + %e , funcHi2_2_px = %e (for %d steps funcHi2_2_px = %e)' % \
+#           (i,fitA2_px[i],dPosA2_px[i],funcHi2_2_px[i],k,curFuncHi2_2_px))
+
+dNegA2_px = np.zeros(nVion)
+for i in range(nVion):
+   deltaFuncHi2_2_px = 0.
+   k = 0
+   curFuncHi2_2_px = 0.
+   while (deltaFuncHi2_2_px < 1.):
+      k += 1 
+      if k > 2000:
+         print ('Break (Fit A for deltaPx; negative) for %d' % i)
+         break
+#    print ('i=%d: fitA2_px = %e, funcHi2_2_px = %e' % (i,fitBA_px[i], funcHi2_2_px[i]))
+      curFitA2_px = fitA2_px[i] - k*stepA2_px
+      curFuncHi2_2_px = 0.
+      factorA2_px = math.pow(10.,curFitA2_px)
+      for n in range(int(maxIndx[i])):
+         rhoInitFit2_px[n,i] = math.pow(10.,log10rhoInit[n,i])
+         curDeltaPx_m_Fit2 = factorA2_px*math.pow(rhoInitFit2_px[n,i],fitB2_px[i])
+         curFuncHi2_2_px += (1.-np.log10(abs(curDeltaPx_m_Fit2))/ \
+                                np.log10(abs(deltaPx_m[n,i])))**2 
+      deltaFuncHi2_2_px = curFuncHi2_2_px - funcHi2_2_px[i] 
+#       if i == 0:
+#          print ('    step %2d ==> curfitB2_px = %e, curHi2_2_px = %e, deltaFuncHi2_2_px=%e' % \
+#                 (k,curFitB2_px,curFuncHi2_2_px,deltaFuncHi2_2_px))
+   dNegA2_px[i] = abs(curFitA2_px - fitA2_px[i])
+#    print('Result:dPosA2_px(%d) = %e' % (i,dPosA2_px[i])) 
+#    print ('i=%d: fitA2_px = %e - %e , funcHi2_2_px = %e (for %d steps funcHi2_2_px = %e)' % \
+#           (i,fitA2_px[i],dNegA2_px[i],funcHi2_2_px[i],k,curFuncHi2_2_px))
+
+# print ('\nResults for exponent A in deltaPx fitting:\n')
 # for i in range(nVion):
-#    print ('i=%2d: fitA_px = %e (+%e,-%e), fitB_px = %e (+%e,-%e), hi2_1 = %e'  % \
-#           (i,fitA_px[i],dPosA_px[i],dNegA_px[i], \
-# 	     fitB_px[i],dPosB_px[i],dNegB_px[i],funcHi2_px[i]))
+#    print ('i=%d: A = %7.3f + %7.3f - %7.3f, (funcHi2_2_px = %e)' % \
+#           (i,fitA2_px[i],dPosA2_px[i],abs(dNegA2_px[i]),funcHi2_2_px[i]))
+# print ('Exponent A for deltaPx: <NegError> = %e, <PosError> =%e' % \
+#        (mean(dNegA2_px),mean(dPosA2_px)))
+
+#
+# Calculation of +-deltaB for second functional
+#
+stepB2_px = 0.05
+dPosB2_px = np.zeros(nVion)
+for i in range(nVion):
+#    print ('i=%d: fitB2_px = %e, funcHi2_2_px = %e' % (i,fitB2_px[i], funcHi2_2_px[i]))
+   factorA2_px = math.pow(10.,fitA2_px[i])
+   deltaFuncHi2_2_px = 0.
+   k = 0
+   curFuncHi2_2_px = 0.
+   while (deltaFuncHi2_2_px < 1.):
+      k += 1 
+      if k > 2000:
+         print ('Break (Fit B for deltaPx; positive) for %d' % i)
+         break
+      curFitB2_px = fitB2_px[i] + k*stepB2_px
+      for n in range(int(maxIndx[i])):
+         rhoInitFit2_px[n,i] = math.pow(10.,log10rhoInit[n,i])
+         curDeltaPx_m_Fit2 = factorA2_px*math.pow(rhoInitFit2_px[n,i],curFitB2_px)
+         curFuncHi2_2_px += (1.-np.log10(abs(curDeltaPx_m_Fit2))/ \
+                                np.log10(abs(deltaPx_m[n,i])))**2 
+      deltaFuncHi2_2_px = curFuncHi2_2_px - funcHi2_2_px[i] 
+#       if i == 0:
+#          print ('    step %2d ==> curfitB2_px = %e, curHi2_2_px = %e, deltaFuncHi2_2_px=%e' % \
+#                 (k,curFitB2_px,curFuncHi2_2_px,deltaFuncHi2_2_px))
+   dPosB2_px[i] = abs(curFitB2_px - fitB2_px[i])
+#    print('Result:dPosB2_px(%d) = %e' % (i,dPosB2_px[i])) 
+#    print ('i=%d: fitB2_px = %e + %e , funcHi2_2_px = %e (for %d steps funcHi2_2_px = %e)' % \
+#           (i,fitB2_px[i],dPosB2_px[i],funcHi2_2_px[i],k,curFuncHi2_2_px))
+
+dNegB2_px = np.zeros(nVion)
+for i in range(nVion):
+#    print ('i=%d: fitB2_px = %e, funcHi2_2_px = %e' % (i,fitB2_px[i], funcHi2_2_px[i]))
+   factorA2_px = math.pow(10.,fitA2_px[i])
+   deltaFuncHi2_2_px = 0.
+   k = 0
+   curFuncHi2_2_px = 0.
+   while (deltaFuncHi2_2_px < 1.):
+      k += 1 
+      if k > 2000:
+         print ('Break (Fit B for deltaPx; negative) for %d' % i)
+         break
+      curFitB2_px = fitB2_px[i] - k*stepB2_px
+      for n in range(int(maxIndx[i])):
+         rhoInitFit2_px[n,i] = math.pow(10.,log10rhoInit[n,i])
+         curDeltaPx_m_Fit2 = factorA2_px*math.pow(rhoInitFit2_px[n,i],curFitB2_px)
+         curFuncHi2_2_px += (1.-np.log10(abs(curDeltaPx_m_Fit2))/ \
+                                np.log10(abs(deltaPx_m[n,i])))**2 
+      deltaFuncHi2_2_px = curFuncHi2_2_px - funcHi2_2_px[i] 
+#       if i == 0:
+#          print ('    step %2d ==> curfitB2_px = %e, curHi2_2_px = %e, deltaFuncHi2_2_px=%e' % \
+#                 (k,curFitB2_px,curFuncHi2_2_px,deltaFuncHi2_2_px))
+   dNegB2_px[i] = abs(curFitB2_px - fitB2_px[i])
+#    print('Result:dPosB2_px(%d) = %e' % (i,dPosB2_px[i])) 
+#    print ('i=%d: fitB2_px = %e - %e , funcHi2_2_px = %e (for %d steps funcHi2_2_px = %e)' % \
+#           (i,fitB2_px[i],dNegB2_px[i],funcHi2_2_px[i],k,curFuncHi2_2_px))
+
+# print ('\nResults for exponent B in deltaPx fitting:\n')
+# for i in range(nVion):
+#    print ('i=%d: B = %5.3f + %5.3f - %5.3f, (funcHi2_2_px = %e)' % \
+#           (i,fitB2_px[i],dPosB2_px[i],abs(dNegB2_px[i]),funcHi2_2_px[i]))
+# print ('Exponent B for deltaPx: <NegError> = %e, <PosError> =%e' % \
+#        (mean(dNegB2_px),mean(dPosB2_px)))
 
 xLimit = [1.015*np.log10(VionRel[0]),.95*np.log10(VionRel[nVion-1])]
 
 yLimMin = 0.
-yLimMax = 10.*min(fitA_pz)
+yLimMax = 10.*min(fitA2_pz)
 for i in range(nVion):
-   if (fitA_pz[i] - dNegA_pz[i]) < yLimMin:
-      yLimMin = fitA_pz[i] - dNegA_pz[i]
-   if (fitA_pz[i] + dPosA_pz[i]) > yLimMax:
-      yLimMax = fitA_pz[i] + dPosA_pz[i]
+   if (fitA2_pz[i] - dNegA2_pz[i]) < yLimMin:
+      yLimMin = fitA2_pz[i] - dNegA2_pz[i]
+   if (fitA2_pz[i] + dPosA2_pz[i]) > yLimMax:
+      yLimMax = fitA2_pz[i] + dPosA2_pz[i]
 # print ('Exponent A (pz): yLimMin = %e, yLimMax = %e' % (yLimMin,yLimMax))
 
-yLimit = [yLimMin-.25,yLimMax+.25]
+yLimit = [yLimMin-.5,yLimMax+.5]
 
-if (plotFigureFlag == 0):   
+if (plotFigureFlag == 1):   
    fig3000=plt.figure (3000)
-   plt.errorbar(np.log10(VionRel),fitA_pz,yerr=[dNegA_pz,dPosA_pz],fmt='-ro', \
+   plt.errorbar(np.log10(VionRel),fitA2_pz,yerr=[dNegA2_pz,dPosA2_pz],fmt='-ro', \
                 ecolor='b',capsize=5,capthick=1)
    plt.xlabel('Relative Ion Velocity, $log_{10}(V_{ion}/V_0)$',color='m',fontsize=14)
    plt.ylabel('Exponent $A$', color='m',fontsize=14)
    titleHeader = 'Dependence of Transferred Momenta to Single Ion: '
    titleHeader += '$\Delta P_z$ = $10^A\cdot rho^B$'
    plt.title(titleHeader,color='m',fontsize=12)
-   plt.text(-3.75,-26.0,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
+   plt.text(-3.75,-23.0,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
             color='m',fontsize=16)
-   plt.text(-4.0,-28.,('<A>=%7.3f $\pm$ %5.3f' % (mean(fitA_pz),mean(dNegA_pz))), \
-            color='r',fontsize=16)
-#   plt.text(-3.25,-29.65,('$-$%5.3f' % (mean(dNegA_pz))),color='r',fontsize=12)
-#   plt.text(-3.25,-29.15,('$+$%5.3f' % (mean(dPosA_pz))),color='r',fontsize=12)
+   plt.text(-4.4,-31.4,('<A>=%7.3f' % (mean(fitA2_pz))),color='r',fontsize=16)
+   plt.text(-3.25,-31.65,('$-$%5.3f' % (mean(dNegA2_pz))),color='r',fontsize=12)
+   plt.text(-3.25,-31.15,('$+$%5.3f' % (mean(dPosA2_pz))),color='r',fontsize=12)
    plt.xlim(xLimit)
    plt.ylim(yLimit)
    plt.grid(True)
    plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
-   plt.text(-2.55,-28.25,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.55,-32.15,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([np.log10(relVeLong),np.log10(relVeLong)],yLimit,'--m',linewidth=1)
-   plt.text(-4.24,-28.25,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig3000.savefig('picturesCMA_v7/fitA_dPz_fig3000cma.png')    
-      print ('File "picturesCMA_v7/fitA_dPz_fig3000cma.png" is written')   
+   plt.text(-4.24,-32.15,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+if (saveFilesFlag == 1):
+   fig3000.savefig('picturesCMA/mapA-B_fig3000cma.png')    
+   print ('File "picturesCMA/mapA-B_fig3000cma.png" is written')   
 
 yLimMin = 0.
-yLimMax = 10.*min(fitB_pz)
+yLimMax = 10.*min(fitB2_pz)
 for i in range(nVion):
-   if (fitB_pz[i] - dNegB_pz[i]) < yLimMin:
-      yLimMin = fitB_pz[i] - dNegB_pz[i]
-   if (fitB_pz[i] + dPosB_pz[i]) > yLimMax:
-      yLimMax = fitB_pz[i] + dPosB_pz[i]
+   if (fitB2_pz[i] - dNegB2_pz[i]) < yLimMin:
+      yLimMin = fitB2_pz[i] - dNegB2_pz[i]
+   if (fitB2_pz[i] + dPosB2_pz[i]) > yLimMax:
+      yLimMax = fitB2_pz[i] + dPosB2_pz[i]
 # print ('Exponent B (pz): yLimMin = %e, yLimMax = %e' % (yLimMin,yLimMax))
 
 yLimit = [yLimMin-.1,yLimMax+.1]
-if (plotFigureFlag == 0):   
+if (plotFigureFlag == 1):   
    fig3010=plt.figure (3010)
-   plt.errorbar(np.log10(VionRel),fitB_pz,yerr=[dNegB_pz,dPosB_pz],fmt='-ro', \
+   plt.errorbar(np.log10(VionRel),fitB2_pz,yerr=[dNegB2_pz,dPosB2_pz],fmt='-ro', \
                 ecolor='b',capsize=5,capthick=1)
    plt.xlabel('Relative Ion Velocity, $log_{10}(V_{ion}/V_0)$',color='m',fontsize=14)
    plt.ylabel('Exponent $B$', color='m',fontsize=14)
    titleHeader = 'Dependence of Transferred Momenta to Single Ion: '
    titleHeader += '$\Delta P_z$ = $10^A\cdot rho^B$'
    plt.title(titleHeader,color='m',fontsize=12)
-   plt.text(-3.75,-.87,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
+   plt.text(-3.75,-.75,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
             color='m',fontsize=16)
-   plt.text(-3.9,-1.55,('<B>=%6.3f $\pm$ %5.3f' % (mean(fitB_pz),mean(dNegB_pz))), \
-            color='r',fontsize=16)
-#   plt.text(-2.85,-2.25,('$-$%5.3f' % (mean(dNegB_pz))),color='r',fontsize=12)
-#   plt.text(-2.85,-1.75,('$+$%5.3f' % (mean(dPosB_pz))),color='r',fontsize=12)
+   plt.text(-3.9,-1.55,('<B>=%6.3f' % (mean(fitB2_pz))),color='r',fontsize=16)
+   plt.text(-2.85,-1.575,('$-$%5.3f' % (mean(dNegB2_pz))),color='r',fontsize=12)
+   plt.text(-2.85,-1.525,('$+$%5.3f' % (mean(dPosB2_pz))),color='r',fontsize=12)
    plt.xlim(xLimit)
    plt.ylim(yLimit)
    plt.grid(True)
    plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
-   plt.text(-2.55,-1.74,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.55,-1.68,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([np.log10(relVeLong),np.log10(relVeLong)],yLimit,'--m',linewidth=1)
-   plt.text(-4.24,-1.74,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig3010.savefig('picturesCMA_v7/fitB_dPz_fig3010cma.png')    
-      print ('File "picturesCMA_v7/fitB_dPz_fig3010cma.png" is written')   
+   plt.text(-4.24,-1.68,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+if (saveFilesFlag == 1):
+   fig3010.savefig('picturesCMA/mapA-B_fig3010cma.png')    
+   print ('File "picturesCMA/mapA-B_fig3010cma.png" is written')   
 
-yLimMin = 0.
-yLimMax = 10.*min(fitA_px)
-for i in range(nVion):
-   if (fitA_px[i] - dNegA_px[i]) < yLimMin:
-      yLimMin = fitA_px[i] - dNegA_px[i]
-   if (fitA_px[i] + dPosA_px[i]) > yLimMax:
-      yLimMax = fitA_px[i] + dPosA_px[i]
-# print ('Exponent A (px): yLimMin = %e, yLimMax = %e' % (yLimMin,yLimMax))
-
-yLimit = [yLimMin-.15,yLimMax+.15]
-
-if (plotFigureFlag == 0):   
+yLimit = [fitA2_px[0]-dPosA2_px[0]-.5,fitA2_px[nVion-1]+dPosA2_px[nVion-1]+.5]
+if (plotFigureFlag == 1):   
    fig3020=plt.figure (3020)
-   plt.errorbar(np.log10(VionRel),fitA_px,yerr=[dNegA_px,dPosA_px],fmt='-ro', \
+   plt.errorbar(np.log10(VionRel),fitA2_px,yerr=[dNegA2_px,dPosA2_px],fmt='-ro', \
                 ecolor='b',capsize=5,capthick=1)
    plt.xlabel('Relative Ion Velocity, $log_{10}(V_{ion}/V_0)$',color='m',fontsize=14)
    plt.ylabel('Exponent $A$', color='m',fontsize=14)
    titleHeader = 'Dependence of Transferred Momenta to Single Ion: '
    titleHeader += '$\Delta P_x$ = $10^A\cdot rho^B$'
    plt.title(titleHeader,color='m',fontsize=12)
-   plt.text(-3.75,-24.2,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
+   plt.text(-3.75,-21.,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
             color='m',fontsize=16)
-   plt.text(-3.9,-24.8,('<A>=%6.3f $\pm$ %5.3f' % (mean(fitA_px),mean(dNegA_px))), \
-            color='r',fontsize=16)
    plt.xlim(xLimit)
    plt.ylim(yLimit)
    plt.grid(True)
    plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
-   plt.text(-2.55,-25.05,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.55,-28.3,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([np.log10(relVeLong),np.log10(relVeLong)],yLimit,'--m',linewidth=1)
-   plt.text(-4.24,-25.05,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig3020.savefig('picturesCMA_v7/fitA_dPx_fig3020cma.png')    
-      print ('File "picturesCMA_v7/fitA_dPx_fig3020cma.png" is written')   
+   plt.text(-4.24,-28.3,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+if (saveFilesFlag == 1):
+   fig3020.savefig('picturesCMA/mapA-B_fig3020cma.png')    
+   print ('File "picturesCMA/mapA-B_fig3020cma.png" is written')   
 
-yLimMin = 0.
-yLimMax = 10.*min(fitB_px)
-for i in range(nVion):
-   if (fitB_px[i] - dNegB_px[i]) < yLimMin:
-      yLimMin = fitB_px[i] - dNegB_px[i]
-   if (fitB_px[i] + dPosB_px[i]) > yLimMax:
-      yLimMax = fitB_px[i] + dPosB_px[i]
-# print ('Exponent B (px): yLimMin = %e, yLimMax = %e' % (yLimMin,yLimMax))
-
-yLimit = [yLimMin-.05,yLimMax+.05]
-
-if (plotFigureFlag == 0):   
+yLimit = [fitB2_px[0]-dPosB2_px[0]-.05,fitB2_px[nVion-1]+dPosB2_px[nVion-1]+.05]
+if (plotFigureFlag == 1):   
    fig3030=plt.figure (3030)
-   plt.errorbar(np.log10(VionRel),fitB_px,yerr=[dNegB_px,dPosB_px],fmt='-ro', \
+   plt.errorbar(np.log10(VionRel),fitB2_px,yerr=[dNegB2_px,dPosB2_px],fmt='-ro', \
                 ecolor='b',capsize=5,capthick=1)
    plt.xlabel('Relative Ion Velocity, $log_{10}(V_{ion}/V_0)$',color='m',fontsize=14)
    plt.ylabel('Exponent $B$', color='m',fontsize=14)
    titleHeader = 'Dependence of Transferred Momenta to Single Ion: '
    titleHeader += '$\Delta P_x$ = $10^A\cdot rho^B$'
    plt.title(titleHeader,color='m',fontsize=12)
-   plt.text(-3.75,-.95,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
+   plt.text(-3.75,-.78,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
             color='m',fontsize=16)
-   plt.text(-3.9,-1.15,('<B>=%6.3f $\pm$ %5.3f' % (mean(fitB_px),mean(dNegB_px))), \
-            color='r',fontsize=16)
    plt.xlim(xLimit)
    plt.ylim(yLimit)
    plt.grid(True)
    plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
-   plt.text(-2.55,-1.22,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.55,-1.35,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([np.log10(relVeLong),np.log10(relVeLong)],yLimit,'--m',linewidth=1)
-   plt.text(-4.24,-1.22,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig3030.savefig('picturesCMA_v7/fitB_dPx_fig3030cma.png')    
-      print ('File "picturesCMA/_v7/fitB_dPx_fig3030cma.png" is written')   
+   plt.text(-4.24,-1.35,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+if (saveFilesFlag == 1):
+   fig3030.savefig('picturesCMA/mapA-B_fig3030cma.png')    
+   print ('File "picturesCMA/mapA-B_fig3030cma.png" is written')   
 
 # plt.show()
 
@@ -1918,9 +2718,9 @@ if (plotFigureFlag == 0):
    # plt.xlim([minA,maxA])
    # plt.ylim([minB,maxB])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig110.savefig('picturesCMA/mapA-B_fig110cma.png')    
-      print ('File "picturesCMA/mapA-B_fig110cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig110.savefig('picturesCMA/mapA-B_fig110cma.png')    
+   print ('File "picturesCMA/mapA-B_fig110cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig20=plt.figure (20)
@@ -1932,9 +2732,9 @@ if (plotFigureFlag == 0):
    plt.xlim([-5000,2*totalPoints+5000])
    # plt.xlim([0,2000])
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig20.savefig('picturesCMA/particleDistance_ls_fig20cma.png')    
-      print ('File "picturesCMA/particleDistance_ls_fig20cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig20.savefig('picturesCMA/particleDistance_ls_fig20cma.png')    
+   print ('File "picturesCMA/particleDistance_ls_fig20cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig30=plt.figure (30)
@@ -1947,9 +2747,9 @@ if (plotFigureFlag == 0):
    # plt.ylim([minB,maxB])
    plt.grid(True)
    plt.legend(['A','B'],loc='lower left',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig30.savefig('picturesCMA/parametersA-B_fig30cma.png')    
-      print ('File "picturesCMA/parametersA-B_fig30cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig30.savefig('picturesCMA/parametersA-B_fig30cma.png')    
+   print ('File "picturesCMA/parametersA-B_fig30cma.png" is written')   
 
 xVionRel = np.zeros((nImpctPrmtr,nVion))
 for i in range(nVion):
@@ -1971,9 +2771,9 @@ if (plotFigureFlag == 0):
    plt.text(1.6e-3,-.026,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
    plt.text(3.9e-5,.05,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig40.savefig('picturesCMA/initialImpactParameter_SM_fig40cma.png')    
-      print ('File "picturesCMA/initialImpactParameter_SM_fig40cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig40.savefig('picturesCMA/initialImpactParameter_SM_fig40cma.png')    
+   print ('File "picturesCMA/initialImpactParameter_SM_fig40cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig45=plt.figure (45)
@@ -1990,9 +2790,9 @@ if (plotFigureFlag == 0):
    plt.text(1.6e-3,.15,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
    plt.text(3.9e-5,.15,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig45.savefig('picturesCMA/initialImpactParameter_SM_fig45cma.png')    
-      print ('File "picturesCMA/initialImpactParameter_SM_fig45cma.png" is written')   
+if (saveFilesFlag == 1):
+   fig45.savefig('picturesCMA/initialImpactParameter_SM_fig45cma.png')    
+   print ('File "picturesCMA/initialImpactParameter_SM_fig45cma.png" is written')   
 
 if (plotFigureFlag == 0):   
    fig31=plt.figure (31)
@@ -2190,8 +2990,11 @@ if (plotFigureFlag == 0):
       figCrrnt = plt.figure(numbrFigures[i])
       plt.loglog(rhoInit[0:nImpctPrmtr,indxFigures[i]], \
                  deltaEnrgIon_c[0:nImpctPrmtr,indxFigures[i]],'-xr', \
-                 rhoInitfit[0:nImpctPrmtr,indxFigures[i]], \
-	         deltaEnrgIon_c_fit[0:nImpctPrmtr,indxFigures[i]],'ob',linewidth=2)
+                 rhoInitFit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         deltaEnrgIon_c_Fit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]],'ob', \
+                 rhoInitFit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         deltaEnrgIon_c_Fit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         'or',linewidth=2)
       plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
       plt.ylabel('$\Delta E_{ion}$, $eV$', color='m',fontsize=14)
       titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion:'
@@ -2199,7 +3002,7 @@ if (plotFigureFlag == 0):
       plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
       plt.xlim([.95*rhoInit[0,indxFigures[i]],1.05*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
       plt.ylim([ .9*deltaEnrgIon_c[nImpctPrmtr-1,indxFigures[i]], \
-                1.1*deltaEnrgIon_c_fit[0,indxFigures[i]]])
+                1.1*deltaEnrgIon_c_Fit2[0,indxFigures[i]]])
       plt.legend(['Calculated Data',('Fitted Data (Func1): B = %5.3f' % \
                   abs(fitB1[indxFigures[i]])), \
                  ('Fitted Data (Func2): B = %5.3f'% abs(fitB2[indxFigures[i]]))], \
@@ -2374,8 +3177,11 @@ if (plotFigureFlag == 0):
       figCrrnt = plt.figure(numbrFigures[i]+5)
       plt.loglog(rhoInit[0:nImpctPrmtr,indxFigures[i]], \
                  1.e24*deltaPz_m[0:nImpctPrmtr,indxFigures[i]],'xr', \
-                 rhoInitFit_pz[0:nImpctPrmtr,indxFigures[i]], \
-	         1.e24*deltaPz_m_fit[0:nImpctPrmtr,indxFigures[i]],'ob',linewidth=2)
+                 rhoInitFit1_pz[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         1.e24*deltaPz_m_Fit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]],'ob', \
+                 rhoInitFit2_pz[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         1.e24*deltaPz_m_Fit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         'or',linewidth=2)
       plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
       plt.ylabel('$10^{24} \cdot \Delta P_z$, $eV$', color='m',fontsize=14)
       titleHeader = 'Transferred Momenta $\Delta P_z$ to Single Ion:'
@@ -2383,16 +3189,17 @@ if (plotFigureFlag == 0):
       plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
       plt.xlim([.95*rhoInit[0,indxFigures[i]],1.05*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
       plt.ylim([ .9e24*deltaPz_m[nImpctPrmtr-1,indxFigures[i]], \
-                1.1e24*deltaPz_m_fit[0,indxFigures[i]]])
-      plt.legend(['Calculated Data', \
-                  ('Fitting: $\Delta P_z=10^A\cdot$rho$_{init}^B$; B = %5.3f $\pm$ %5.3f' % \
-                   (fitB_pz[indxFigures[i]],dNegB_pz[indxFigures[i]]))],loc='lower left',fontsize=11)
-#      plt.text(xPos[i],yPos[i],'Fitted $\Delta P_z$ are proportional to $rho_{Init}^{-B}$', \
-#	       color='m',fontsize=16)
+                1.1e24*deltaPz_m_Fit2[0,indxFigures[i]]])
+      plt.legend(['Calculated Data',('Fitted Data (Func1): B = %5.3f' % \
+                  abs(fitB1_pz[indxFigures[i]])), \
+                 ('Fitted Data (Func2): B = %5.3f'% abs(fitB2_pz[indxFigures[i]]))], \
+                loc='lower left',fontsize=11)
+      plt.text(xPos[i],yPos[i],'Fitted $\Delta P_z$ are proportional to $rho_{Init}^{-B}$', \
+	       color='m',fontsize=16)
       plt.grid(True)
       if (saveFilesFlag == 1):
-         fileName = 'picturesCMA_v7/dPz_withFit_indxPlot'+str(indxFigures[i])+'_fig'
-         fileName += str(numbrFigures[i]+5)+'cma.png' 
+         fileName = 'picturesCMA/deltaEtransf_indxPlot-'+str(indxFigures[i])+'_fig'
+         fileName += str(numbrFigures[i])+'cma.png' 
          figCrrnt.savefig(fileName) 
          print ('File "',fileName,'" is written')
 
@@ -2404,8 +3211,11 @@ if (plotFigureFlag == 0):
       figCrrnt = plt.figure(numbrFigures[i]+7)
       plt.loglog(rhoInit[0:nImpctPrmtr,indxFigures[i]], \
                  deltaPx_m[0:nImpctPrmtr,indxFigures[i]],'xr', \
-                 rhoInitFit_px[0:nImpctPrmtr,indxFigures[i]], \
-	         deltaPx_m_fit[0:nImpctPrmtr,indxFigures[i]],'ob',linewidth=2)
+                 rhoInitFit1_px[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         deltaPx_m_Fit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]],'ob', \
+                 rhoInitFit2_px[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         deltaPx_m_Fit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+	         'or',linewidth=2)
       plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
       plt.ylabel('$\Delta P_x$, $eV$', color='m',fontsize=14)
       titleHeader = 'Transferred Momenta $\Delta P_x$ to Single Ion:'
@@ -2413,16 +3223,17 @@ if (plotFigureFlag == 0):
       plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
       plt.xlim([.95*rhoInit[0,indxFigures[i]],1.05*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
       plt.ylim([ .9*deltaPx_m[nImpctPrmtr-1,indxFigures[i]], \
-                1.1*deltaPx_m_fit[0,indxFigures[i]]])
-      plt.legend(['Calculated Data', \
-                  ('Fitting: $\Delta P_x=10^A\cdot$rho$_{init}^B$; B = %5.3f $\pm$ %5.3f' % \
-                  (fitB_px[indxFigures[i]],dNegB_px[indxFigures[i]]))],loc='lower left',fontsize=11)
-#      plt.text(xPos[i],yPos[i],'Fitted $\Delta P_x$ are proportional to $rho_{Init}^{-B}$', \
-#	       color='m',fontsize=16)
+                1.1*deltaPx_m_Fit2[0,indxFigures[i]]])
+      plt.legend(['Calculated Data',('Fitted Data (Func1): B = %5.3f' % \
+                  abs(fitB1_px[indxFigures[i]])), \
+                 ('Fitted Data (Func2): B = %5.3f'% abs(fitB2_px[indxFigures[i]]))], \
+                loc='lower left',fontsize=11)
+      plt.text(xPos[i],yPos[i],'Fitted $\Delta P_x$ are proportional to $rho_{Init}^{-B}$', \
+	       color='m',fontsize=16)
       plt.grid(True)
       if (saveFilesFlag == 1):
-         fileName = 'picturesCMA_v7/dPx_withFit_indxPlot-'+str(indxFigures[i])+'_fig'
-         fileName += str(numbrFigures[i]+7)+'cma.png' 
+         fileName = 'picturesCMA/deltaEtransf_indxPlot-'+str(indxFigures[i])+'_fig'
+         fileName += str(numbrFigures[i])+'cma.png' 
          figCrrnt.savefig(fileName) 
          print ('File "',fileName,'" is written')
 
@@ -2781,9 +3592,9 @@ if (plotFigureFlag == 0):
    plt.text(1.6e-3,-.03,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
    plt.text(4.4e-5,.05,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig41.savefig('picturesCMA/initialImpactParameter_GK_fig41cma.png') 
-      print ('File "picturesCMA/initialImpactParameter_GK_fig41cma.png" is written')
+if (saveFilesFlag == 1):
+   fig41.savefig('picturesCMA/initialImpactParameter_GK_fig41cma.png') 
+   print ('File "picturesCMA/initialImpactParameter_GK_fig41cma.png" is written')
 
 
 indxFigures = [0,9,12,18,19,23,27,29,31,34,39,49]
@@ -2835,7 +3646,7 @@ for i in range(nVion):
 yLimit = [-2.92,-0.26]
 
 if (plotFigureFlag == 0): 
-   for k in range(1,4,1):  
+   for k in range(4):  
       figCrrnt = plt.figure(245+100*k)
       ax = figCrrnt.add_subplot(111)                                       # for contours plotting
       mapCrrnt = ax.contourf(X,Y,Z[:,:,k],cmap='jet') 
@@ -2847,7 +3658,7 @@ if (plotFigureFlag == 0):
       plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=16)
       plt.ylabel('Initial Impact Parameter, $log_{10}(rho_{Init})$',color='m',fontsize=16)
       titleHeader = 'Difference of $\Delta'
-      fileName = 'picturesCMA_v7/delta'
+      fileName = 'picturesCMA/delta'
       if (k == 0):
          titleHeader += ' E_{ion}$: "GC"/"ME" $-$ 1, %' 
          fileName += 'EcomprsnMap_fig'
@@ -3002,9 +3813,9 @@ if (plotFigureFlag == 0):
    plt.text(4.4e-5,yLimit[0]+.1,'$ \Delta V_{e||}/ sV_{e0}$',color='m',fontsize=14)
    plt.legend(['"GC" Approach','"ME" Approach'],loc='lower right',fontsize=14)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5000.savefig('picturesCMA/frctnForce_c_m_GK_fig5000cma.png')    
-      print ('File "picturesCMA/frctnForce_c_m_GK_fig5000cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5000.savefig('picturesCMA/frctnForce_c_m_GK_fig5000cma.png')    
+   print ('File "picturesCMA/frctnForce_c_m_GK_fig5000cma.png" is written')
 
 if (plotFigureFlag == 0):   
    fig5010=plt.figure (5010)
@@ -3027,9 +3838,9 @@ if (plotFigureFlag == 0):
    plt.text(4.4e-5,yLimit[0]+.1,'$ \Delta V_{e||}/ sV_{e0}$',color='m',fontsize=14)
    plt.legend(['Func1','Func2'],loc='lower right',fontsize=14)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5000.savefig('picturesCMA/frctnForce_c_m_AI_fig5010cma.png')    
-      print ('File "picturesCMA/frctnForce_c_m_AI_fig5010cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5000.savefig('picturesCMA/frctnForce_c_m_AI_fig5010cma.png')    
+   print ('File "picturesCMA/frctnForce_c_m_AI_fig5010cma.png" is written')
 
 yLimit = [-2.8,-0.35]
 log10relVeTrnsv = np.log10(relVeTrnsv)
@@ -3053,9 +3864,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5100.colorbar(mapDenrgF)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5100.savefig('picturesCMA/mapEion_m_fig5100cma.png')    
-      print ('File "picturesCMA/mapEion_m_fig5100cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5100.savefig('picturesCMA/mapEion_m_fig5100cma.png')    
+   print ('File "picturesCMA/mapEion_m_fig5100cma.png" is written')
 
 
 deltaEnrgIon_m_cutoff = np.zeros((nVion,nImpctPrmtr))
@@ -3085,9 +3896,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5110.colorbar(mapDenrgFc)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5110.savefig('picturesCMA/mapEion_m_cutoff_fig5110cma.png')    
-      print ('File "picturesCMA/mapEion_m_cutoff_fig5110cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5110.savefig('picturesCMA/mapEion_m_cutoff_fig5110cma.png')    
+   print ('File "picturesCMA/mapEion_m_cutoff_fig5110cma.png" is written')
 
 #
 # Additional output for checking:
@@ -3170,7 +3981,7 @@ for i in range(nVion_c):
 #--------------------------------------------
 # 5200 - wrong picture!!!
 #      
-# if (plotFigureFlag == 0):   
+# if (plotFigureFlag == 1):   
 #    fig5200=plt.figure (5200)
 #    ax = fig5200.add_subplot(111)                    # for contours plotting
 #    mapDpxF = ax.contourf(X,Y,1.e22*deltaPx_m,cmap='jet') 
@@ -3210,9 +4021,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5201.colorbar(mapDpxF1)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5201.savefig('picturesCMA_v7/mapDeltaPx_m_fig5201cma.png')    
-      print ('File "picturesCMA_v7/mapDeltaPx_m_fig5201cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5201.savefig('picturesCMA/mapDeltaPx_m_fig5201cma.png')    
+   print ('File "picturesCMA/mapDeltaPx_m_fig5201cma.png" is written')
 
 if (plotFigureFlag == 0):   
    fig5202=plt.figure (5202)
@@ -3233,9 +4044,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5202.colorbar(mapDpxF2)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5202.savefig('picturesCMA_v7/mapLog10deltaPx_m_fig5202cma.png')    
-      print ('File "picturesCMA_v7/mapLog10deltaPx_m_fig5202cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5202.savefig('picturesCMA/mapLog10deltaPx_m_fig5202cma.png')    
+   print ('File "picturesCMA/mapLog10deltaPx_m_fig5202cma.png" is written')
 
 #--------------------------------------------
 # 5300 - wrong picture!!!
@@ -3301,7 +4112,7 @@ if (plotFigureFlag == 0):
 #--------------------------------------------
 # 5400 - wrong picture!!!
 #      
-# if (plotFigureFlag == 0):   
+# if (plotFigureFlag == 1):   
 #    fig5400=plt.figure (5400)
 #    ax = fig5400.add_subplot(111)                    # for contours plotting
 #    mapDpzF = ax.contourf(X,Y,1.e24*deltaPz_m,cmap='jet') 
@@ -3344,9 +4155,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5401.colorbar(mapDpzF1)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5401.savefig('picturesCMA_v7/mapDeltaPz_m_fig5401cma.png')    
-      print ('File "picturesCMA_v7/mapDeltaPz_m_fig5401cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5401.savefig('picturesCMA/mapDeltaPz_m_fig5401cma.png')    
+   print ('File "picturesCMA/mapDeltaPz_m_fig5401cma.png" is written')
 
 if (plotFigureFlag == 0):
    fig5402=plt.figure (5402)
@@ -3367,9 +4178,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5402.colorbar(mapDpzF2)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5402.savefig('picturesCMA_v7/mapLog10deltaPz_m_fig5402cma.png')    
-      print ('File "picturesCMA_v7/mapLog10deltaPz_m_fig5402cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5402.savefig('picturesCMA/mapLog10deltaPz_m_fig5402cma.png')    
+   print ('File "picturesCMA/mapLog10deltaPz_m_fig5402cma.png" is written')
 
 #--------------------------------------------
 # 5410 - wrong picture and bad idea to use the cut-off approach 
@@ -3427,9 +4238,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5250.colorbar(mapVixm)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5250.savefig('picturesCMA/mapVix_m_fig5250cma.png')    
-      print ('File "picturesCMA/mapVix_m_fig5250cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5250.savefig('picturesCMA/mapVix_m_fig5250cma.png')    
+   print ('File "picturesCMA/mapVix_m_fig5250cma.png" is written')
 
 if (plotFigureFlag == 0):   
    fig5350=plt.figure (5350)
@@ -3450,9 +4261,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5350.colorbar(mapViym)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5350.savefig('picturesCMA/mapViy_m_fig5350cma.png')    
-      print ('File "picturesCMA/mapViy_m_fig5350cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5350.savefig('picturesCMA/mapViy_m_fig5350cma.png')    
+   print ('File "picturesCMA/mapViy_m_fig5350cma.png" is written')
 
 if (plotFigureFlag == 0):   
    fig5450=plt.figure (5450)
@@ -3473,9 +4284,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5450.colorbar(mapVizm)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5450.savefig('picturesCMA/mapViz_m_fig5450cma.png')    
-      print ('File "picturesCMA/mapViz_m_fig5450cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5450.savefig('picturesCMA/mapViz_m_fig5450cma.png')    
+   print ('File "picturesCMA/mapViz_m_fig5450cma.png" is written')
 
 log10ionVx_m = np.zeros((nImpctPrmtr_c,nVion_c))
 log10ionVy_m = np.zeros((nImpctPrmtr_c,nVion_c))
@@ -3506,9 +4317,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5251.colorbar(mapVixm1)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5251.savefig('picturesCMA_v7/mapLog10Vix_m_fig5251cma.png')    
-      print ('File "picturesCMA_v7/mapLog10Vix_m_fig5251cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5251.savefig('picturesCMA/mapLog10Vix_m_fig5251cma.png')    
+   print ('File "picturesCMA/mapLog10Vix_m_fig5251cma.png" is written')
 
 if (plotFigureFlag == 0):   
    fig5351=plt.figure (5351)
@@ -3529,9 +4340,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5351.colorbar(mapViym1)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5351.savefig('picturesCMA_v7/mapLog10Viy_m_fig5351cma.png')    
-      print ('File "picturesCMA_v7/mapLog10Viy_m_fig5351cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5351.savefig('picturesCMA/mapLog10Viy_m_fig5351cma.png')    
+   print ('File "picturesCMA/mapLog10Viy_m_fig5351cma.png" is written')
 
 if (plotFigureFlag == 0):   
    fig5451=plt.figure (5451)
@@ -3552,9 +4363,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig5451.colorbar(mapVizm1)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig5451.savefig('picturesCMA_v7/mapLog10Viz_m_fig5451cma.png')    
-      print ('File "picturesCMA_v7/mapLog10Viz_m_fig5451cma.png" is written')
+if (saveFilesFlag == 1):
+   fig5451.savefig('picturesCMA/mapLog10Viz_m_fig5451cma.png')    
+   print ('File "picturesCMA/mapLog10Viz_m_fig5451cma.png" is written')
 
 #--------------------------------------------
 # 5260 - wrong picture and bad idea to use the cut-off approach 
@@ -3720,7 +4531,7 @@ if (plotFigureFlag == 0):
    plt.clabel(mapVixPx2,fmt='%4.2f',inline=True)
    plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0)$',color='m',fontsize=14)
    plt.ylabel('Initial Impact Parameter $log_{10}(rho_{Init})$',color='m',fontsize=14)
-   titleHeader = '$10^{18}\cdot Vx_{ion}\cdot \Delta P_x$,  g$\cdot $cm$^2$/s$^2$'
+   titleHeader = '$10^{18}\cdot Vz_{ion}\cdot \Delta P_z$,  g$\cdot $cm$^2$/s$^2$'
    plt.title(titleHeader,color='m',fontsize=12)
 #   titleHeader = 'z-Component of Ion Velocity $Vz_{ion}$, cm/s'
 #   titleHeader += '\n$\widetilde{Vz_{ion}}$ = $10^{-8} \cdot Vz_{ion}$ '
@@ -3733,9 +4544,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig6002.colorbar(mapVixPxm2)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig6002.savefig('picturesCMA_v7/mapVix_dPx_m_fig6002cma.png')    
-      print ('File "picturesCMA_v7/mapVix_dPx_m_fig6002cma.png" is written')
+if (saveFilesFlag == 1):
+   fig6002.savefig('picturesCMA/mapVix_dPx_m_fig6002cma.png')    
+   print ('File "picturesCMA/mapVix_dPx_m_fig6002cma.png" is written')
 
 
 yLimit = [-2.9,-0.3]
@@ -3799,7 +4610,7 @@ if (plotFigureFlag == 0):
    plt.clabel(mapVizPz2,fmt='%4.2f',inline=True)
    plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0)$',color='m',fontsize=14)
    plt.ylabel('Initial Impact Parameter $log_{10}(rho_{Init})$',color='m',fontsize=14)
-   titleHeader = '$10^{16}\cdot Vz_{ion}\cdot \Delta P_z$,  g$\cdot $cm$^2$/s$^2$'
+   titleHeader = '$10^{16}\cdot Vx_{ion}\cdot \Delta P_x$,  g$\cdot $cm$^2$/s$^2$'
    plt.title(titleHeader,color='m',fontsize=12)
    plt.plot([log10relVeTrnsv,log10relVeTrnsv],yLimit,'--m',linewidth=1)
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
@@ -3808,9 +4619,9 @@ if (plotFigureFlag == 0):
    plt.ylim(yLimit)
    fig6102.colorbar(mapVizPzm2)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig6102.savefig('picturesCMA_v7/mapViz_dPz_m_fig6102cma.png')    
-      print ('File "picturesCMA_v7/mapViz_dPz_m_fig6102cma.png" is written')
+if (saveFilesFlag == 1):
+   fig6102.savefig('picturesCMA/mapViz_dPz_m_fig6102cma.png')    
+   print ('File "picturesCMA/mapViz_dPz_m_fig6102cma.png" is written')
 
 log10ionVx_dPx_m = np.zeros((nImpctPrmtr_c,nVion_c))
 log10ionVz_dPz_m = np.zeros((nImpctPrmtr_c,nVion_c))
@@ -3820,9 +4631,9 @@ for i in range(nVion_c):
       log10ionVx_dPx_m[n,i] = np.log10(1.e18*ionVx_dPx_m[n,i])
       log10ionVz_dPz_m[n,i] = np.log10(1.e16*ionVz_dPz_m[n,i])
 
-if (plotFigureFlag == 0):   
-   fig6000=plt.figure (6000)
-   ax = fig6000.add_subplot(111)                    # for contours plotting
+if (plotFigureFlag == 1):   
+   fig6005=plt.figure (6000)
+   ax = fig6005.add_subplot(111)                    # for contours plotting
    mapVixPxm_c = ax.contourf(X_c,Y_c,log10ionVx_dPx_m[0:nImpctPrmtr_c,0:nVion_c],cmap='jet') 
 #   mapVixPx_c = ax.contour(X_c,Y_c,log10ionVx_dPx_m[0:nImpctPrmtr_c,0:nVion_c],levels=range(0,2,1),colors='black') 
    mapVixPx_c = ax.contour(X_c,Y_c,log10ionVx_dPx_m[0:nImpctPrmtr_c,0:nVion_c],7,colors='black') 
@@ -3838,16 +4649,16 @@ if (plotFigureFlag == 0):
 # y   plt.xlim([-4.75,-3.25])
 # y   plt.ylim([-2.75,-2.0])
    plt.ylim(yLimit)
-   fig6000.colorbar(mapVixPxm_c)
+   fig6005.colorbar(mapVixPxm_c)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig6000.savefig('picturesCMA_v7/mapLog10Vix_dPx_m_fig6000cma.png')    
-      print ('File "picturesCMA_v7/mapLog10Vix_dPx_m_fig6000cma.png" is written')
+if (saveFilesFlag == 1):
+   fig6005.savefig('picturesCMA/mapLog10Vix_dPx_m_fig6005cma.png')    
+   print ('File "picturesCMA/mapLog10Vix_dPx_m_fig6005cma.png" is written')
 
 # yLimit = [-2.9,-0.3]
-if (plotFigureFlag == 0):   
-   fig6100=plt.figure (6100)
-   ax = fig6100.add_subplot(111)                    # for contours plotting
+if (plotFigureFlag == 1):   
+   fig6105=plt.figure (6100)
+   ax = fig6105.add_subplot(111)                    # for contours plotting
    mapVizPzm_c = ax.contourf(X_c,Y_c,log10ionVz_dPz_m[0:nImpctPrmtr_c,0:nVion_c],cmap='jet') 
 #   mapVizPz_c = ax.contour(X_c,Y_c,log10ionVz_dPz_m[0:nImpctPrmtr_c,0:nVion_c],levels=range(0,2,1),colors='black') 
    mapVizPz_c = ax.contour(X_c,Y_c,log10ionVz_dPz_m[0:nImpctPrmtr_c,0:nVion_c],7,colors='black') 
@@ -3863,11 +4674,11 @@ if (plotFigureFlag == 0):
 # y   plt.xlim([-4.75,-3.25])
 # y   plt.ylim([-2.75,-2.0])
    plt.ylim(yLimit)
-   fig6100.colorbar(mapVizPzm_c)
+   fig6105.colorbar(mapVizPzm_c)
    plt.grid(True)
-   if (saveFilesFlag == 1):
-      fig6100.savefig('picturesCMA_v7/mapLog10Viz_dPz_m_fig6100cma.png')    
-      print ('File "picturesCMA_v7/mapLog10Viz_dPz_m_fig6100cma.png" is written')
+if (saveFilesFlag == 1):
+   fig6105.savefig('picturesCMA/mapLog10Viz_dPz_m_fig6105cma.png')    
+   print ('File "picturesCMA/mapLog10Viz_dPz_m_fig6105cma.png" is written')
 
 #
 # Dependecies of ionVz_dPz_m on impact parameter rhoInit for different
@@ -3890,15 +4701,15 @@ if (plotFigureFlag == 0):
 #       plt.ylim([ .9*[nImpctPrmtr-1,indxFigures[i]], \
 #                 1.1*[0,indxFigures[i]]])
 #       plt.legend(['Calculated Data',('Fitted Data (Func1): B = %5.3f' % \
-#                   abs(fitB_pz[indxFigures[i]])), \
+#                   abs(fitB1_pz[indxFigures[i]])), \
 #                  ('Fitted Data (Func2): B = %5.3f'% abs(fitB2_pz[indxFigures[i]]))], \
 #                 loc='lower left',fontsize=11)
 #       plt.text(xPos[i],yPos[i],'Fitted $\Delta P_z$ are proportional to $rho_{Init}^{-B}$', \
 # 	       color='m',fontsize=16)
       plt.grid(True)
       if (saveFilesFlag == 1):
-         fileName = 'picturesCMA_v7/ionVz_dPz_indxPlot-'+str(indxFigures[i])+'_fig'
-         fileName += str(numbrFigures[i]+8)+'cma.png' 
+         fileName = 'picturesCMA/deltaEtransf_indxPlot-'+str(indxFigures[i])+'_fig'
+         fileName += str(numbrFigures[i])+'cma.png' 
          figCrrnt.savefig(fileName) 
          print ('File "',fileName,'" is written')
 
@@ -3908,137 +4719,247 @@ if (plotFigureFlag == 0):
 #
 #===================================================
 #
-fitA_vz_pz = np.zeros(nVion)            # dimensionless 
-fitB_vz_pz = np.zeros(nVion)            # dimensionless
-dPosA_vz_pz = np.zeros(nVion)
-dNegA_vz_pz = np.zeros(nVion)
-dPosB_vz_pz = np.zeros(nVion)
-dNegB_vz_pz = np.zeros(nVion)
+# Fitting for figures with ionVz_dPz_m (my own Least Squares Method - LSM;
+# Python has own routine for LSM - see site  
+#     http://scipy-cookbook.readthedocs.io/items/FittingData.html):
+#
+#
+# First minimized functional: 
+#   
+#  ionVz_dPz_m = 10^fitA_vz_pz * rho^fitB_vz_pz,
+#  so that
+#
+# log10(ionVz_dPz_m) = fitB_vz_pz*log10(rho) + fitA_vz_pz
+#
+# So, the dimension of expression (10^fitA_vz_pz * rho^fitB_vz_pz) is the same
+# as ionVz_dPz_m,  i.e. g*cm^2/c^2
+#
 
-funcHi2_vz_pz = np.zeros(nVion)
-rhoInitFit_vz_pz = np.zeros((nImpctPrmtr,nVion))
-ionVz_dPz_m_fit = np.zeros((nImpctPrmtr,nVion))
+maxIndx = np.zeros(nVion)
+fitA1_vz_pz = np.zeros(nVion)            # dimensionless 
+fitB1_vz_pz = np.zeros(nVion)            # dimensionless
+fitA2_vz_pz = np.zeros(nVion)            # dimensionless 
+fitB2_vz_pz = np.zeros(nVion)            # dimensionless
+dPosA1_vz_pz = np.zeros(nVion)
+dNegA1_vz_pz = np.zeros(nVion)
+dPosB1_vz_pz = np.zeros(nVion)
+dNegB1_vz_pz = np.zeros(nVion)
 
-fitA_vz_pz,fitB_vz_pz,funcHi2_vz_pz,rhoInitFit_vz_pz, ionVz_dPz_m_fit = \
-fitting(nImpctPrmtr,nVion,rhoInit,ionVz_dPz_m)
-dPosA_vz_pz,dNegA_vz_pz = \
-errFitAB(nImpctPrmtr,nVion,rhoInit,ionVz_dPz_m,fitA_vz_pz,fitB_vz_pz,funcHi2_vz_pz,1,2)
-dPosB_vz_pz,dNegB_vz_pz = \
-errFitAB(nImpctPrmtr,nVion,rhoInit,ionVz_dPz_m,fitA_vz_pz,fitB_vz_pz,funcHi2_vz_pz,2,2)
-# print ('Fitting for ionVz_dPz_m:')
+#
+# Preparing of the initial data:
+# 
+log10rhoInit = np.zeros((nImpctPrmtr,nVion))
+log10ionVz_dPz_m = np.zeros((nImpctPrmtr,nVion))
+
+timeStart = os.times()
+for i in range(nVion):
+   indx = 0
+   for n in range(nImpctPrmtr):
+      if ((rhoInit[n,i] > 0.) and (ionVz_dPz_m[n,i] > 0.)):
+         log10rhoInit[indx,i] = np.log10(rhoInit[n,i])
+         log10ionVz_dPz_m[indx,i] = np.log10(ionVz_dPz_m[n,i])
+         indx += 1
+      else:
+         print ('i = %d, n = %d: rhoInit = %e, deltaPz_m = %e' % \
+	        (i,n,rhoInit[n,i],ionVz_dPz_m[n,i]))	 
+   maxIndx[i] = int(indx)
+#    print ('maxIndx(%d) = %d' % (i,maxIndx[i]-1))
+
+#
+# Fitting ionVz_dPz_m with first functional: 
+#   
+funcHi2_1_vz_pz = np.zeros(nVion)
+rhoInitFit1_vz_pz = np.zeros((int(maxIndx[0]),nVion))
+ionVz_dPz_m_Fit1 = np.zeros((int(maxIndx[0]),nVion))
+
+fitA1_vz_pz,fitB1_vz_pz,funcHi2_1_vz_pz,rhoInitFit1_vz_pz, ionVz_dPz_m_Fit1 = \
+fitFunc1(nImpctPrmtr,nVion,rhoInit,ionVz_dPz_m)
+dPosA1_vz_pz,dNegA1_vz_pz = \
+errFitAfunc1(nImpctPrmtr,nVion,rhoInit,ionVz_dPz_m,fitA1_vz_pz,fitB1_vz_pz,funcHi2_1_vz_pz)
+dPosB1_vz_pz,dNegB1_vz_pz = \
+errFitBfunc1(nImpctPrmtr,nVion,rhoInit,ionVz_dPz_m,fitA1_vz_pz,fitB1_vz_pz,funcHi2_1_vz_pz)
+print ('Fitting of with first functional:')
+for i in range(nVion):
+   print ('i=%2d: fitA1_vz_pz = %e (+%e,-%e), fitB1_vz_pz = %e (+%e,-%e), hi2_1 = %e'  % \
+          (i,fitA1_vz_pz[i],dPosA1_vz_pz[i],dNegA1_vz_pz[i], \
+	     fitB1_vz_pz[i],dPosB1_vz_pz[i],dNegB1_vz_pz[i],funcHi2_1_vz_pz[i]))
+
+#
+# Fitting with second functional: 
+#   
+rhoInitFit2_vz_pz = np.zeros((nImpctPrmtr,nVion))
+ionVz_Pz_m_Fit2 = np.zeros((nImpctPrmtr,nVion))
+funcHi2_2_vz_pz = np.zeros(nVion)
+
+fitA2_vz_pz,fitB2_vz_pz,funcHi2_2_vz_pz,rhoInitFit2_vz_pz,ionVz_Pz_m_Fit2 = \
+fitFunc2(nImpctPrmtr,nVion,rhoInit,ionVz_dPz_m)
 # for i in range(nVion):
-#    print ('i=%2d: fitA_vz_pz = %e (+%e,-%e), fitB_vz_pz = %e (+%e,-%e), hi2_1 = %e'  % \
-#           (i,fitA_vz_pz[i],dPosA_vz_pz[i],dNegA_vz_pz[i], \
-# 	     fitB_vz_pz[i],dPosB_vz_pz[i],dNegB_vz_pz[i],funcHi2_vz_pz[i]))
+#    print ('i=%2d: fitA2_vz_pz = %e, fitB2_vz_pz = %e, hi2_2_vz_pz = %e' % \
+#           (i,fitA2_vz_pz[i],fitB2_vz_pz[i],funcHi2_2_vz_pz[i]))
 
+#
+# Calculation of +-deltaA for second functional
+#
+dPosA2_vz_pz = np.zeros(nVion)
+dNegA2_vz_pz = np.zeros(nVion)
+dPosA2_vz_pz,dNegA2_vz_pz = \
+errFitAfunc2(nImpctPrmtr,nVion,rhoInit,ionVz_dPz_m,fitA2_vz_pz,fitB2_vz_pz,funcHi2_2_vz_pz)
+#for i in range(nVion):
+#   print ('i=%d: A = %7.3f + %7.3f  - %7.3f (funcHi2_2_vz_pz = %e)' % \
+#          (i,fitA2_vz_pz[i],dPosA2_vz_pz[i],dNegA2_vz_pz[i],funcHi2_2_vz_pz[i]))
+
+#
+# Calculation of +-deltaB for second functional
+#
+stepB2_vz_pz = 0.05
+dPosB2_vz_pz = np.zeros(nVion)
+for i in range(nVion):
+#    print ('i=%d: fitB2_vz_pz = %e, funcHi2_2_vz_pz = %e' % (i,fitB2_vz_pz[i], funcHi2_2_vz_pz[i]))
+   factorA2_vz_pz = math.pow(10.,fitA2_vz_pz[i])
+   deltaFuncHi2_2_vz_pz = 0.
+   k = 0
+   curFuncHi2_2_vz_pz = 0.
+   while (deltaFuncHi2_2_vz_pz < 1.):
+      k += 1 
+      if k > 2000:
+         print ('Break (Fit B for ionVz_dPz_m; positive) for %d' % i)
+         break
+      curFitB2_vz_pz = fitB2_vz_pz[i] + k*stepB2_vz_pz
+      curFuncHi2_2_vz_pz = 0.
+      for n in range(int(maxIndx[i])):
+         rhoInitFit2_vz_pz[n,i] = math.pow(10.,log10rhoInit[n,i])
+         curIonVz_Pz_m_Fit2 = factorA2_vz_pz*math.pow(rhoInitFit2_vz_pz[n,i],curFitB2_vz_pz)
+         curFuncHi2_2_vz_pz += (1.-np.log10(abs(curIonVz_Pz_m_Fit2))/ \
+                                np.log10(abs(ionVz_dPz_m[n,i])))**2 
+      deltaFuncHi2_2_vz_pz = curFuncHi2_2_vz_pz - funcHi2_2_vz_pz[i] 
+#      if i == 0:
+#         print ('    step %2d ==> curfitB2_vz_pz = %e, curHi2_2_vz_pz = %e, deltaFuncHi2_2_vz_pz=%e' % \
+#                (k,curFitB2_vz_pz,curFuncHi2_2_vz_pz,deltaFuncHi2_2_vz_pz))
+   dPosB2_vz_pz[i] = abs(curFitB2_vz_pz - fitB2_vz_pz[i])
+#    print('Result:dPosB2_vz_pz(%d) = %e' % (i,dPosB2_vz_pz[i])) 
+#   print ('i=%d: fitB2_vz_pz = %e + %e , funcHi2_2_vz_pz = %e (for %d steps funcHi2_2_vz_pz = %e)' % \
+#          (i,fitB2_vz_pz[i],dPosB2_vz_pz[i],funcHi2_2_vz_pz[i],k,curFuncHi2_2_vz_pz))
+
+dNegB2_vz_pz = np.zeros(nVion)
+for i in range(nVion):
+#    print ('i=%d: fitB2_vz_pz = %e, funcHi2_2_vz_pz = %e' % (i,fitB2_vz_pz[i], funcHi2_2_vz_pz[i]))
+   factorA2_vz_pz = math.pow(10.,fitA2_vz_pz[i])
+   deltaFuncHi2_2_vz_pz = 0.
+   k = 0
+   curFuncHi2_2_vz_pz = 0.
+   while (deltaFuncHi2_2_vz_pz < 1.):
+      k += 1 
+      if k > 2000:
+         print ('Break (Fit B for ionVz_dPz_m; negative) for %d' % i)
+         break
+      curFitB2_vz_pz = fitB2_vz_pz[i] - k*stepB2_vz_pz
+      curFuncHi2_2_vz_pz = 0.
+      for n in range(int(maxIndx[i])):
+         rhoInitFit2_vz_pz[n,i] = math.pow(10.,log10rhoInit[n,i])
+         curIonVz_Pz_m_Fit2 = factorA2_vz_pz*math.pow(rhoInitFit2_vz_pz[n,i],curFitB2_vz_pz)
+         curFuncHi2_2_vz_pz += (1.-np.log10(abs(curIonVz_Pz_m_Fit2))/ \
+                                   np.log10(abs(ionVz_dPz_m[n,i])))**2 
+      deltaFuncHi2_2_vz_pz = curFuncHi2_2_vz_pz - funcHi2_2_vz_pz[i] 
+#      if i == 0:
+#         print ('    step %2d ==> curfitB2_vz_pz = %e, curHi2_2_vz_pz = %e, deltaFuncHi2_2_vz_pz=%e' % \
+#                (k,curFitB2_vz_pz,curFuncHi2_2_vz_pz,deltaFuncHi2_2_vz_pz))
+   dNegB2_vz_pz[i] = abs(curFitB2_vz_pz - fitB2_vz_pz[i])
+#    print('Result:dPosB2_vz_pz(%d) = %e' % (i,dPosB2_vz_pz[i])) 
+#    print ('i=%d: fitB2_vz_pz = %e - %e , funcHi2_2_vz_pz = %e (for %d steps funcHi2_2_vz_pz = %e)' % \
+#           (i,fitB2_vz_pz[i],dNegB2_vz_pz[i],funcHi2_2_vz_pz[i],k,curFuncHi2_2_vz_pz))
+
+# print ('\nResults for exponent B in ionVz_dPz_m fitting:\n')
+#for i in range(nVion):
+#   print ('i=%d: B = %5.3f + %5.3f - %5.3f, (funcHi2_2_vz_pz = %e)' % \
+#          (i,fitB2_vz_pz[i],dPosB2_vz_pz[i],dNegB2_vz_pz[i],funcHi2_2_vz_pz[i]))
+# print ('Exponent B for ionVz_dPz_m: <NegError> = %e, <PosError> =%e' % \
+#        (mean(dNegB2_vz_pz),mean(dPosB2_vz_pz)))
+
+dPosB2_vz_pzHelp = np.zeros(nVion)
+dNegB2_vz_pzHelp = np.zeros(nVion)
+dPosB2_vz_pzHelp,dNegAB_vz_pzHelp = \
+errFitBfunc2(nImpctPrmtr,nVion,rhoInit,ionVz_dPz_m,fitA2_vz_pz,fitB2_vz_pz,funcHi2_2_vz_pz)
+#for i in range(nVion):
+#   print ('i=%d: A = %7.3f + %7.3f  - %7.3f (funcHi2_2_vz_pz = %e)' % \
+#          (i,fitA2_vz_pz[i],dPosA2_vz_pz[i],dNegA2_vz_pz[i],funcHi2_2_vz_pz[i]))
 
 xLimit = [1.015*np.log10(VionRel[0]),.95*np.log10(VionRel[nVion-1])]
 
 yLimMin = 0.
-yLimMax = 10.*min(fitA_vz_pz)
+yLimMax = 10.*min(fitA2_vz_pz)
 for i in range(nVion):
-   if (fitA_vz_pz[i] - dNegA_vz_pz[i]) < yLimMin:
-      yLimMin = fitA_vz_pz[i] - dNegA_vz_pz[i]
-   if (fitA_vz_pz[i] + dPosA_vz_pz[i]) > yLimMax:
-      yLimMax = fitA_vz_pz[i] + dPosA_vz_pz[i]
+   if (fitA2_vz_pz[i] - dNegA2_vz_pz[i]) < yLimMin:
+      yLimMin = fitA2_vz_pz[i] - dNegA2_vz_pz[i]
+   if (fitA2_vz_pz[i] + dPosA2_vz_pz[i]) > yLimMax:
+      yLimMax = fitA2_vz_pz[i] + dPosA2_vz_pz[i]
 # print ('Exponent A (VzPz): yLimMin = %e, yLimMax = %e' % (yLimMin,yLimMax))
 
 yLimit = [yLimMin-.5,yLimMax+.5]
-if (plotFigureFlag == 0):   
+if (plotFigureFlag == 1):   
    fig3040=plt.figure (3040)
-   plt.errorbar(np.log10(VionRel),fitA_vz_pz,yerr=[dNegA_vz_pz,dPosA_vz_pz],fmt='-ro', \
+   plt.errorbar(np.log10(VionRel),fitA2_vz_pz,yerr=[dNegA2_vz_pz,dPosA2_vz_pz],fmt='-ro', \
                 ecolor='b',capsize=5,capthick=1)
    plt.xlabel('Relative Ion Velocity, $log_{10}(V_{ion}/V_0)$',color='m',fontsize=14)
    plt.ylabel('Exponent $A$', color='m',fontsize=14)
    titleHeader = 'Dependence of Transferred Value to Single Ion: '
    titleHeader += '$V_z \cdot \Delta P_z$ = $10^A\cdot rho^B$'
    plt.title(titleHeader,color='m',fontsize=12)
-   plt.text(-3.75,-19.1,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
+   plt.text(-4.7,-17.0,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
             color='m',fontsize=16)
-   plt.text(-4.0,-22.0,('<A>=%7.3f $\pm$ %5.3f' % (mean(fitA_vz_pz),mean(dNegA_vz_pz))), \
-            color='r',fontsize=16)
-#   plt.text(-2.77,-24.25,('$-$%5.3f' % (mean(dNegA_vz_pz))),color='r',fontsize=12)
-#   plt.text(-2.77,-23.75,('$+$%5.3f' % (mean(dPosA_vz_pz))),color='r',fontsize=12)
+   plt.text(-3.9,-24.0,('<A>=%7.3f' % (mean(fitA2_vz_pz))),color='r',fontsize=16)
+   plt.text(-2.77,-24.25,('$-$%5.3f' % (mean(dNegA2_vz_pz))),color='r',fontsize=12)
+   plt.text(-2.77,-23.75,('$+$%5.3f' % (mean(dPosA2_vz_pz))),color='r',fontsize=12)
    plt.xlim(xLimit)
    plt.ylim(yLimit)
    plt.grid(True)
    plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
-   plt.text(-2.55,-22.5,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.55,-26.75,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([np.log10(relVeLong),np.log10(relVeLong)],yLimit,'--m',linewidth=1)
-   plt.text(-4.24,-22.5,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig3040.savefig('picturesCMA_v7/fitA_ionVz_dPz_fig3040cma.png')    
-      print ('File "picturesCMA_v7/fitA_ionVz_dPz_fig3040cma.png" is written')   
+   plt.text(-4.24,-26.75,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+if (saveFilesFlag == 1):
+   fig3040.savefig('picturesCMA/mapA-B_fig3040cma.png')    
+   print ('File "picturesCMA/mapA-B_fig3040cma.png" is written')   
 
 yLimMin = 0.
-yLimMax = 10.*min(fitB_vz_pz)
+yLimMax = 10.*min(fitB2_vz_pz)
 for i in range(nVion):
-   if (fitB_vz_pz[i] - dNegB_vz_pz[i]) < yLimMin:
-      yLimMin = fitB_vz_pz[i] - dNegB_vz_pz[i]
-   if (fitB_vz_pz[i] +  dPosB_vz_pz[i]) > yLimMax:
-      yLimMax = fitB_vz_pz[i] +  dPosB_vz_pz[i]
+   if (fitB2_vz_pz[i] - dNegB2_vz_pz[i]) < yLimMin:
+      yLimMin = fitB2_vz_pz[i] - dNegB2_vz_pz[i]
+   if (fitB2_vz_pz[i] +  dPosB2_vz_pz[i]) > yLimMax:
+      yLimMax = fitB2_vz_pz[i] +  dPosB2_vz_pz[i]
 # print ('Exponent B (VzPz): yLimMin = %e, yLimMax = %e' % (yLimMin,yLimMax))
 
 yLimit = [yLimMin-.1,yLimMax+.1]
-if (plotFigureFlag == 0):   
+if (plotFigureFlag == 1):   
    fig3050=plt.figure (3050)
-   plt.errorbar(np.log10(VionRel),fitB_vz_pz,yerr=[dNegB_vz_pz,dPosB_vz_pz],fmt='-ro', \
+   plt.errorbar(np.log10(VionRel),fitB2_vz_pz,yerr=[dNegB2_vz_pz,dPosB2_vz_pz],fmt='-ro', \
                 ecolor='b',capsize=5,capthick=1)
    plt.xlabel('Relative Ion Velocity, $log_{10}(V_{ion}/V_0)$',color='m',fontsize=14)
    plt.ylabel('Exponent $B$', color='m',fontsize=14)
    titleHeader = 'Dependence of Transferred Value to Single Ion: '
    titleHeader += '$V_z \cdot \Delta P_z$ = $10^A\cdot rho^B$'
    plt.title(titleHeader,color='m',fontsize=12)
-   plt.text(-3.75,-.875,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
+   plt.text(-3.75,-.4,('$V_{e0}=%5.3f\cdot10^{%2d}$cm/s' % (mantV0,powV0)), \
             color='m',fontsize=16)
-   plt.text(-3.9,-1.6,('<B>=%6.3f $\pm$ %5.3f' % (mean(fitB_vz_pz),mean(dNegB_vz_pz))), \
-            color='r',fontsize=16)
-#   plt.text(-2.87,-2.55,('$-$%5.3f' % (mean(dNegB_vz_pz))),color='r',fontsize=12)
-#   plt.text(-2.87,-2.45,('$+$%5.3f' % (mean(dPosB_vz_pz))),color='r',fontsize=12)
+   plt.text(-3.9,-1.5,('<B>=%6.3f' % (mean(fitB2_vz_pz))),color='r',fontsize=16)
+   plt.text(-2.87,-1.535,('$-$%5.3f' % (mean(dNegB2_vz_pz))),color='r',fontsize=12)
+   plt.text(-2.87,-1.465,('$+$%5.3f' % (mean(dPosB2_vz_pz))),color='r',fontsize=12)
    plt.xlim(xLimit)
    plt.ylim(yLimit)
    plt.grid(True)
    plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
-   plt.text(-2.55,-1.75,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.55,-1.65,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([np.log10(relVeLong),np.log10(relVeLong)],yLimit,'--m',linewidth=1)
-   plt.text(-4.24,-1.75,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-   if (saveFilesFlag == 1):
-      fig3010.savefig('picturesCMA_v7/fitB_ionVz_dPz_fig3050cma.png')    
-      print ('File "picturesCMA_v7/fitB_ionVz_dPz_fig3050cma.png" is written')   
-
-if (plotFigureFlag == 0):   
-   for i in range(12):
-      VionCrrnt = V0*VionRel[indxFigures[i]]
-      powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
-      mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
-      figCrrnt = plt.figure(numbrFigures[i]+9)
-      plt.loglog(rhoInit[0:nImpctPrmtr,indxFigures[i]], \
-                 1.e16*ionVz_dPz_m[0:nImpctPrmtr,indxFigures[i]],'xr', \
-                 rhoInitFit_vz_pz[0:nImpctPrmtr,indxFigures[i]], \
-	         1.e16*ionVz_dPz_m_fit[0:nImpctPrmtr,indxFigures[i]],'ob',linewidth=2)
-      plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
-      plt.ylabel('$10^{16} \cdot Vi_z\cdot\Delta P_z$, $eV$', color='m',fontsize=14)
-      titleHeader = 'Transferred Value $VI_z\cdot\Delta P_z$ to Single Ion:'
-      titleHeader += ' $V_{ion}=%3.1f\cdot10^{%2d}$ $cm/s$'
-      plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
-      plt.xlim([.95*rhoInit[0,indxFigures[i]],1.05*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
-#      plt.ylim([ .9e24*deltaPz_m[nImpctPrmtr-1,indxFigures[i]], \
-#                1.1e24*deltaPz_m_fit[0,indxFigures[i]]])
-      plt.legend(['Calculated Data', \
-                  ('Fitting: $Vi_z\cdot\Delta P_z=10^A\cdot$rho$_{init}^B$; B = %5.3f $\pm$ %5.3f' % \
-                   (fitB_vz_pz[indxFigures[i]],dNegB_vz_pz[indxFigures[i]]))],loc='lower left',fontsize=11)
-      plt.grid(True)
-      if (saveFilesFlag == 1):
-         fileName = 'picturesCMA_v7/ionVz_dPz_withFit_indxPlot-'+str(indxFigures[i])+'_fig'
-         fileName += str(numbrFigures[i]+9)+'cma.png' 
-         figCrrnt.savefig(fileName) 
-         print ('File "',fileName,'" is written')
+   plt.text(-4.24,-1.65,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+if (saveFilesFlag == 1):
+   fig3010.savefig('picturesCMA/mapA-B_fig3050cma.png')    
+   print ('File "picturesCMA/mapA-B_fig3050cma.png" is written')   
 
 #
 # Dependecies of ionVx_dPx_m on ion velocity Vion for different 
 # impact parameters rhoInit:
 #
-# if (plotFigureFlag == 0):   
+# if (plotFigureFlag == 1):   
 #    for i in range(12):
 #       VionCrrnt = V0*VionRel[indxFigures[i]]
 #       powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
@@ -4046,10 +4967,10 @@ if (plotFigureFlag == 0):
 #       figCrrnt = plt.figure(numbrFigures[i]+9)
 #       plt.loglog(rhoInit[0:nImpctPrmtr,indxFigures[i]], \
 #                  deltaPx_m[0:nImpctPrmtr,indxFigures[i]],'xr', \
-#                  rhoInitFit_px[0:nImpctPrmtr,indxFigures[i]], \
-# 	         deltaPx_m_fit[0:nImpctPrmtr,indxFigures[i]],'ob', \
-#                  rhoInitFit2_px[0:nImpctPrmtr,indxFigures[i]], \
-# 	         deltaPx_m_Fit2[0:nImpctPrmtr,indxFigures[i]], \
+#                  rhoInitFit1_px[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+# 	         deltaPx_m_Fit1[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]],'ob', \
+#                  rhoInitFit2_px[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
+# 	         deltaPx_m_Fit2[0:int(maxIndx[indxFigures[i]])+1,indxFigures[i]], \
 # 	         'or',linewidth=2)
 #       plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
 #       plt.ylabel('$\Delta P_x$, $eV$', color='m',fontsize=14)
@@ -4060,7 +4981,7 @@ if (plotFigureFlag == 0):
 #       plt.ylim([ .9*deltaPx_m[nImpctPrmtr-1,indxFigures[i]], \
 #                 1.1*deltaPx_m_Fit2[0,indxFigures[i]]])
 #       plt.legend(['Calculated Data',('Fitted Data (Func1): B = %5.3f' % \
-#                   abs(fitB_px[indxFigures[i]])), \
+#                   abs(fitB1_px[indxFigures[i]])), \
 #                  ('Fitted Data (Func2): B = %5.3f'% abs(fitB2_px[indxFigures[i]]))], \
 #                 loc='lower left',fontsize=11)
 #       plt.text(xPos[i],yPos[i],'Fitted $\Delta P_x$ are proportional to $rho_{Init}^{-B}$', \
@@ -4076,7 +4997,7 @@ plt.show()
 
 sys.exit()
 
-# if (plotFigureFlag == 0):   
+# if (plotFigureFlag == 1):   
 #    fig6005=plt.figure (6005)
 #    ax = fig6005.add_subplot(111)                    # for contours plotting
 #    mapVixPxm1 = ax.contourf(X,Y,1.e18*ionVx_dPx_m-.6,cmap='jet') 
@@ -4102,7 +5023,7 @@ sys.exit()
 #    fig6005.savefig('picturesCMA/mapVix_m_fig6005cma.png')    
 #    print ('File "picturesCMA/mapVix_m_fig6005cma.png" is written')
 
-# if (plotFigureFlag == 0):   
+# if (plotFigureFlag == 1):   
 #    fig6105=plt.figure (6105)
 #    ax = fig6105.add_subplot(111)                    # for contours plotting
 #    mapVizPzm1 = ax.contourf(X,Y,1.e16*ionVz_dPz_m-1.5,cmap='jet') 
