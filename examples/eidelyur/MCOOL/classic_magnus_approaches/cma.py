@@ -266,6 +266,10 @@ inpfile.close()
 print ('Close input file "%s"' % inputFile)
 '''
 
+#====================================================================
+#
+#------------------ Begin of defined functions -----------------------
+
 #
 # Larmor frequency electron:
 #
@@ -610,6 +614,54 @@ def errFitAB(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2,errVar,errType):
 #                (i,fitB[i],negErrFit[i],funcHi2[i],k,curFuncHi2))
    return posErrFit,negErrFit
 
+
+def fittedGKintegration(xMin,xMax,fitA,fitB):
+#
+#  "Gauss-Kronrod" method of integration (GK)
+#
+#
+# Points (psi_i) and weigths (w_i) to integrate for interval from -1 to 1;
+# These data are from William H. Beyer. "Handbook of Mathematical Science".
+# 5th Edition, CRC Press, Inc, 1978.
+#
+# To integrate for interval from 0 to 1 it is necessary to change points
+# psi_i with points ksi_i=(1+psi_i)/2;
+#
+# For method with order N for function F(x):
+#      int_(-1)^1 = sum_1^N [w_i* F(psi_i)];
+#
+# In case of integration over interval from a to b:  
+#      int_(a)^b = (b-a)/2 * sum_1^N [w_i* F(x_i)], where
+#            x_i = (b-a)*psi_i/2+(a+b)/2.
+#
+#----------------------------------------------------
+#
+# Data for GK:
+#
+#----------------------------------------------------
+
+   nPoints_GK = 16
+   psi_16=np.array([-0.9894009, -0.9445750, -0.8656312, -0.7554044, -0.6178762, \
+                    -0.4580168, -0.2816036, -0.0950125,  0.0950125,  0.2816036, \
+		     0.4580168,  0.6178762,  0.7554044,  0.8656312,  0.9445750, \
+		     0.9894009])
+   w_16  =np.array([ 0.0271525,  0.0622535,  0.0951585,  0.1246290,  0.1495960, \
+                     0.1691565,  0.1826034,  0.1894506,  0.1894506,  0.1826034, \
+		     0.1691565,  0.1495960,  0.1246290,  0.0951585,  0.0622535, \
+		     0.0271525])
+
+   y = np.zeros(nPoints_GK)
+   yIntegrated = 0.
+   for n in range(nPoints_GK):
+      xCrrnt = psi_16[n]*(xMax-xMin)/2 + (xMax+xMin)/2.
+      factorA = math.pow(10.,fitA)
+      y[n] = factorA*math.pow(xCrrnt,fitB)
+      yIntegrated += (xMax-xMin)*w_16[n]*y[n]*xCrrnt
+   return y,yIntegrated      
+
+#------------------ End of defined functions -----------------------
+#
+#====================================================================
 
 sphereNe=3.
 R_e=math.pow(sphereNe/n_e,1./3)                                     # cm
@@ -2199,7 +2251,7 @@ if (plotFigureFlag == 0):
 # for different ion velocities:
 #
 if (plotFigureFlag == 0):   
-   for i in rangse(12):
+   for i in range(12):
       VionCrrnt = V0*VionRel[indxFigures[i]]
       powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
       mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
@@ -2217,7 +2269,7 @@ if (plotFigureFlag == 0):
       plt.ylim([ .9*deltaPx_m[nImpctPrmtr-1,indxFigures[i]], \
                 1.1*deltaPx_m_fit[0,indxFigures[i]]])
       plt.legend(['Calculated Data', \
-                  ('Fitting: $\Delta P_x=10^A\cdot$rho$_{init}^B$; B = %5.3f $\pm$ %5.3f' % \
+                  ('Fitting: $\Delta P_x=10^A\cdot rho_{init}^B$; B = %5.3f $\pm$ %5.3f' % \
                   (fitB_px[indxFigures[i]],dNegB_px[indxFigures[i]]))],loc='lower left',fontsize=11)
 #      plt.text(xPos[i],yPos[i],'Fitted $\Delta P_x$ are proportional to $rho_{Init}^{-B}$', \
 #	       color='m',fontsize=16)
@@ -2253,11 +2305,11 @@ if (plotFigureFlag == 0):
                 1.1e-18*max(deltaEnrgIon_m[0,indxFigures[i]], \
 		            deltaEnrgIon_m_fit[0,indxFigures[i]])])
       plt.legend(['Calculated Data', \
-                  ('Fitting: $\Delta E_{ion}=10^A\cdot$rho$_{init}^B$; B = %5.3f $\pm$ %5.3f' % \
+                  ('Fitting: $\Delta E_{ion}=10^A\cdot rho_{init}^B$; B = %5.3f $\pm$ %5.3f' % \
                    (fitB_dEion[indxFigures[i]],dNegB_dEion[indxFigures[i]]))],loc='lower left',fontsize=11)
       plt.grid(True)
       if (saveFilesFlag == 1):
-         fileName = 'picturesCMA_v7/dPz_withFit_indxPlot'+str(indxFigures[i])+'_fig'
+         fileName = 'picturesCMA_v7/dEion_withFit_indxPlot'+str(indxFigures[i])+'_fig'
          fileName += str(numbrFigures[i]+6)+'cma.png' 
          figCrrnt.savefig(fileName) 
          print ('File "',fileName,'" is written')
@@ -2269,11 +2321,11 @@ if (plotFigureFlag == 0):
 yPos = [1.45,6.1,3.3,2.01]
 viewFctr = [1.,1.,1.,1.]
 viewFctr = [1.e-19,1.e-18,1.e-17,1.e-17]
-if (plotFigureFlag == 1):   
+if (plotFigureFlag == 0):   
    for k in range(nRhoSlctd):
       powViewFctr = math.floor(np.log10(viewFctr[k])) 
       mantViewFctr = viewFctr[k]/(10**powViewFctr) 
-      figCrrnt=plt.figure (6000+100*k)
+      figCrrnt=plt.figure (7000+100*k)
       plt.semilogx(VionRel[npStart[k]:nVion-1], \
                    viewFctr[k]*deltaEnrgIon_dpnd_Vi[k,npStart[k]:nVion-1],'.r')
       plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=16)
@@ -2294,33 +2346,17 @@ if (plotFigureFlag == 1):
          plt.text(1.6e-3,yPos[k],'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
       plt.grid(True)
       if (saveFilesFlag == 1):
-         fileName = 'picturesCMA/deltaEtransfOnVion_rhoIndx-'+str(k)+'_fig'
-         fileName += str(6000+100*k)+'cma.png' 
+         fileName = 'picturesCMA_v7/deltaEtransfOnVion_rhoIndx-'+str(k)+'_fig'
+         fileName += str(7000+100*k)+'cma.png' 
          figCrrnt.savefig(fileName) 
          print ('File "',fileName,'" is written')
 
 #----------------------------------------------------
 #
 # Integration of the transferred energy to ion from electron beam
-#----------------------------------------------------
 #
-#  "Gauss-Kronrod" method of integration (GK)
-#
-#
-# Points (psi_i) and weigths (w_i) to integrate for interval from -1 to 1;
-# These data are from William H. Beyer. "Handbook of Mathematical Science".
-# 5th Edition, CRC Press, Inc, 1978.
-#
-# To integrate for interval from 0 to 1 it is necessary to change points
-# psi_i with points ksi_i=(1+psi_i)/2;
-#
-# For method with order N for function F(x):
-#      int_(-1)^1 = sum_1^N [w_i* F(psi_i)];
-#
-# In case of integration over interval from a to b:  
-#      int_(a)^b = (b-a)/2 * sum_1^N [w_i* F(x_i)], where
-#            x_i = (b-a)*psi_i/2+(a+b)/2.
-#
+# "Gauss-Kronrod" (GK) method is used
+# Technic of integration see above (function fittedGKintegration)
 #----------------------------------------------------
 #
 # Data for GK:
@@ -2328,6 +2364,7 @@ if (plotFigureFlag == 1):
 #----------------------------------------------------
 
 timeStart = os.times()
+nPointsGK = 16
 
 frctnForce_GK = np.zeros(nVion)   # integration using "Gauss-Kronrod" method 
 
@@ -2340,7 +2377,6 @@ w16  =np.array([ 0.0271525,  0.0622535,  0.0951585,  0.1246290,  0.1495960, \
 		 0.1691565,  0.1495960,  0.1246290,  0.0951585,  0.0622535, \
 		 0.0271525])
 
-nPointsGK = 16
 rhoCrrntGK = np.zeros((nPointsGK,nVion))
 deltaEnrgIon_cGK = np.zeros((nPointsGK,nVion))
 deltaPx_cGK = np.zeros((nPointsGK,nVion))  
@@ -2581,16 +2617,18 @@ if (plotFigureFlag == 0):
 
 
 frctnForce_GKfit = np.zeros(nVion)
+# frctnForce_GKfit1 = np.zeros(nVion)
 for i in range(nVion):
    rhoMaxCrrnt = impctPrmtrMax[i]
+   arrayTemp,valueTemp = fittedGKintegration(rhoMin,rhoMaxCrrnt,fitA_dEion[i],fitB_dEion[i])
    for n in range(nPointsGK):
-      rhoCrrntGK[n,i] = psi16[n]*(rhoMaxCrrnt-rhoMin)/2 + \
-                       (rhoMaxCrrnt+rhoMin)/2
-      factorA = math.pow(10.,fitA_dEion[i])
-      deltaEnrgIon_GKfit[n,i] = factorA*math.pow(rhoCrrntGK[n,i],fitB_dEion[i])
-      frctnForce_GKfit[i] += pi*n_e*100.*(rhoMaxCrrnt-rhoMin)*w16[n]* \
-                             deltaEnrgIon_GKfit[n,i]* rhoCrrntGK[n,i]               # eV/m
-
+      deltaEnrgIon_GKfit[n,i] = arrayTemp[n]  
+   frctnForce_GKfit[i] = pi*n_e*100.*valueTemp                      # eV/m
+#    for n in range(nPointsGK):
+#       rhoCrrntGK[n,i] = psi16[n]*(rhoMaxCrrnt-rhoMin)/2 + \
+#                        (rhoMaxCrrnt+rhoMin)/2
+#       factorA = math.pow(10.,fitA_dEion[i])
+#       deltaEnrgIon_GKfit[n,i] = factorA*math.pow(rhoCrrntGK[n,i],fitB_dEion[i])
 #
 # Figures show dependence of calculated and fitted values of deltaEnrgIon
 # on impact parameter for different ion velocities:
@@ -2601,30 +2639,18 @@ if (plotFigureFlag == 0):
       powVionCrrnt = math.floor(np.log10(VionCrrnt)) 
       mantVionCrrnt = VionCrrnt/(10**powVionCrrnt) 
       figCrrnt = plt.figure(numbrFigures[i]+3)
-#      plt.loglog(rhoInit[0:nImpctPrmtr,indxFigures[i]], \
-#                 1.e-18*deltaEnrgIon_m[0:nImpctPrmtr,indxFigures[i]],'xr', \
-#                 rhoInitFit_dEion[0:nImpctPrmtr,indxFigures[i]], \
-#	         1.e-18*deltaEnrgIon_m_fit[0:nImpctPrmtr,indxFigures[i]],'ob', \
-#		 rhoCrrntGK[0:int(nPointsGK),indxFigures[i]], \
-#		 1.e-18*deltaEnrgIon_GK[0:int(nPointsGK),indxFigures[i]],'og',linewidth=2)
       plt.loglog(rhoInit[0:nImpctPrmtr,indxFigures[i]], \
                  1.e-18*deltaEnrgIon_m[0:nImpctPrmtr,indxFigures[i]],'xr', \
                  rhoInitFit_dEion[0:nImpctPrmtr,indxFigures[i]], \
 	         1.e-18*deltaEnrgIon_m_fit[0:nImpctPrmtr,indxFigures[i]],'ob', \
 		 rhoCrrntGK[0:int(nPointsGK),indxFigures[i]], \
-		 1.e-18*deltaEnrgIon_GKfit[0:int(nPointsGK),indxFigures[i]],'og',linewidth=2)
+		 1.e-18*deltaEnrgIon_GKfit[0:int(nPointsGK),indxFigures[i]],'om',linewidth=2)
       plt.xlabel('Initial Impact Parameter $rho_{Init}$, $cm$',color='m',fontsize=14)
       plt.ylabel('$10^{-18} \cdot \Delta E_{ion}$, $eV$', color='m',fontsize=14)
       titleHeader = 'Transferred Energy $\Delta E_{ion}$ to Single Ion:'
       titleHeader += ' $V_{ion}=%3.1f\cdot10^{%2d}$ $cm/s$'
       plt.title(titleHeader % (mantVionCrrnt,powVionCrrnt),color='m',fontsize=14)
       plt.xlim([.95*rhoInit[0,indxFigures[i]],1.05*rhoInit[nImpctPrmtr-1,indxFigures[i]]])
-#      plt.ylim([ .9e-18*min(deltaEnrgIon_m[nImpctPrmtr-1,indxFigures[i]], \
-#                            deltaEnrgIon_m_fit[nImpctPrmtr-1,indxFigures[i]], \
-#			    deltaEnrgIon_GK[int(nPointsGK)-1,indxFigures[i]]), \
-#                1.1e-18*max(deltaEnrgIon_m[0,indxFigures[i]], \
-#		            deltaEnrgIon_m_fit[0,indxFigures[i]], \
-#			    deltaEnrgIon_GK[0,indxFigures[i]])])
       plt.ylim([ .9e-18*min(deltaEnrgIon_m[nImpctPrmtr-1,indxFigures[i]], \
                             deltaEnrgIon_m_fit[nImpctPrmtr-1,indxFigures[i]], \
 			    deltaEnrgIon_GK[int(nPointsGK)-1,indxFigures[i]]), \
@@ -2632,15 +2658,13 @@ if (plotFigureFlag == 0):
 		            deltaEnrgIon_m_fit[0,indxFigures[i]], \
 			    deltaEnrgIon_GKfit[0,indxFigures[i]])])
       plt.legend(['Calculated Data', \
-                  ('Fitting: $\Delta E_{ion}=10^A\cdot$rho$_{init}^B$; B = %5.3f $\pm$ %5.3f' % \
+                  ('Fitting: $\Delta E_{ion}=10^A\cdot rho_{init}^B$; B = %5.3f $\pm$ %5.3f' % \
                    (fitB_dEion[indxFigures[i]],dNegB_dEion[indxFigures[i]])), \
 		   'Calculated Data for GK Integtation'],loc='lower left',fontsize=11)
-#      plt.text(xPos[i],yPos[i],'Fitted $\Delta P_z$ are proportional to $rho_{Init}^{-B}$', \
-#	       color='m',fontsize=16)
       plt.grid(True)
       if (saveFilesFlag == 1):
          fileName = 'picturesCMA_v7/dPz_withFit_indxPlot'+str(indxFigures[i])+'_fig'
-         fileName += str(numbrFigures[i]+6)+'cma.png' 
+         fileName += str(numbrFigures[i]+3)+'cma.png' 
          figCrrnt.savefig(fileName) 
          print ('File "',fileName,'" is written')
 
@@ -2673,23 +2697,22 @@ if (plotFigureFlag == 0):
 #
 X = np.zeros((nVion,nImpctPrmtr))
 Y = np.zeros((nImpctPrmtr,nVion))
-Z = np.zeros((nVion,nImpctPrmtr,4))
-
-cutoffValues = [-400,-200,-100,-50]
+Z = np.zeros((nVion,nImpctPrmtr,5))
 
 for i in range(nVion):
    for n in range(nImpctPrmtr):
-      X[i,n] = np.log10(VionRel[i])
-      Y[n,i] = np.log10(rhoInit[i,n])
+      X[n,i] = np.log10(VionRel[i])
+      Y[n,i] = np.log10(rhoInit[n,i])
       Z[i,n,0] = dEion_c_m[i,n]                    # dEion
       Z[i,n,1] = deltaPx_c_m[i,n]                  # dPx
       Z[i,n,2] = deltaPy_c_m[i,n]                  # dPy
       Z[i,n,3] = deltaPz_c_m[i,n]                  # dPz
+      Z[i,n,4] = np.log10(abs(.01*deltaPz_c_m[i,n]+1.))                 # dPz
 yLimit = [-2.92,-0.26]
 
 if (plotFigureFlag == 0): 
-   for k in range(1,4,1):  
-      figCrrnt = plt.figure(245+100*k)
+   for k in range(1,5,1):  
+      figCrrnt = plt.figure(1245+100*k)
       ax = figCrrnt.add_subplot(111)                                       # for contours plotting
       mapCrrnt = ax.contourf(X,Y,Z[:,:,k],cmap='jet') 
       plt.plot(np.log10(VionRel),np.log10(impctPrmtrMax),'-r',linewidth=2)
@@ -2699,22 +2722,26 @@ if (plotFigureFlag == 0):
       plt.plot([np.log10(relVeLong), np.log10(relVeLong)], yLimit,'--m',linewidth=1)
       plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=16)
       plt.ylabel('Initial Impact Parameter, $log_{10}(rho_{Init})$',color='m',fontsize=16)
-      titleHeader = 'Difference of $\Delta'
+      titleHeader = 'Difference'
       fileName = 'picturesCMA_v7/delta'
       if (k == 0):
-         titleHeader += ' E_{ion}$: "GC"/"ME" $-$ 1, %' 
+         titleHeader += ' of $\Delta E_{ion}$: "GC"/"ME" $-$ 1, %' 
          fileName += 'EcomprsnMap_fig'
       if (k == 1):
-         titleHeader += ' p_x$: "GC"/"ME" $-$ 1, %' 
+         titleHeader += ' of $\Delta p_x$: "GC"/"ME" $-$ 1, %' 
          fileName += 'PXcomprsnMap_fig'
       if (k == 2):
-         titleHeader += ' p_y$: "GC"/"ME" $-$ 1, %' 
+         titleHeader += ' of $\Delta p_y$: "GC"/"ME" $-$ 1, %' 
          fileName += 'PYcomprsnMap_fig'
       if (k == 3):
-         titleHeader += ' p_z$: "GC"/"ME" $-$ 1, %' 
+         titleHeader += ' of $\Delta p_z$: "GC"/"ME" $-$ 1, %' 
+         fileName += 'PZcomprsnMap_fig'
+      if (k == 4):
+         titleHeader += ' of $\Delta p_z$: $log_{10}($"GC"/"ME"$)$' 
          fileName += 'PZcomprsnMap_fig'
       plt.title(titleHeader,color='m',fontsize=16)
-      plt.text(-4.14,-.45,'Screened Collisions',color='r',fontsize=16)
+      plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+      plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
       plt.text(-3.25,-1.3,'$R_{max}$',color='k',fontsize=16)
       plt.text(-3.25,-2.89,'$R_{min}$',color='k',fontsize=16)
       plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
@@ -2722,75 +2749,81 @@ if (plotFigureFlag == 0):
       plt.ylim(yLimit)
       figCrrnt.colorbar(mapCrrnt)
       plt.grid(True)
-      fileName += str(245+100*k)
-      fileName += 'cma.png'
-      if (saveFilesFlag == 1):
-         figCrrnt.savefig(fileName) 
-#         figCrrnt.savefig(nameFile) 
-         print ('File "',fileName,'" is written')
-
-cutoffLevel = [.05,.05,.75,-60.]
-cutoffZ = np.zeros((nVion,nImpctPrmtr,4))
-
-for i in range(nVion):
-   for n in range(nImpctPrmtr):
-      cutoffZ[i,n,0] = dEion_c_m[i,n]                    # dEion
-      cutoffZ[i,n,1] = deltaPx_c_m[i,n]                  # dPx
-      cutoffZ[i,n,2] = deltaPy_c_m[i,n]                  # dPy
-      cutoffZ[i,n,3] = deltaPz_c_m[i,n]                  # dPz
-      for k in range(3):
-         if (cutoffZ[i,n,k] > cutoffLevel[k]):
-            cutoffZ[i,n,k] = cutoffLevel[k]
-      if (cutoffZ[i,n,3] < cutoffLevel[3]):
-         cutoffZ[i,n,3] = cutoffLevel[3]
-        
-if (plotFigureFlag == 0): 
-   for k in range(4):  
-      figCrrnt = plt.figure(246+100*k)
-      ax = figCrrnt.add_subplot(111)                      # for contours plotting
-      mapCrrnt_co = ax.contourf(X,Y,cutoffZ[:,:,k],cmap='jet') 
-      mapCrrnt_cl = ax.contour(X,Y,cutoffZ[:,:,k],8,colors='black') 
-      plt.clabel(mapCrrnt_cl,fmt='%4.2f',inline=True)
-      plt.plot(np.log10(VionRel),np.log10(impctPrmtrMax),'-r',linewidth=2)
-      plt.plot([np.log10(VionRel[0]),np.log10(VionRel[nVion-1])], \
-               [np.log10(impctPrmtrMin),np.log10(impctPrmtrMin)],'-r',linewidth=2)
-      plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
-      plt.plot([np.log10(relVeLong), np.log10(relVeLong)], yLimit,'--m',linewidth=1)
-      plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=16)
-      plt.ylabel('Initial Impact Parameter, $log_{10}(rho_{Init})$',color='m',fontsize=16)
-      titleHeader = 'Difference of $\Delta'
-      fileName = 'picturesCMA/delta'
-      if (k == 0):
-         titleHeader += ' E_{ion}$: $\widetilde{\Delta E}_{ion}$ = "GC"/"ME" $-$ 1, %'
-         titleHeader += '\n($\widetilde{\Delta E}_{ion}$ = .05, ' 
-         titleHeader += 'if $\widetilde{\Delta E}_{ion}$ > .05)'
-         fileName += 'EcomprsnMap_fig'
-      if (k == 1):
-         titleHeader += ' p_x$: $\widetilde{\Delta p}_x$ = "GC"/"ME" $-$ 1, %' 
-         titleHeader += '\n($\widetilde{\Delta p}_x$ = .05, if $\widetilde{\Delta p}_x$ > .5)'
-         fileName += 'PXcomprsnMap_fig'
-      if (k == 2):
-         titleHeader += ' p_y$: $\widetilde{\Delta p}_y$ = "GC"/"ME" $-$ 1, %' 
-         titleHeader += '\n($\widetilde{\Delta p}_y$ = .75, if $\widetilde{\Delta p}_y$ > .75)' 
-         fileName += 'PYcomprsnMap_fig'
-      if (k == 3):
-         titleHeader += ' p_z$: $\widetilde{\Delta p}_z$ = "GC"/"ME" $-$ 1, %' 
-         titleHeader += '\n($\widetilde{\Delta p}_z$ = -60, if $\widetilde\Delta {p}_z$ > -60)' 
-         fileName += 'PZcomprsnMap_fig'
-      plt.title(titleHeader,color='m',fontsize=16)
-      plt.text(-4.14,-.45,'Screened Collisions',color='r',fontsize=16)
-      plt.text(-3.25,-1.3,'$R_{max}$',color='k',fontsize=16)
-      plt.text(-3.25,-2.89,'$R_{min}$',color='k',fontsize=16)
-      plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
-      plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-      plt.ylim(yLimit)
-      figCrrnt.colorbar(mapCrrnt_co)
-      plt.grid(True)
-      fileName += str(246+100*k)
+      fileName += str(1245+100*k)
       fileName += 'cma.png'
       if (saveFilesFlag == 1):
          figCrrnt.savefig(fileName) 
          print ('File "',fileName,'" is written')
+
+#--------------------------------------------------------
+#
+# cutoff approach is a bad decision!
+#
+
+# cutoffLevel = [.05,.05,.75,-60.]
+# cutoffZ = np.zeros((nVion,nImpctPrmtr,4))
+# 
+# for i in range(nVion):
+#    for n in range(nImpctPrmtr):
+#       cutoffZ[i,n,0] = dEion_c_m[i,n]                    # dEion
+#       cutoffZ[i,n,1] = deltaPx_c_m[i,n]                  # dPx
+#       cutoffZ[i,n,2] = deltaPy_c_m[i,n]                  # dPy
+#       cutoffZ[i,n,3] = deltaPz_c_m[i,n]                  # dPz
+#       for k in range(3):
+#          if (cutoffZ[i,n,k] > cutoffLevel[k]):
+#             cutoffZ[i,n,k] = cutoffLevel[k]
+#       if (cutoffZ[i,n,3] < cutoffLevel[3]):
+#          cutoffZ[i,n,3] = cutoffLevel[3]
+#         
+# if (plotFigureFlag == 0): 
+#    for k in range(4):  
+#       figCrrnt = plt.figure(246+100*k)
+#       ax = figCrrnt.add_subplot(111)                      # for contours plotting
+#       mapCrrnt_co = ax.contourf(X,Y,cutoffZ[:,:,k],cmap='jet') 
+#       mapCrrnt_cl = ax.contour(X,Y,cutoffZ[:,:,k],8,colors='black') 
+#       plt.clabel(mapCrrnt_cl,fmt='%4.2f',inline=True)
+#       plt.plot(np.log10(VionRel),np.log10(impctPrmtrMax),'-r',linewidth=2)
+#       plt.plot([np.log10(VionRel[0]),np.log10(VionRel[nVion-1])], \
+#                [np.log10(impctPrmtrMin),np.log10(impctPrmtrMin)],'-r',linewidth=2)
+#       plt.plot([np.log10(relVeTrnsv),np.log10(relVeTrnsv)],yLimit,'--m',linewidth=1)
+#       plt.plot([np.log10(relVeLong), np.log10(relVeLong)], yLimit,'--m',linewidth=1)
+#       plt.xlabel('Relative Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=16)
+#       plt.ylabel('Initial Impact Parameter, $log_{10}(rho_{Init})$',color='m',fontsize=16)
+#       titleHeader = 'Difference of $\Delta'
+#       fileName = 'picturesCMA/delta'
+#       if (k == 0):
+#          titleHeader += ' E_{ion}$: $\widetilde{\Delta E}_{ion}$ = "GC"/"ME" $-$ 1, %'
+#          titleHeader += '\n($\widetilde{\Delta E}_{ion}$ = .05, ' 
+#          titleHeader += 'if $\widetilde{\Delta E}_{ion}$ > .05)'
+#          fileName += 'EcomprsnMap_fig'
+#       if (k == 1):
+#          titleHeader += ' p_x$: $\widetilde{\Delta p}_x$ = "GC"/"ME" $-$ 1, %' 
+#          titleHeader += '\n($\widetilde{\Delta p}_x$ = .05, if $\widetilde{\Delta p}_x$ > .5)'
+#          fileName += 'PXcomprsnMap_fig'
+#       if (k == 2):
+#          titleHeader += ' p_y$: $\widetilde{\Delta p}_y$ = "GC"/"ME" $-$ 1, %' 
+#          titleHeader += '\n($\widetilde{\Delta p}_y$ = .75, if $\widetilde{\Delta p}_y$ > .75)' 
+#          fileName += 'PYcomprsnMap_fig'
+#       if (k == 3):
+#          titleHeader += ' p_z$: $\widetilde{\Delta p}_z$ = "GC"/"ME" $-$ 1, %' 
+#          titleHeader += '\n($\widetilde{\Delta p}_z$ = -60, if $\widetilde\Delta {p}_z$ > -60)' 
+#          fileName += 'PZcomprsnMap_fig'
+#       plt.title(titleHeader,color='m',fontsize=16)
+#       plt.text(-4.14,-.45,'Screened Collisions',color='r',fontsize=16)
+#       plt.text(-3.25,-1.3,'$R_{max}$',color='k',fontsize=16)
+#       plt.text(-3.25,-2.89,'$R_{min}$',color='k',fontsize=16)
+#       plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+#       plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+#       plt.ylim(yLimit)
+#       figCrrnt.colorbar(mapCrrnt_co)
+#       plt.grid(True)
+#       fileName += str(246+100*k)
+#       fileName += 'cma.png'
+#       if (saveFilesFlag == 1):
+#          figCrrnt.savefig(fileName) 
+#          print ('File "',fileName,'" is written')
+#
+#--------------------------------------------------------
 
 
 viewFctr = 1.e-27   
@@ -2849,10 +2882,10 @@ if (plotFigureFlag == 0):
       fig5000.savefig('picturesCMA/frctnForce_AI_fig5010cma.png')    
       print ('File "picturesCMA/frctnForce_AI_fig5010cma.png" is written')
 
-if (plotFigureFlag == 1):   
+if (plotFigureFlag == 0):   
    fig5020=plt.figure (5020)
-   plt.semilogx(VionRel,1.1*viewFctr*frctnForce_GKfit,'-xr', \
-                VionRel,0.9*viewFctr*frctnForce_AI,'-xb',linewidth=2)
+   plt.semilogx(VionRel,1.05*viewFctr*frctnForce_GKfit,'-xr', \
+                VionRel,0.95*viewFctr*frctnForce_AI,'-xb',linewidth=2)
    plt.xlabel('Relative Ion Velocity  $V_{ion}/V_{e0}$',color='m',fontsize=14)
    if (mantViewrFctr == 1.):
       plt.ylabel(('$10^{%2d} \cdot F_{ion}$, eV/m' % powViewrFctr), color='m',fontsize=14)
@@ -2865,26 +2898,26 @@ if (plotFigureFlag == 1):
 #             (mantV0,powV0,mant_n_e,pow_n_e,int(fieldB[0]))),color='m',fontsize=14)
    plt.xlim([.9*VionRel[0],1.1*VionRel[nVion-1]])
    yLimit=[0.,max(1.1*viewFctr*frctnForce_GKfit)]
-#    print ('ylim[0] = %e, ylim[1] = %e' % (yLimit[0],yLimit[1]))
    plt.ylim(yLimit)
    plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
-#   plt.text(1.6e-3,yLimit[0]-.3,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(1.6e-3,.5,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
-#   plt.text(4.4e-5,yLimit[0]+.1,'$ \Delta V_{e||}/ sV_{e0}$',color='m',fontsize=14)
+   plt.text(4.4e-5,.5,'$ \Delta V_{e||}/ sV_{e0}$',color='m',fontsize=14)
+   plt.legend(['GK-Integration (x 1.05)','Analytical Integration (x 0.95)'],loc='lower left',fontsize=11)
    plt.grid(True)
    if (saveFilesFlag == 1):
-      fig5020.savefig('picturesCMA/frctnForce_GKfit_fig5020cma.png')    
-      print ('File "picturesCMA/frctnForce_GKfit_fig5020cma.png" is written')
+      fig5020.savefig('picturesCMA_v7/frctnForce_GKfit_fig5020cma.png')    
+      print ('File "picturesCMA_v7/frctnForce_GKfit_fig5020cma.png" is written')
 
-if (plotFigureFlag == 1):   
+if (plotFigureFlag == 0):   
    fig5030=plt.figure (5030)
    plt.semilogx(VionRel,np.log10(viewFctr*frctnForce_GKfit),'-r', \
                 VionRel,np.log10(viewFctr*frctnForce_AI),'xb',linewidth=2)
    plt.xlabel('Relative Ion Velocity  $V_{ion}/V_{e0}$',color='m',fontsize=14)
    if (mantViewrFctr == 1.):
-      plt.ylabel(('$10^{%2d} \cdot F_{ion}$, eV/m' % powViewrFctr), color='m',fontsize=14)
+      plt.ylabel(('$log_{10}(10^{%2d} \cdot F_{ion})$' % powViewrFctr), color='m',fontsize=14)
    else:
-      plt.ylabel(('$%3.1f \cdot 10^{%2d} \cdot F_{ion}$, eV/m' % \
+      plt.ylabel(('$log_{10}(%3.1f \cdot 10^{%2d} \cdot F_{ion})$' % \
                   (mantViewrFctr,powViewrFctr)), color='m',fontsize=14)
    plt.title('Comparison Two Methods to Calculate Friction Force $F_{ion}$', \
              color='m',fontsize=14)
@@ -2893,7 +2926,6 @@ if (plotFigureFlag == 1):
    plt.xlim([.9*VionRel[0],1.1*VionRel[nVion-1]])
    yLimit=[min(np.log10(.9*viewFctr*frctnForce_GKfit)), \
            max(np.log10(1.1*viewFctr*frctnForce_GKfit))]
-#    print ('ylim[0] = %e, ylim[1] = %e' % (yLimit[0],yLimit[1]))
    plt.ylim(yLimit)
    plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
    plt.text(1.6e-3,yLimit[1]-.3,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
@@ -2902,8 +2934,8 @@ if (plotFigureFlag == 1):
    plt.legend(['GK-Integration','Analytical Integration'],loc='lower right',fontsize=11)
    plt.grid(True)
    if (saveFilesFlag == 1):
-      fig5030.savefig('picturesCMA/frctnForce_GKfit_fig5030cma.png')    
-      print ('File "picturesCMA/frctnForce_GKfit_fig5030cma.png" is written')
+      fig5030.savefig('picturesCMA_v7/frctnForce_GKfit_fig5030cma.png')    
+      print ('File "picturesCMA_v7/frctnForce_GKfit_fig5030cma.png" is written')
 
 yLimit = [-2.8,-0.35]
 log10relVeTrnsv = np.log10(relVeTrnsv)
@@ -3013,30 +3045,6 @@ for i in range(nVion_c):
       log10deltaPx_m[n,i] = np.log10(1.e22*deltaPx_m[n,i])
       log10deltaPz_m[n,i] = np.log10(1.e24*deltaPz_m[n,i])
       
-#--------------------------------------------
-# 5200 - wrong picture!!!
-#      
-# if (plotFigureFlag == 0):   
-#    fig5200=plt.figure (5200)
-#    ax = fig5200.add_subplot(111)                    # for contours plotting
-#    mapDpxF = ax.contourf(X,Y,1.e22*deltaPx_m,cmap='jet') 
-# #   mapDpx = ax.contour(X_c,Y_c,1.e22*deltaPx_m,levels=range(0,2,1),colors='black') 
-#    mapDpx = ax.contour(X,Y,1.e22*deltaPx_m,7,colors='black') 
-#    plt.clabel(mapDpx,fmt='%4.2f',inline=True)
-#    plt.xlabel('Relative Ion Velocity  $log_{10}(V_{ion}/V_0)$',color='m',fontsize=14)
-#    plt.ylabel('Initial Impact Parameter, $log_{10}(rho_{Init})$',color='m',fontsize=14)
-#    titleHeader = 'Transferred Momenta $\Delta p_x$ per Ion'
-#    titleHeader += '\n$10^{22} \cdot \Delta p_x$, g$\cdot$cm/s'
-#    plt.title(titleHeader,color='m',fontsize=16)
-#    plt.plot([log10relVeTrnsv,log10relVeTrnsv],yLimit,'--m',linewidth=1)
-#    plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
-#    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
-#    plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
-#    plt.ylim(yLimit)
-#    fig5200.colorbar(mapDpxF)
-#    plt.grid(True)
-#--------------------------------------------
-
 if (plotFigureFlag == 0):   
    fig5201=plt.figure (5201)
    ax = fig5201.add_subplot(111)                    # for contours plotting
@@ -3053,6 +3061,8 @@ if (plotFigureFlag == 0):
    plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
    plt.ylim(yLimit)
    fig5201.colorbar(mapDpxF1)
    plt.grid(True)
@@ -3076,6 +3086,8 @@ if (plotFigureFlag == 0):
    plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
    plt.ylim(yLimit)
    fig5202.colorbar(mapDpxF2)
    plt.grid(True)
@@ -3099,6 +3111,8 @@ if (plotFigureFlag == 0):
    plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='w',fontsize=16)
    plt.ylim(yLimit)
    fig5401.colorbar(mapDpzF1)
    plt.grid(True)
@@ -3122,6 +3136,8 @@ if (plotFigureFlag == 0):
    plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
    plt.ylim(yLimit)
    fig5402.colorbar(mapDpzF2)
    plt.grid(True)
@@ -3145,12 +3161,16 @@ if (plotFigureFlag == 0):
 #   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
 #   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='w',fontsize=16)
    plt.ylim(yLimit)
    fig5250.colorbar(mapVixm)
    plt.grid(True)
    if (saveFilesFlag == 1):
-      fig5250.savefig('picturesCMA/mapVix_m_fig5250cma.png')    
-      print ('File "picturesCMA/mapVix_m_fig5250cma.png" is written')
+      fig5250.savefig('picturesCMA_v7/mapVix_m_fig5250cma.png')    
+      print ('File "picturesCMA_v7/mapVix_m_fig5250cma.png" is written')
 
 if (plotFigureFlag == 0):   
    fig5350=plt.figure (5350)
@@ -3168,12 +3188,16 @@ if (plotFigureFlag == 0):
 #   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
 #   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='w',fontsize=16)
    plt.ylim(yLimit)
    fig5350.colorbar(mapViym)
    plt.grid(True)
    if (saveFilesFlag == 1):
-      fig5350.savefig('picturesCMA/mapViy_m_fig5350cma.png')    
-      print ('File "picturesCMA/mapViy_m_fig5350cma.png" is written')
+      fig5350.savefig('picturesCMA_v7/mapViy_m_fig5350cma.png')    
+      print ('File "picturesCMA_v7/mapViy_m_fig5350cma.png" is written')
 
 if (plotFigureFlag == 0):   
    fig5450=plt.figure (5450)
@@ -3191,12 +3215,16 @@ if (plotFigureFlag == 0):
 #   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
 #   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='w',fontsize=16)
    plt.ylim(yLimit)
    fig5450.colorbar(mapVizm)
    plt.grid(True)
    if (saveFilesFlag == 1):
-      fig5450.savefig('picturesCMA/mapViz_m_fig5450cma.png')    
-      print ('File "picturesCMA/mapViz_m_fig5450cma.png" is written')
+      fig5450.savefig('picturesCMA_v7/mapViz_m_fig5450cma.png')    
+      print ('File "picturesCMA_v7/mapViz_m_fig5450cma.png" is written')
 
 log10ionVx_m = np.zeros((nImpctPrmtr_c,nVion_c))
 log10ionVy_m = np.zeros((nImpctPrmtr_c,nVion_c))
@@ -3224,6 +3252,10 @@ if (plotFigureFlag == 0):
 #   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
 #   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
    plt.ylim(yLimit)
    fig5251.colorbar(mapVixm1)
    plt.grid(True)
@@ -3247,6 +3279,10 @@ if (plotFigureFlag == 0):
 #   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
 #   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
    plt.ylim(yLimit)
    fig5351.colorbar(mapViym1)
    plt.grid(True)
@@ -3270,6 +3306,10 @@ if (plotFigureFlag == 0):
 #   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
 #   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-2.85,-0.95,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.5,-0.95,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
    plt.ylim(yLimit)
    fig5451.colorbar(mapVizm1)
    plt.grid(True)
@@ -3380,6 +3420,8 @@ if (plotFigureFlag == 0):
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.8,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='w',fontsize=16)
    plt.ylim(yLimit)
    fig6002.colorbar(mapVixPxm2)
    plt.grid(True)
@@ -3455,6 +3497,8 @@ if (plotFigureFlag == 0):
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.8,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='w',fontsize=16)
    plt.ylim(yLimit)
    fig6102.colorbar(mapVizPzm2)
    plt.grid(True)
@@ -3477,6 +3521,8 @@ if (plotFigureFlag == 0):
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.8,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='w',fontsize=16)
    plt.ylim(yLimit)
    fig6202.colorbar(mapViyPym2)
    plt.grid(True)
@@ -3484,7 +3530,7 @@ if (plotFigureFlag == 0):
       fig6202.savefig('picturesCMA_v7/mapViy_dPy_m_fig6202cma.png')    
       print ('File "picturesCMA_v7/mapViy_dPy_m_fig6202cma.png" is written')
 
-if (plotFigureFlag == 1):   
+if (plotFigureFlag == 0):   
    fig6302=plt.figure (6302)
    ax = fig6302.add_subplot(111)                    # for contours plotting
    mapEnrgIon_m = ax.contourf(X_c,Y_c,1.e-19*deltaEnrgIon_m,cmap='jet') 
@@ -3499,6 +3545,8 @@ if (plotFigureFlag == 1):
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.8,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='w',fontsize=16)
    plt.ylim(yLimit)
    fig6302.colorbar(mapEnrgIon_m)
    plt.grid(True)
@@ -3537,6 +3585,8 @@ if (plotFigureFlag == 0):
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.8,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
 # y   plt.xlim([-4.75,-3.25])
 # y   plt.ylim([-2.75,-2.0])
    plt.ylim(yLimit)
@@ -3562,6 +3612,8 @@ if (plotFigureFlag == 0):
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.8,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
 # y   plt.xlim([-4.75,-3.25])
 # y   plt.ylim([-2.75,-2.0])
    plt.ylim(yLimit)
@@ -3586,6 +3638,8 @@ if (plotFigureFlag == 0):
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.8,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
 # y   plt.xlim([-4.75,-3.25])
 # y   plt.ylim([-2.75,-2.0])
    plt.ylim(yLimit)
@@ -3599,7 +3653,7 @@ if (plotFigureFlag == 0):
 # Renumeration 6300 to 6301 because 6300 "is occupied"
 #
 
-if (plotFigureFlag == 1):   
+if (plotFigureFlag == 0):   
    fig6301=plt.figure (6301)
    ax = fig6301.add_subplot(111)                    # for contours plotting
    mapIonEnrg_m1 = ax.contourf(X_c,Y_c,log10deltaEnrgIon_m[0:nImpctPrmtr_c,0:nVion_c],cmap='jet') 
@@ -3614,6 +3668,8 @@ if (plotFigureFlag == 1):
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.8,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
 # y   plt.xlim([-4.75,-3.25])
 # y   plt.ylim([-2.75,-2.0])
    plt.ylim(yLimit)
@@ -3633,7 +3689,7 @@ for i in range(nVion_c):
       Y_f[n,i] = np.log10(rhoInitFit_dEion[n,i])
       log10deltaEnrgIon_m_fit[n,i] = np.log10(1.e-19*deltaEnrgIon_m_fit[n,i])
 
-if (plotFigureFlag == 1):   
+if (plotFigureFlag == 0):   
    fig6400=plt.figure (6400)
    ax = fig6400.add_subplot(111)                    # for contours plotting
    mapIonEnrg_m_fit = ax.contourf(X_f,Y_f,log10deltaEnrgIon_m_fit[0:nImpctPrmtr_c,0:nVion_c],cmap='jet') 
@@ -3648,6 +3704,8 @@ if (plotFigureFlag == 1):
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.8,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='k',fontsize=16)
 # y   plt.xlim([-4.75,-3.25])
 # y   plt.ylim([-2.75,-2.0])
    plt.ylim(yLimit)
@@ -3657,7 +3715,7 @@ if (plotFigureFlag == 1):
       fig6400.savefig('picturesCMA_v7/mapLogDeltaEnrgFit_fig6400cma.png')    
       print ('File "picturesCMA_v7/mapLog10DeltaEnrgFit_fig6400cma.png" is written')
 
-if (plotFigureFlag == 1):   
+if (plotFigureFlag == 0):   
    fig6402=plt.figure (6402)
    ax = fig6402.add_subplot(111)                    # for contours plotting
    mapEnrgIon_m_fit = ax.contourf(X_f,Y_f,1.e-19*deltaEnrgIon_m_fit,cmap='jet') 
@@ -3672,6 +3730,8 @@ if (plotFigureFlag == 1):
    plt.text(-2.85,-0.8,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
    plt.plot([log10relVeLong,log10relVeLong],yLimit,'--m',linewidth=1)
    plt.text(-4.5,-0.8,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(-4.14,-.6,'Screened Collisions',color='r',fontsize=16)
+   plt.text(-4.14,-2.2,'Magnetized Collisions',color='w',fontsize=16)
    plt.ylim(yLimit)
    fig6402.colorbar(mapEnrgIon_m_fit)
    plt.grid(True)
