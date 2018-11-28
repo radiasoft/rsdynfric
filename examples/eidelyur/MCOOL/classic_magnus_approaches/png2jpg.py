@@ -49,8 +49,15 @@ print ('numbFiles = %d' % numbFiles)
 #                 '6302cma','6400cma','6402cma']
 # nbrForRename = ['506cma','606cma','636cma','666cma','706cma','736cma','766cma','806cma', \
 #                 '836cma','866cma','906cma','1006cma']
-nbrForRename = ['503cma','603cma','633cma','663cma','703cma','733cma','763cma','803cma', \
-                '833cma','863cma','903cma','1003cma']
+# nbrForRename = ['503cma','603cma','633cma','663cma','703cma','733cma','763cma','803cma', \
+#                 '833cma','863cma','903cma','1003cma']
+nbrForRename = ['4200cma','4203cma','4206cma','4209cma','4212cma','4215cma','4218cma', \
+                '4221cma','4224cma','4227cma','4230cma','4236cma','4239cma','4242cma', \
+		'4245cma','4248cma', \
+		'4400cma','4403cma','4406cma','4409cma','4412cma','4415cma','4418cma', \
+                '4421cma','4424cma','4427cma','4430cma','4436cma','4439cma','4442cma', \
+		'4445cma','4448cma', \
+		'3152cma','fig2cma']
 
 totalRename = len(nbrForRename)
 
@@ -75,7 +82,7 @@ for n in range(numbFiles):
          if (flagRename > 0): 
             print ('file "%s" will be renamed' % fileName)
             pngName = 'picturesCMA_v7/' + fileName[0:lenName-1]
-            jpgName = 'picturesCMA_v7/' + fileName[0:lenName-5] + '.jpg'
+            jpgName = 'picturesCMA_v7/jpgAlbm/' + fileName[0:lenName-5] + '.jpg'
             print ('file(%d) = %s --> %s' % (n,pngName,jpgName))
             pngFileFlag=0
             try:

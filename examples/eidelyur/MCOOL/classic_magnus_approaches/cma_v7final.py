@@ -277,6 +277,37 @@ def omega_Larmor(mass,B_mag):
     return (q_elec)*B_mag/(mass*clight*1.e+2)                      # rad/sec
 
 #
+# Derived quantities:
+#
+omega_L = omega_Larmor(m_elec,B_mag)                               # rad/sec 
+T_larm = 2*pi/omega_L                                              # sec
+timeStep = T_larm/stepsNumberOnGyro                                # time step, sec
+print ('omega_Larmor= %e rad/sec, T_larm = %e sec, timeStep = %e sec' % \
+       (omega_L,T_larm,timeStep))
+
+nLarmorAvrgng=10               # number of averaged Larmor rotations 
+#
+# Data to integrate transferred momemta over the track:
+#
+timeStep_c=nLarmorAvrgng*stepsNumberOnGyro*timeStep                # sec      
+print ('timeStep_c = %e s' % timeStep_c)
+
+eVrmsTran = np.sqrt(2.*eTempTran*eVtoErg/m_elec)                   # cm/sec
+eVrmsLong = np.sqrt(2.*eTempLong*eVtoErg/m_elec)                   # cm/sec
+kinEnergy = m_elec*(eVrmsTran**2+eVrmsLong**2)/2.     # kinetic energy; erg
+print ('eVrmsTran = %e cm/sec, eVrmsLong = %e cm/sec, kinEnergy = %e eV' % \
+       (eVrmsTran,eVrmsLong,ergToEV*kinEnergy))
+
+ro_larmRMS = eVrmsTran/omega_L                                     # cm
+print ('ro_larmRMS =%e mkm' % (1.e4*ro_larmRMS))
+
+#
+# Electrons are magnetized for impact parameter >> rhoCrit:
+#
+rhoCrit=math.pow(q_elec**2/(m_elec*omega_L**2),1./3)               # cm
+print ('rhoCrit (mkm) = ' , 1.e+4*rhoCrit)
+
+#
 # Convertion from 6-vector of relectron's "coordinates" to 6-vector
 # of guiding-center coordinates:
 # z_e=(x_e,px_e,y_e,py_e,z_e,pz_e) --> zgc_e=(phi,p_phi,y_gc,p_gc,z_e,pz_e);
@@ -370,7 +401,7 @@ def guidingCenterCollision(vectrElec_gc,vectrIon,deltaT):
    b_gc=np.sqrt((vectrIon[0]-x_gc)**2+ \
                 (vectrIon[2]-vectrElec_gc[2])**2+ \
                 (vectrIon[4]-vectrElec_gc[4])**2+2.*action/mOmegaLarm)   # cm
-# Dimensions of dpIon, dpElec are g*cm/sec:   
+# Dimensions of dpIon, deElec are g*cm/sec:   
    dpIon[0]=-dpFactor_gc*deltaT*(vectrIon[0]-x_gc)/b_gc**3               
    dpIon[1]=-dpFactor_gc*deltaT*(vectrIon[2]-vectrElec_gc[2])/b_gc**3  
    dpIon[2]=-dpFactor_gc*deltaT*(vectrIon[4]-vectrElec_gc[4])/b_gc**3
@@ -584,13 +615,14 @@ def errFitAB(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2,errVar,errType):
    return posErrFit,negErrFit
 
 
-#----------------------------------------------------
+def fittedGKintegration(xMin,xMax,fitA,fitB):
 #
 #  "Gauss-Kronrod" method of integration (GK)
 #
+#
 # Points (psi_i) and weigths (w_i) to integrate for interval from -1 to 1;
 # These data are from William H. Beyer. "Handbook of Mathematical Science".
-# 5th Edition, CRC Press, Inc, 1978 (pp. 661,662).
+# 5th Edition, CRC Press, Inc, 1978.
 #
 # To integrate for interval from 0 to 1 it is necessary to change points
 # psi_i with points ksi_i=(1+psi_i)/2;
@@ -602,22 +634,21 @@ def errFitAB(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2,errVar,errType):
 #      int_(a)^b = (b-a)/2 * sum_1^N [w_i* F(x_i)], where
 #            x_i = (b-a)*psi_i/2+(a+b)/2.
 #
-# See also script myTest_Gauss-Kronrod.py.
+#----------------------------------------------------
+#
+# Data for GK:
 #
 #----------------------------------------------------
-# Data for GK:
 
-nPoints_GK = 16
-psi_16=np.array([-0.9894009, -0.9445750, -0.8656312, -0.7554044, -0.6178762, \
-                 -0.4580168, -0.2816036, -0.0950125,  0.0950125,  0.2816036, \
-		  0.4580168,  0.6178762,  0.7554044,  0.8656312,  0.9445750, \
-		  0.9894009])
-w_16  =np.array([ 0.0271525,  0.0622535,  0.0951585,  0.1246290,  0.1495960, \
-                  0.1691565,  0.1826034,  0.1894506,  0.1894506,  0.1826034, \
-		  0.1691565,  0.1495960,  0.1246290,  0.0951585,  0.0622535, \
-		  0.0271525])
-
-def fittedGKintegration(xMin,xMax,fitA,fitB):
+   nPoints_GK = 16
+   psi_16=np.array([-0.9894009, -0.9445750, -0.8656312, -0.7554044, -0.6178762, \
+                    -0.4580168, -0.2816036, -0.0950125,  0.0950125,  0.2816036, \
+		     0.4580168,  0.6178762,  0.7554044,  0.8656312,  0.9445750, \
+		     0.9894009])
+   w_16  =np.array([ 0.0271525,  0.0622535,  0.0951585,  0.1246290,  0.1495960, \
+                     0.1691565,  0.1826034,  0.1894506,  0.1894506,  0.1826034, \
+		     0.1691565,  0.1495960,  0.1246290,  0.0951585,  0.0622535, \
+		     0.0271525])
 
    y = np.zeros(nPoints_GK)
    yIntegrated = 0.
@@ -630,39 +661,7 @@ def fittedGKintegration(xMin,xMax,fitA,fitB):
 
 #------------------ End of defined functions -----------------------
 #
-
 #====================================================================
-#
-#--------- Input data, parameters and derived quantities-------------
-#
-
-omega_L = omega_Larmor(m_elec,B_mag)                               # rad/sec 
-T_larm = 2*pi/omega_L                                              # sec
-timeStep = T_larm/stepsNumberOnGyro                                # time step, sec
-print ('omega_Larmor= %e rad/sec, T_larm = %e sec, timeStep = %e sec' % \
-       (omega_L,T_larm,timeStep))
-
-nLarmorAvrgng=10               # number of averaged Larmor rotations 
-#
-# Data to integrate transferred momemta over the track:
-#
-timeStep_c=nLarmorAvrgng*stepsNumberOnGyro*timeStep                # sec      
-print ('timeStep_c = %e s' % timeStep_c)
-
-eVrmsTran = np.sqrt(2.*eTempTran*eVtoErg/m_elec)                   # cm/sec
-eVrmsLong = np.sqrt(2.*eTempLong*eVtoErg/m_elec)                   # cm/sec
-kinEnergy = m_elec*(eVrmsTran**2+eVrmsLong**2)/2.     # kinetic energy; erg
-print ('eVrmsTran = %e cm/sec, eVrmsLong = %e cm/sec, kinEnergy = %e eV' % \
-       (eVrmsTran,eVrmsLong,ergToEV*kinEnergy))
-
-ro_larmRMS = eVrmsTran/omega_L                                     # cm
-print ('ro_larmRMS =%e mkm' % (1.e4*ro_larmRMS))
-
-#
-# Electrons are magnetized for impact parameter >> rhoCrit:
-#
-rhoCrit=math.pow(q_elec**2/(m_elec*omega_L**2),1./3)               # cm
-print ('rhoCrit (mkm) = ' , 1.e+4*rhoCrit)
 
 sphereNe=3.
 R_e=math.pow(sphereNe/n_e,1./3)                                     # cm
@@ -673,12 +672,7 @@ print ('ro_Larm (cm)=%e' % ro_Larm)
 
 impctPrmtrMin=2.*ro_Larm
 
-#
-# Electrons are magnetized for impact parameter >> rhoCrit:
-#
-rhoCrit=math.pow(q_elec**2/(m_elec*omega_L**2),1./3)               # cm
-print ('rhoCrit (mkm) = ' , 1.e+4*rhoCrit)
-
+# rhoDependenceFlag = 1  # skip calculation of rho dependence if = 0!
 
 #============ Important flags ===========================
 #
@@ -771,7 +765,7 @@ if (plotFigureFlag == 0):
 xLimit=[.9*VionRel[0],1.1*VionRel[nVion-1]]
 
 #
-# Types of collisions:
+# Typs of collisions:
 #
 if (plotFigureFlag == 0):   
    fig3151=plt.figure (3151)
@@ -802,298 +796,6 @@ if (plotFigureFlag == 0):
    if (saveFilesFlag == 1):
       fig3151.savefig('picturesCMA_v7/impctPrmtr_fig3151cma.png')    
       print ('File "picturesCMA_v7/impctPrmtr_fig3151cma.png" is written')   
-
-#------- 11/19/2018 (velocities of electrons are distributed flattenedly) ------
-
-eVlongMin = .01*eVrmsLong
-eVlongMax = 5.*eVrmsLong
-print ('eVlongMin = %e, eVlongMax = %e' %(eVlongMin,eVlongMax)) 
-
-eVlongNumb = 16
-eVlongStep=math.log10(eVlongMax/eVlongMin)/(eVlongNumb-1)
-
-eVlong = np.zeros(eVlongNumb)
-
-for n in range(eVlongNumb):
-#   eVlongLog = math.log10(eVlongMin)+n*eVlongStep
-#   eVlong[n] = math.pow(10.,eVlongLog)
-# xCrrnt = psi_16_ccrnt*(xMax-xMin)/2. + (xMax+xMin)/2.
-   eVlong[n] = psi_16[n]*(eVlongMax-eVlongMin)/2. + (eVlongMax+eVlongMin)/2.
-#   print ('eVlong(%d) = %e ==> %e' % (n,eVlong[n],eVlong[n]/eVrmsLong))
-
-eVtrnsvMin = .01*eVrmsTran
-eVtrnsvMax = 5.*eVrmsTran
-print ('eVtrnsvMin = %e, eVtrnsvMax = %e' %(eVtrnsvMin,eVtrnsvMax)) 
-
-eVtrnsvNumb = 16
-eVtrnsvStep=math.log10(eVtrnsvMax/eVtrnsvMin)/(eVtrnsvNumb-1)
-
-eVtrnsv = np.zeros(eVtrnsvNumb)
-
-for n in range(eVtrnsvNumb):
-#     eVtrnsvLog = math.log10(eVtrnsvMin)+n*eVtrnsvStep
-#     eVtrnsv[n] = math.pow(10.,eVtrnsvLog)
-# xCrrnt = psi_16_ccrnt*(xMax-xMin)/2. + (xMax+xMin)/2.
-     eVtrnsv[n] = psi_16[n]*(eVtrnsvMax-eVtrnsvMin)/2. + (eVtrnsvMax+eVtrnsvMin)/2.
-#     print ('eVtrnsv(%d) = %e ==> %e' % (n,eVtrnsv[n],eVtrnsv[n]/eVrmsTran))
-
-R_pass_map = np.zeros((eVlongNumb,nVion))
-R_debye_map = np.zeros((eVlongNumb,eVtrnsvNumb,nVion))
-R_max_map = np.zeros((eVlongNumb,eVtrnsvNumb,nVion))
-
-for i in range(nVion):
-  for n in range(eVlongNumb):
-     R_pass_map[n,i] = np.sqrt(Vion[i]**2+eVlong[n]**2)*coolPassTime
-     for j in range(eVtrnsvNumb):
-        R_debye_map[n,j,i]=np.sqrt(Vion[i]**2+eVtrnsv[j]**2+eVlong[n]**2)/omega_p
-        help=max(R_debye_map[n,j,i],R_e)
-        R_max_map[n,j,i]=min(help,R_pass_map[n,i])
-
-#
-# Map for R_pass:
-#
-X = np.zeros((eVlongNumb,nVion))
-Y = np.zeros((eVlongNumb,nVion))
-Z = np.zeros((eVlongNumb,nVion))
-
-for i in range(nVion):
-   for n in range(eVlongNumb):
-      X[n,i] = np.log10(VionRel[i])
-      Y[n,i] = np.log10(eVlong[n]/eVrmsLong)
-      Z[n,i] = np.log10(R_pass_map[n,i])                    
-
-yLimit = [np.log10(min(eVlong)/eVrmsLong),np.log10(max(eVlong)/eVrmsLong)]
-# print ('yLimMin = %e, yLimMax = %e' %(yLimit[0],yLimit[1]))
-
-locs = np.zeros(10)
-abels = np.zeros(10)
-myYticks = np.zeros(10)
-if (plotFigureFlag == 1): 
-      figCrrnt = plt.figure(3152)
-      ax = figCrrnt.add_subplot(111)                                       # for contours plotting
-      mapCrrnt = ax.contourf(X,Y,Z,cmap='jet') 
-#
-# Curves don't make much sense on this graph because ordinate-axis for them is
-# impact parameter and not electron longitudinal velocity! Nevertheless...
-#      
-#      plt.plot(np.log10(VionRel),np.log10(R_pass),'-r',linewidth=2)
-#      plt.plot(np.log10(VionRel),np.log10(R_debye),'-w',linewidth=2)
-#      plt.plot(np.log10(VionRel),1.02*np.log10(impctPrmtrMax),'-k',linewidth=2)
-#      plt.text(-4.6,-1.3,'$R_{Debye}$',color='w',fontsize=16)
-#      plt.text(-3.5,-.5,'$R_{Pass}$ for\n$V_{e||}=\Delta V_{e||}$',color='r',fontsize=16)
-#      plt.text(-4.,-1.9,'$R_{max}$ = $min(R_{Debye},R_{Pass})$',color='k',fontsize=16)
-#
-      titleHeader = \
-                 'Map for $R_{Pass}$ = $\sqrt{V_{ion}^2+V_{e||}^2}\cdot T_{cool}$, cm (Log Scale)'
-      plt.title(titleHeader,color='m',fontsize=14)
-      plt.xlabel('Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=14)
-      plt.ylabel('Longitudinal Velocity (Log Scale), $V_{e||}/\Delta V_{e||}$', \
-                 color='m',fontsize=14)
-      plt.ylim(yLimit)
-      figCrrnt.colorbar(mapCrrnt)
-      plt.grid(True)
-      locs,labels = plt.yticks()
-      for i in range(10):
-         myYticks[i] = 10.**locs[i]
-         myYticks[i] = "{:5.3f}".format(myYticks[i])
-      ax.set_yticklabels(myYticks)
-      if (saveFilesFlag == 1):
-         fileName = 'picturesCMA_v7/mapRpass_fig3152cma.png'
-         figCrrnt.savefig(fileName) 
-         print ('File "',fileName,'" is written')
-
-for j in range(eVtrnsvNumb):
-   powVion=round(np.log10(eVtrnsv[j])) 
-   mantVion=eVtrnsv[j]/(10**powVion) 
-   for i in range(nVion):
-      for n in range(eVlongNumb):
-#         Z[n,i] = np.log10(R_debye_map[n,j,i])                    
-         Z[n,i] = R_debye_map[n,j,i]                    
-   if (plotFigureFlag == 0): 
-      figCrrnt = plt.figure(4100+j)
-      ax = figCrrnt.add_subplot(111)                   # for contours plotting
-      mapCrrnt = ax.contourf(X,Y,Z,cmap='jet') 
-#      mapCrrnt1 = ax.contour(X,Y,Z,7,colors='white') 
-#      plt.clabel(mapCrrnt1,fmt='%4.2f',inline=True)
-      titleHeader = '$R_{Debye}$ = $\sqrt{V_{ion}^2+V_{e||}^2+V_{e\perp}^2}/\omega_p$, cm'
-      plt.title(titleHeader,color='m',fontsize=14)
-      plt.xlabel('Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=14)
-      plt.ylabel(' Longitudinal Velocity,cm: $V_{e||}/\Delta V_{e||}$ (Log Scale)', \
-	         color='m',fontsize=14)
-      plt.text(-4,.5,('$V_{ion \perp}=%3.1f\cdot10^{%2d}$cm/s' % (mantVion,powVion)), \
-               color='w',fontsize=14)
-      plt.ylim(yLimit)
-      figCrrnt.colorbar(mapCrrnt)
-      plt.grid(True)
-# Array myYticks is defined firstly for figure 3152 for map of R_pass:      
-      ax.set_yticklabels(myYticks)
-      if (saveFilesFlag == 1):
-         fileName = 'picturesCMA_v7/mapRpass_fig'+str(4100+j)+'cma.png'
-         figCrrnt.savefig(fileName) 
-         print ('File "',fileName,'" is written')
-
-for j in range(eVtrnsvNumb):
-   powVion=round(np.log10(eVtrnsv[j])) 
-   mantVion=eVtrnsv[j]/(10**powVion) 
-   for i in range(nVion):
-      for n in range(eVlongNumb):
-#         Z[n,i] = np.log10(R_max_map[n,j,i])                    
-         Z[n,i] = R_max_map[n,j,i]                    
-   if (plotFigureFlag == 0): 
-      figCrrnt = plt.figure(4300+j)
-      ax = figCrrnt.add_subplot(111)                  # for contours plotting
-      mapCrrnt = ax.contourf(X,Y,Z,cmap='jet') 
-#      mapCrrnt1 = ax.contour(X,Y,Z,7,colors='white') 
-#      plt.clabel(mapCrrnt1,fmt='%4.2f',inline=True)
-      titleHeader = 'Maximal Impact Parameter $R_{max}$, cm' 
-      plt.title(titleHeader,color='m',fontsize=14)
-      plt.xlabel('Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=14)
-      plt.ylabel('Longitudinal Velocity, $V_{e||}/\Delta V_{e||}$ (Log Scale)', \
-                 color='m',fontsize=14)
-      plt.text(-4,.5,('$V_{ion \perp}=%3.1f\cdot10^{%2d}$cm/s' % (mantVion,powVion)), \
-               color='w',fontsize=14)
-      plt.ylim(yLimit)
-      figCrrnt.colorbar(mapCrrnt)
-      plt.grid(True)
-# Array myYticks is defined firstly for figure 3152 for map of R_pass:      
-      ax.set_yticklabels(myYticks)
-      if (saveFilesFlag == 0):
-         fileName = 'picturesCMA_v7/mapRmax_fig'+str(4300+j)+'cma.png'
-         figCrrnt.savefig(fileName) 
-         print ('File "',fileName,'" is written')
-	 
-X = np.zeros((eVtrnsvNumb,eVlongNumb))		     
-Y = np.zeros((eVtrnsvNumb,eVlongNumb))		     
-Z = np.zeros((eVtrnsvNumb,eVlongNumb))		     
-
-for i in range(eVtrnsvNumb):
-   for n in range(eVlongNumb):
-      X[i,n] = np.log10(eVtrnsv[i]/eVrmsTran)		     
-      Y[i,n] = np.log10(eVlong[n]/eVrmsLong)		     
-
-for j in range(0,nVion,3):
-   powVion=round(np.log10(Vion[j])) 
-   mantVion=Vion[j]/(10**powVion) 
-   for i in range(eVtrnsvNumb):
-      for n in range(eVlongNumb):
-#         Z[n,i] = np.log10(R_debye_map[n,i,j])                    
-         Z[i,n] = R_debye_map[n,i,j]                    
-   if (plotFigureFlag == 0): 
-      figCrrnt = plt.figure(4200+j)
-      ax = figCrrnt.add_subplot(111)                        # for contours plotting
-      mapCrrnt = ax.contourf(X,Y,Z,cmap='jet') 
-#      mapCrrnt1 = ax.contour(X,Y,Z,7,colors='white') 
-#      plt.clabel(mapCrrnt1,fmt='%4.2f',inline=True)
-      titleHeader = '$R_{Debye}$ = $\sqrt{V_{ion}^2+V_{e||}^2+V_{e\perp}^2}/\omega_p$, cm'
-      plt.title(titleHeader,color='m',fontsize=14)
-      plt.title(titleHeader,color='m',fontsize=14)
-#      plt.xlabel('Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=14)
-      plt.xlabel('Electron Transversal Velocity, $log_{10}(V_{e\perp}/\Delta V_{e\perp}$)',\
-      color='m',fontsize=14)
-      plt.ylabel('Longitudinal Velocity, $V_{e||}/\Delta V_{e||}$ (Log Scale)', \
-                 color='m',fontsize=14)
-      plt.text(-1,-1.25,('$V_{ion \perp}=%3.1f\cdot10^{%2d}$cm/s' % (mantVion,powVion)), \
-               color='w',fontsize=14)
-      plt.ylim(yLimit)
-      figCrrnt.colorbar(mapCrrnt)
-      plt.grid(True)
-# Array myYticks is defined firstly for figure 3152 for map of R_pass:      
-      ax.set_yticklabels(myYticks)
-      if (saveFilesFlag == 1):
-         fileName = 'picturesCMA_v7/mapRmax_fig'+str(4200+j)+'cma.png'
-         figCrrnt.savefig(fileName) 
-         print ('File "',fileName,'" is written')
-
-for j in range(0,nVion,3):
-   powVion=round(np.log10(Vion[j])) 
-   mantVion=Vion[j]/(10**powVion) 
-   for i in range(eVtrnsvNumb):
-      for n in range(eVlongNumb):
-#         Z[n,i] = np.log10(R_max_map[n,i,j])                    
-         Z[i,n] = R_max_map[n,i,j]                    
-   if (plotFigureFlag == 0): 
-      figCrrnt = plt.figure(4400+j)
-      ax = figCrrnt.add_subplot(111)                        # for contours plotting
-      mapCrrnt = ax.contourf(X,Y,Z,cmap='jet') 
-      mapCrrnt1 = ax.contour(X,Y,Z,7,colors='white') 
-      plt.clabel(mapCrrnt1,fmt='%5.3f',inline=True)
-      titleHeader = 'Maximal Impact Parameter $R_{max}$, cm' 
-      plt.title(titleHeader,color='m',fontsize=14)
-#      plt.xlabel('Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=14)
-      plt.xlabel('Electron Transversal Velocity, $log_{10}(V_{e\perp}/\Delta V_{e\perp}$)',\
-      color='m',fontsize=14)
-      plt.ylabel('Longitudinal Velocity, $V_{e||}/\Delta V_{e||}$ (Log Scale)', \
-                 color='m',fontsize=14)
-      plt.text(-1,-1.25,('$V_{ion \perp}=%3.1f\cdot10^{%2d}$cm/s' % (mantVion,powVion)), \
-               color='w',fontsize=14)
-      plt.ylim(yLimit)
-      figCrrnt.colorbar(mapCrrnt)
-      plt.grid(True)
-# Array myYticks is defined firstly for figure 3152 for map of R_pass:      
-      ax.set_yticklabels(myYticks)
-      if (saveFilesFlag == 1):
-         fileName = 'picturesCMA_v7/mapRmax_fig'+str(4400+j)+'cma.png'
-         figCrrnt.savefig(fileName) 
-         print ('File "',fileName,'" is written')
-	 
-gaussDnst = np.zeros(50)
-gaussVelct = np.zeros(50)
-
-for i in range(50):
-   longVlog = math.log10(eVlongMin)+i*math.log10(eVlongMax/eVlongMin)/49
-   longVcrrnt = math.pow(10.,longVlog)
-   gaussVelct[i] = longVcrrnt/eVrmsLong
-   gaussDnst[i] = math.exp(-(gaussVelct[i]-0.*V0/eVrmsLong)**2)	 
-
-gaussVelctSlctd = np.zeros(eVlongNumb)
-gaussDnstSlctd = np.zeros(eVlongNumb)
-
-for i in range(eVlongNumb):
-   gaussVelctSlctd[i] = eVlong[i]/eVrmsLong
-   gaussDnstSlctd[i] = math.exp(-(gaussVelctSlctd[i])**2)	 
-
-plt.figure(2)
-plt.plot(gaussVelctSlctd,gaussDnstSlctd,'or',gaussVelct,gaussDnst,'-xb')
-plt.xlabel('Relative Velocity, $V_e/\Delta V_e$',color='m',fontsize=14)
-plt.ylabel('Relative Density',color='m',fontsize=14)
-plt.title('Gaussian Density Distribution',color='m',fontsize=14)
-plt.legend(['16 Points for GK Integration','Standard Set of 50 Points'],loc='upper right',fontsize=14)
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fileName = 'picturesCMA_v7/densityDistribution_fig2cma.png'
-   figCrrnt.savefig(fileName) 
-   print ('File "',fileName,'" is written')
-
-eDenst = np.zeros((eVtrnsvNumb,eVlongNumb))
-
-for i in range(eVtrnsvNumb):
-   for n in range(eVlongNumb):
-      eDenst[i,n] = math.exp(-(eVtrnsv[i]/eVrmsTran)**2)* \
-                    math.exp(-(eVlong[n]/eVrmsLong)**2)  
-		    
-X = np.zeros((eVtrnsvNumb,eVlongNumb))		     
-Y = np.zeros((eVtrnsvNumb,eVlongNumb))		     
-
-for i in range(eVtrnsvNumb):
-   for n in range(eVlongNumb):
-      X[i,n] = eVtrnsv[i]/eVrmsTran		     
-      Y[i,n] = eVlong[n]/eVrmsLong		     
-
-figCrrnt = plt.figure(3)
-ax = figCrrnt.add_subplot(111)                                       # for contours plotting
-mapCrrnt = ax.contourf(X,Y,np.log10(eDenst),cmap='jet') 
-mapLevels = ax.contour(X,Y,np.log10(eDenst),15,colors='black') 
-plt.clabel(mapLevels,fmt='%4.2f',inline=True)
-titleHeader = '"Flattened" Electron Density ($log_{10}$): $T_{\perp}$=%3.1f eV, $T_{||}$=%3.1f meV' 
-plt.title(titleHeader % (eTempTran,1.e3*eTempLong),color='m',fontsize=12)
-plt.xlabel('Transverse Velocity,  $V_{e\perp}/\Delta V_{e\perp}$',color='m',fontsize=14)
-plt.ylabel('Longitudinal Velocity,  $V_{e||}/\Delta V_{e||}$',color='m',fontsize=14)
-figCrrnt.colorbar(mapCrrnt)
-plt.grid(True)
-
-plt.show()
-
-sys.exit()
 
 #
 # Magnetized  collisions:
@@ -1269,10 +971,7 @@ totalTimeRun = 0.
 
 indx = 0
 
-###################   Main simulation   ###############
-#
-# Initial electron longitudinal and transversal velocities do not 
-# distributted, but equel to eVrmsLong and eVrmsTran correspondingly
+# -----------------   Main simulation   ---------------
 #
 for i in range(nVion):
 # Taking into account the corection of the maximal impact parameter
