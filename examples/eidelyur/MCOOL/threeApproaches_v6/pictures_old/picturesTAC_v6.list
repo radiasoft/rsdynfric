@@ -1,0 +1,64 @@
+ Volume in drive C has no label.
+ Volume Serial Number is C262-507B
+
+ Directory of C:\Users\eidelyur\Documents\GitHub\radiasoft\rsfriction\examples\eidelyur\MCOOL\threeApproaches_v6\pictures
+
+12/06/2018  02:15 PM    <DIR>          .
+12/06/2018  02:15 PM    <DIR>          ..
+03/02/2018  03:06 PM           183,562 dpxHist-A1_v6-fig240-1.png
+03/02/2018  03:05 PM           130,880 dpxHist-A1_v6-fig240.png
+03/02/2018  03:06 PM           202,317 dpxHist-A2_v6-fig340-1.png
+03/02/2018  03:06 PM           127,546 dpxHist-A2_v6-fig340.png
+03/02/2018  03:07 PM           149,461 dpxHist-A3_v6-fig540-1.png
+03/02/2018  03:06 PM           134,573 dpxHist-A3_v6-fig540.png
+03/02/2018  02:54 PM            66,588 dpxMap-A1_v6-fig245.png
+03/02/2018  02:55 PM            69,972 dpxMap-A1_v6-fig255.png
+03/02/2018  02:38 PM            65,334 dpxMap-A2toA1_v6-fig545.png
+03/02/2018  02:55 PM            67,527 dpxMap-A2_v6-fig345.png
+03/02/2018  02:38 PM            59,412 dpxMap-A3toA1_v6-fig745.png
+03/08/2018  10:52 AM            61,406 dpxMap-A3toA2_v6-fig845.png
+03/08/2018  10:53 AM            62,865 dpxMap-A3toA2_v6-fig850.png
+03/02/2018  02:55 PM            67,103 dpxMap-A3_v6-fig550.png
+03/02/2018  02:56 PM            93,909 dpxSurf-A1_v6-fig1240-1.png
+03/02/2018  03:14 PM            86,988 dpxSurf-A1_v6-fig1240-1n.png
+03/02/2018  02:56 PM            98,852 dpxSurf-A1_v6-fig1240.png
+03/02/2018  03:17 PM            90,946 dpxSurf-A1_v6-fig1240n.png
+03/02/2018  02:57 PM            87,417 dpxSurf-A2_v6-fig1340-1.png
+03/02/2018  02:57 PM            97,351 dpxSurf-A2_v6-fig1340.png
+03/02/2018  02:58 PM            95,337 dpxSurf-A3_v6-fig1540-1.png
+03/02/2018  02:58 PM           101,913 dpxWSurf-A3_v6-fig1540.png
+03/02/2018  02:59 PM           187,185 dpyHist-A1_v6-fig250-1.png
+03/02/2018  02:59 PM           177,886 dpyHist-A1_v6-fig250-2.png
+03/02/2018  02:58 PM           132,844 dpyHist-A1_v6-fig250.png
+03/02/2018  02:59 PM            70,086 dpyMap-A1_v6-fig255.png
+03/02/2018  03:00 PM            96,332 dpySurf-A1_v6-fig1250-1.png
+03/02/2018  03:00 PM            98,931 dpySurf-A1_v6-fig1250.png
+03/02/2018  03:01 PM           143,786 dpzHist-A1_v6-fig260-1.png
+03/02/2018  03:00 PM           135,307 dpzHist-A1_v6-fig260.png
+03/02/2018  03:03 PM           146,358 dpzHist-A2_v6-fig360-1.png
+03/02/2018  03:03 PM           129,947 dpzHist-A2_v6-fig360.png
+03/02/2018  03:04 PM           193,488 dpzHist-A3_v6-fig560-1.png
+03/02/2018  03:03 PM           132,032 dpzHist-A3_v6-fig560.png
+03/02/2018  03:04 PM            67,283 dpzMap-A1_v6-fig265.png
+03/02/2018  02:38 PM            66,414 dpzMap-A2toA1_v6-fig555.png
+03/02/2018  03:04 PM            65,440 dpzMap-A2_v6-fig365.png
+03/02/2018  02:38 PM            65,197 dpzMap-A3toA1_v6-fig755.png
+03/08/2018  10:53 AM            62,605 dpzMap-A3toA2_v6-fig855.png
+03/08/2018  10:54 AM            64,129 dpzMap-A3toA2_v6-fig860.png
+03/02/2018  03:05 PM            66,862 dpzMap-A3_v6-fig565.png
+03/02/2018  02:38 PM            88,491 dpzSurf-A1_v6-fig1260-1.png
+03/02/2018  02:38 PM            91,523 dpzSurf-A1_v6-fig1260.png
+03/02/2018  02:38 PM            95,393 dpzSurf-A2_v6-fig1360-1.png
+03/02/2018  02:38 PM            87,148 dpzSurf-A2_v6-fig1360.png
+03/02/2018  02:38 PM            89,777 dpzSurf-A3_v6-fig1560-1.png
+03/02/2018  02:38 PM            81,976 dpzSurf-A3_v6-fig1560.png
+12/06/2018  02:15 PM                 0 picturesTAC_v6.list
+03/09/2018  05:09 PM            63,590 rhoInitMap_less025-fig2360.png
+03/09/2018  05:09 PM            64,137 rhoInitMap_less1-fig2355.png
+03/09/2018  05:09 PM            58,080 rhoInitMap_total-fig2345.png
+03/09/2018  05:10 PM            63,632 vTranMap_less10-fig2370.png
+03/09/2018  05:10 PM            64,084 vTranMap_less1_5-fig2380.png
+03/09/2018  05:10 PM            65,256 vTranMap_less3_0-fig2375.png
+03/09/2018  05:10 PM            62,492 vTranMap_total-fig2365.png
+              55 File(s)      5,278,950 bytes
+               2 Dir(s)  133,564,616,704 bytes free
