@@ -3,8 +3,8 @@
 
  Directory of C:\Users\eidelyur\Documents\GitHub\radiasoft\rsfriction\examples\eidelyur\MCOOL\threeApproaches_v6\pictures
 
-12/11/2018  03:43 PM    <DIR>          .
-12/11/2018  03:43 PM    <DIR>          ..
+12/12/2018  12:05 PM    <DIR>          .
+12/12/2018  12:05 PM    <DIR>          ..
 12/11/2018  03:37 PM            29,706 actionJalongFirstTrack-A2_v6-fig160.jpg
 12/11/2018  03:38 PM            32,394 actionJalongFirstTrack-A3_v6-fig460.jpg
 12/11/2018  03:36 PM            51,510 areaInitialImpactParameter_v6-fig10.jpg
@@ -21,10 +21,14 @@
 12/11/2018  03:38 PM            56,390 dpxMap-A3minusA1_v6-fig745.jpg
 12/11/2018  03:38 PM            59,849 dpxMap-A3minusA2_v6-fig1745.jpg
 12/11/2018  03:38 PM            61,374 dpxMap-A3_v6-fig845.jpg
+12/12/2018  11:12 AM            88,935 dpxSurf-A1-1_v6-fig240.jpg
 12/11/2018  03:37 PM            98,199 dpxSurf-A1_v6-fig240.jpg
+12/12/2018  11:14 AM            95,828 dpxSurf-A2-1_v6-fig340.jpg
 12/11/2018  03:37 PM           100,391 dpxSurf-A2_v6-fig340.jpg
+12/12/2018  11:20 AM            88,727 dpxSurf-A3-1_v6-fig540.jpg
 12/11/2018  03:38 PM            98,691 dpxSurf-A3_v6-fig540.jpg
 12/11/2018  03:37 PM            62,518 dpyMap-A1_v6-fig255.jpg
+12/12/2018  11:22 AM            84,788 dpySurf-A1-1_v6-fig250.jpg
 12/11/2018  03:37 PM            89,951 dpySurf-A1_v6-fig250.jpg
 12/11/2018  03:37 PM            63,425 dpzMap-A1_v6-fig265.jpg
 12/11/2018  03:38 PM            59,425 dpzMap-A2divideA1_v6-fig556.jpg
@@ -33,21 +37,26 @@
 12/11/2018  03:38 PM            60,807 dpzMap-A3minusA1_v6-fig755.jpg
 12/11/2018  03:38 PM            58,735 dpzMap-A3minusA2_v6-fig1755.jpg
 12/11/2018  03:38 PM            63,337 dpzMap-A3_v6-fig865.jpg
+12/12/2018  11:16 AM            90,162 dpzSurf-A1-1_v6-fig260.jpg
 12/11/2018  03:37 PM            94,005 dpzSurf-A1_v6-fig260.jpg
+12/12/2018  11:17 AM            84,956 dpzSurf-A2-1_v6-fig360.jpg
 12/11/2018  03:37 PM            86,182 dpzSurf-A2_v6-fig360.jpg
+12/12/2018  11:18 AM            92,406 dpzSurf-A3-1_v6-fig860.jpg
 12/11/2018  03:38 PM            96,319 dpzSurf-A3_v6-fig860.jpg
-12/11/2018  03:37 PM           107,720 firstTrack3D-A1andA2_v6-fig440.jpg
+12/12/2018  12:05 PM           102,091 firstTrack3D-A1andA2_v6-fig440.jpg
 12/11/2018  03:37 PM           104,275 firstTrack3D-A1_v6-fig40.jpg
 12/11/2018  03:37 PM            76,748 firstTrack3D-A2_v6-fig140.jpg
 12/11/2018  03:38 PM            90,223 firstTrack3D-A3_v6-fig640.jpg
+12/12/2018  11:07 AM            81,117 HalfLengthTrack-1_v6-fig20.jpg
 12/11/2018  03:36 PM            75,191 HalfLengthTrack_v6-fig20.jpg
+12/12/2018  11:06 AM            82,460 larmorNumbers-1_v6-fig30.jpg
 12/11/2018  03:36 PM            75,288 larmorNumbers_v6-fig30.jpg
-12/11/2018  03:43 PM                 0 listOfPictures.txt
+12/12/2018  02:17 PM                 0 listOfPictures.txt
 12/11/2018  03:37 PM            37,147 mapParametersAandB-A1_v6-fig110.jpg
-12/11/2018  03:37 PM            38,535 mapParametersAandB-A2_v6-fig115.jpg
+12/11/2018  03:52 PM            36,930 mapParametersAandB-A2_v6-fig115.jpg
 12/11/2018  03:37 PM           129,708 trackWithMaxDpx-3D-A1_v6-fig45.jpg
 12/11/2018  03:38 PM           126,529 trackWithMaxDpx3D-A1andA2_v6-fig445.jpg
 12/11/2018  03:37 PM            70,367 trackWithMaxDpx3d-A2_v6-fig145.jpg
 12/11/2018  03:38 PM            75,817 trackWithMaxDpx3D-A3_v6-fig645.jpg
-              44 File(s)      3,015,361 bytes
-               2 Dir(s)  131,859,079,168 bytes free
+              53 File(s)      3,797,506 bytes
+               2 Dir(s)  134,235,512,832 bytes free
