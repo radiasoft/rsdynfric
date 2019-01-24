@@ -6,8 +6,12 @@ def main():
 #
 # Opening the input file: 
 #
-   inputFile='frictionForceLong_Nsplit_5_ve_3.dat'
-   inputFile='HESR_coldBeam.dat'
+#   inputFile='frictionForceLong_Nsplit_5_ve_3.dat'
+   nameDevice = 'HESR'
+   nameDevice = 'EIC'
+   nameDevice = 'MOSOL'
+   inputFile = nameDevice
+   inputFile +='_coldBeam.dat'
    print ('Open input file "%s"...' % inputFile)
    inpfileFlag=0
    try:
@@ -63,8 +67,9 @@ def main():
 
    Nsplit = 5
 #    
-#   Delta_e_par = 1.e5
-   Delta_e_par = .6e5
+#   Delta_e_par = 1.e5              # EIC, m/s
+#   Delta_e_par = 6.e4              # HESR, m/s 
+   Delta_e_par = 8.4e3             # MOSOL, m/s
 
 #   powDelta_e_par = np.zeros(v_e_numb)
 #   mantDelta_e_par = np.zeros(v_e_numb)
@@ -94,7 +99,8 @@ def main():
    plt.plot(Vion[0:dataNumber], -frctnFrcLong_P[0:dataNumber],'-xb') 
    plt.xlabel('$V_{i\parallel}/v_{e\parallel}}$',color='m',fontsize=14) 
    plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
-   titleHeader = ('HESR Longitudinal Friction Force: $V_{e||}=%3.1f\cdot10^{%2d}$ m/s' % \
+   titleHeader = nameDevice
+   titleHeader += (' Longitudinal Friction Force: $V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
 #                   (mantDelta_e_par[1],powDelta_e_par[1]))
                   (mantV0,powV0))
    plt.title(titleHeader,color='m',fontsize=14)
@@ -228,7 +234,7 @@ def main():
    Fk_ffLong = fft.fft(ffLong_fft)/n         # Fourier coefficients (divided by n)
 #    Fk = fft.fftshift(Fk)                     # Shift zero freq to center
 #    for i in range(n):
-#       print i,') v_i = ',vi_arg[i],'  Fk_ffLong =',  Fk_ffLong[i]
+#       print( i,') v_i = ',vi_arg[i],'  Fk_ffLong =',  Fk_ffLong[i])
 
    ffLong_check = n*fft.ifft(Fk_ffLong)
 
@@ -258,7 +264,7 @@ def main():
       Fk_gauss = fft.fft(gauss_fft)/n           # Fourier coefficients (divided by n)
 #       Fk = fft.fftshift(Fk)                     # Shift zero freq to center
 #       for i in range(n):
-#          print i,') v_i = ',vi_arg[i],'  Fk_gauss =',  Fk_gauss[i]
+#          print( i,') v_i = ',vi_arg[i],'  Fk_gauss =',  Fk_gauss[i])
 
       gauss_check = n*fft.ifft(Fk_gauss)
 #
@@ -279,7 +285,7 @@ def main():
 #
 #      Fk_ffLong_vs_vi = Fk_ffLong*Fk_gauss 
 #       for i in range(n):
-#          print i,') v_i = ',vi_arg[i],'  Fk_ffLong_vs_vi =',  Fk_ffLong_vs_vi[i]
+#          print( i,') v_i = ',vi_arg[i],'  Fk_ffLong_vs_vi =',  Fk_ffLong_vs_vi[i])
 
 #      ffLong_vs_vi = n**2*fft.ifft(Fk_ffLong_vs_vi) 
 #      result = np.real(ffLong_vs_vi)
@@ -297,33 +303,38 @@ def main():
 
       if (sourceFlag == 1):
          xLimit = [-.2,3.]
+# For MOSOL case:	 
+         xLimit = [-.01,.3]
       
       if (sourceFlag == 2):
          xLimit = [-.2,6.]
+# For MOSOL case:	 
+         xLimit = [-.01,.3]
 
    fig100 = plt.figure(100+sourceFlag)
-   plt.plot(vi_arg[(n-1)/2:n],ffLong_fft[(n-1)/2:n],'-b', \
-            vi_arg[(n-1)/2:n],   results[(n-1)/2:n,0],'-r', \
-   	    vi_arg[(n-1)/2:n],   results[(n-1)/2:n,1],'-g', \
-   	    vi_arg[(n-1)/2:n],   results[(n-1)/2:n,2],'-m', \
+   plt.plot(vi_arg[int((n-1)/2):n],ffLong_fft[int((n-1)/2):n],'-b', \
+            vi_arg[int((n-1)/2):n],   results[int((n-1)/2):n,0],'-r', \
+   	    vi_arg[int((n-1)/2):n],   results[int((n-1)/2):n,1],'-g', \
+   	    vi_arg[int((n-1)/2):n],   results[int((n-1)/2):n,2],'-m', \
 	    Vion[0:dataNumber],-frctnFrcLong_P[0:dataNumber],'-xr')
    plt.xlim(xLimit) 
    plt.xlabel('Ion velocity $V_i/V_0$', color='m',fontsize=14) 
    plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
-   titleHeader = ('HESR Longitudinal Friction Force $F_{\parallel}$: $V_0=%3.1f \cdot 10^{%2d}$ m/s' % \
+   titleHeader = nameDevice + \
+   (' Longitudinal Friction Force $F_{\parallel}$: $V_0=%3.1f \cdot 10^{%2d}$ m/s' % \
                   (mantV0,powV0))
-   plt.title(titleHeader,color='m',fontsize=14)
-   plt.legend(['$eV_{rms}=0$ $(T_e = 0)$', \
-               ('$eV_{rms}=%3.1f \cdot V_0$ $(T_e =%6.4f$ eV)' % (eVrms[0]/v0,eT_eV[0])), \
-               ('$eV_{rms}=%3.1f \cdot V_0$ $(T_e =%5.3f$ eV)' % (eVrms[1]/v0,eT_eV[1])), \
-   	       ('$eV_{rms}=%3.1f \cdot V_0$ $(T_e =%5.3f$ eV)' % (eVrms[2]/v0,eT_eV[2])), \
+   plt.title(titleHeader,color='m',fontsize=12)
+   plt.legend(['$eV_{rms,\parallel}=0$ $(T_e = 0)$', \
+               ('$eV_{rms,\parallel}=%3.1f \cdot V_0$ $(T_e =%6.4f$ eV)' % (eVrms[0]/v0,eT_eV[0])), \
+               ('$eV_{rms,\parallel}=%3.1f \cdot V_0$ $(T_e =%5.3f$ eV)' % (eVrms[1]/v0,eT_eV[1])), \
+   	       ('$eV_{rms,\parallel}=%3.1f \cdot V_0$ $(T_e =%5.3f$ eV)' % (eVrms[2]/v0,eT_eV[2])), \
 	       ('"Parkhomchuk"')], \
-   	      loc='upper right',fontsize=14)
+   	      loc='upper right',fontsize=10)
    plt.grid(True)
-   figureFile = 'HESRsimulation_fig10'+str(sourceFlag)+'.png'
-   print 'File  with figure is "',figureFile,'"'   
+   figureFile = nameDevice + 'simulation_fig10'+str(sourceFlag)+'.png'
+   print ( 'File  with figure is "',figureFile,'"')   
    fig100.savefig(figureFile)    
-   print 'File "', figureFile,'" is written'  
+   print ('File "', figureFile,'" is written')  
    
 #   someChecking() 
 
@@ -390,7 +401,7 @@ def someChecking():
    I6 = 1./7.
    x10 = np.sqrt( (np.sqrt(5.)+2.)/(3.*np.sqrt(5.))) # -.7946544
    x20 = np.sqrt( (np.sqrt(5.)-2.)/(3.*np.sqrt(5.))) # -.1875924
-   print 'x10 =',x10,', x20 = ',x20
+   print( 'x10 =',x10,', x20 = ',x20)
    
    delta = 24.*x10*x20*(x10**2-x20**2)*(I2*(x10**2+x20**2)-(x10*x20)**2-I2**2)
    
@@ -398,7 +409,7 @@ def someChecking():
    d2 = 2.*x10*(x10**2-I2)*(2.*(I6-I2**3)-3.*(x10**2+I2)*(I4-I2**2))/delta
    x3_2 = I2-2.*x10**2*d1-2.*x20**2*d2
    
-   print 'd1 = ',d1,', d2 = ',d2,', x3^2 = ',x3_2
+   print( 'd1 = ',d1,', d2 = ',d2,', x3^2 = ',x3_2)
    
    x10 = x10+d1
    x20 = x20+x3_2  
@@ -409,7 +420,7 @@ def someChecking():
    d2 = 2.*x10*(x10**2-I2)*(2.*(I6-I2**3)-3.*(x10**2+I2)*(I4-I2**2))/delta
    x3_2 = I2-2.*x10**2*d1-2.*x20**2*d2
    
-   print 'd1 = ',d1,', d2 = ',d2,', x3^2 = ',x3_2
+   print ('d1 = ',d1,', d2 = ',d2,', x3^2 = ',x3_2)
    
   
 if __name__=="__main__": 

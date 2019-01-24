@@ -1,6 +1,7 @@
 #============================================================================
 #
-# Firstly (12/27/19), this is my copy of Ponomarev's script Fpar_1D_ave_-2.py
+# Firstly (01/20/19), this is a copy of the script frictionLong-01.py
+# Now it in progerss
 #
 #============================================================================
 
@@ -28,8 +29,7 @@ def main():
 		
   Nstep = 1000                # number of timesteps 
 #  deviceFlag = 1              # HESR
-#  deviceFlag = 2              # EIC
-  deviceFlag = 3              # MOSOL
+  deviceFlag = 2              # EIC
 
   if (deviceFlag == 1):
 #-------------------------------------------------------
@@ -52,7 +52,8 @@ def main():
 
 
      Tsim = T_cool               # s;   for Ekin_p  = 1670 MeV 
-     print ('Tsim = ',Tsim,' s')
+     print( 'Tsim = ',Tsim,'s')
+     T_inter = 2.26e-9  # s, in the beam frame 
      T_inter = T_cool  # s, in the beam frame 
      v0_beam = v_el              # m/s; for Ekin_el =  908 keV 
 #     Z = Z_p 
@@ -89,56 +90,6 @@ def main():
      Delta_e_par_arr = [Delta_e_par]      # m/s 
      nameDevice = 'EIC'
 
-#-------------------------------------------------------
-#
-#                Input data for MOSOL cooler:
-#
-  if (deviceFlag == 3):
-#  n_e=omega_p**2*m_e/(4.*pi*q_e**2)       # plasma density, 3.1421e+08 cm-3
-
-#  n_e1=8.e7                               # plasma density, cm-3
-#  omega_p1=np.sqrt(4.*pi*n_e1*q_e**2/m_e) # plasma frequency, 5.0459e+08 1/s  
-
-
-     L_cooling = 2.4                    # m
-
-     Ekin_p = [.85]                     # MeV
-     m_p_MeV = m_p*c0**2/(1.e6*eVtoJ)
-     Ekin_el = [.47]                    # keV
-     m_el_keV = m_el*c0**2/(1.e3*eVtoJ)
-     for i in range(np.size(Ekin_p)):
-        v_p = c0*np.sqrt(Ekin_p[i]/m_p_MeV*(Ekin_p[i]/m_p_MeV+2.))/(Ekin_p[i]/m_p_MeV+1.)
-        v_el = c0*np.sqrt(Ekin_el[i]/m_el_keV*(Ekin_el[i]/m_el_keV+2.))/ \
-	       (Ekin_el[i]/m_el_keV+1.)
-        T_cool = L_cooling/v_p
-        print( 'v_p =%e m/s, v_el = %e m/s; T_cool =%e s' % (v_p,v_el,T_cool))
-
-     T_cool = L_cooling/v_el 
-     print ('T_cool = %e s' % T_cool)
-     T_inter = T_cool            # s, in the beam frame 
-     Tsim = T_cool               # s;   
-     v0_beam = v_el              # m/s; for Ekin_el =  470 eV
-     Z = Z_p 
-
-
-     Bz = .4                     # T (working in MKS units)
-     I_beam = 0.001               # A
-     a_beam = .01               # m
-     S_beam = np.pi*a_beam**2    # m^2
-     n_e = I_beam/S_beam/(abs(q_el)*v0_beam)   # m^-3, in the beam frame
-     print( 'v0_beam = %e m/s, S_beam = %e m^2, n_e = %e 1/m^3' % (v0_beam,S_beam,n_e)) 
-     
-     longT=2.0e-4                                      # longitudinal temperature, eV 
-     Delta_e_par = np.sqrt(2.*longT*eVtoJ/m_el)        # m/s
-     print ('Delta_e_par = %e m/s  ==> longT = %e eV' % (Delta_e_par,longT))
-
-     trnsvT=0.5                                        # transversal temperature, eV
-     Delta_e_tr = np.sqrt(2.*trnsvT*eVtoJ/m_el)        # m/s
-     print ('Delta_e_tr = %e m/s  ==> trnsvT = %e eV' % (Delta_e_tr,trnsvT))
-
-     Delta_e_par_arr = [Delta_e_par]      # m/s 
-     nameDevice = 'MOSOL'
-  
 #                     End of input data
 #
 #-------------------------------------------------------
@@ -154,8 +105,8 @@ def main():
   Zrcc = Z *r_cl_el *c0 *c0  
   eT_par_eV = .5*m_el*np.power(Delta_e_par,2)/eVtoJ
   eT_tr_eV  = .5*m_el*np.power(Delta_e_tr,2)/eVtoJ
-  print ('Delta_e_par = ',Delta_e_par,' m/s  ==> eT_par_eV=',eT_par_eV,' eV')
-  print ('Delta_e_tr = ',Delta_e_tr,' m/s  ==> eT_tr_eV=',eT_tr_eV,' eV')
+  print( 'Delta_e_par = ',Delta_e_par,' m/s  ==> eT_par_eV=',eT_par_eV,' eV')
+  print( 'Delta_e_tr = ',Delta_e_tr,' m/s  ==> eT_tr_eV=',eT_tr_eV,' eV')
 
 # k-th nearest neighbor, if contribs from only one particle are computed (Not done here;
 # better to introduce k_min?):
@@ -187,19 +138,16 @@ def main():
   v_i_rel = [.01,.02,.03,.04,.05,.06,.07,.08,.09,.1,.15,.2,.25,.3,.35,.4,.45,.5,.55,.6, \
              .65,.7,.75,.8,.85,.9,.95,1.,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2., 2.2, \
 	     2.4,2.6,2.8,3.,3.5,4.,4.5,5.,5.5,6.]
-# For MOSOL case:
-  v_i_rel = [.01,.02,.03,.04,.05,.06,.07,.08,.09,.1,.11,.12,.13,.14,.15,.16,.17, \
-             .18,.19,.20,.21,.22,.23,.24,.25,.26,.27]
   v_i_numb = np.size(v_i_rel)
   print ('v_i_numb = %d' % v_i_numb)
 #  v_i_numb = 5                                                   # For debugging
   v_i_abs = np.zeros((v_i_numb,v_e_numb)) 
 # For longitudinal friction forse from Parchomchuk formulae:
-  log_par = np.zeros((v_i_numb,v_e_numb))         # Coulomb log  
-  F_P_par_w = np.zeros((v_i_numb,v_e_numb))       # without Coulomb log       
-  F_P_par_t = np.zeros((v_i_numb,v_e_numb))       # wit Coulomb log            
-  F_P_par_w1 = np.zeros((v_i_numb,v_e_numb))       # without Coulomb log       
-  F_P_par_t1 = np.zeros((v_i_numb,v_e_numb))       # wit Coulomb log            
+  log_par = np.zeros((v_i_numb,v_e_numb))            # Coulomb log  
+  F_P_trnsv_w = np.zeros((v_i_numb,v_e_numb))        # without Coulomb log       
+  F_P_trnsv_t = np.zeros((v_i_numb,v_e_numb))        # with Coulomb log            
+  F_P_trnsv_w1 = np.zeros((v_i_numb,v_e_numb))       # without Coulomb log       
+  F_P_trnsv_t1 = np.zeros((v_i_numb,v_e_numb))       # wit Coulomb log            
   for k in range(v_e_numb):
      v_eff = Delta_e_par_arr[k]
 # For checking:
@@ -211,13 +159,13 @@ def main():
         rho_min = Zrcc/v_i_abs[i,k]**2
         rho_max = v_i_abs[i,k]/max(w_p,1./T_inter) 
         log_par[i,k] = np.log((rho_max+rho_min+r_L)/(rho_min+r_L) ) 
-        F_P_par_w[i,k] = -4.*m_el*Zrcc*Zrcc*n_e*v_i_abs[i,k]/ \
+        F_P_trnsv_w[i,k] = -4.*m_el*Zrcc*Zrcc*n_e*v_i_abs[i,k]/ \
                        np.power(v_i_abs[i,k]**2+v_eff**2, 1.5)/eVtoJ 
-        F_P_par_t[i,k] = F_P_par_w[i,k]* log_par[i,k]
-# For checking:
-#        F_P_par_w1[i,k] = -4.*m_el*Zrcc*Zrcc*n_e*v_i_abs[i,k]/ \
+        F_P_trnsv_t[i,k] = F_P_trnsv_w[i,k]* log_par[i,k]
+# For checking (dependence on Zrcc**2):
+#        F_P_trnsv_w1[i,k] = -4.*m_el*Zrcc*Zrcc*n_e*v_i_abs[i,k]/ \
 #                          np.power(v_i_abs[i,k]**2+Delta_e_tr**2, 1.5)/eVtoJ 
-#        F_P_par_t1[i,k] = F_P_par_w1[i,k]* log_par[i,k]
+#        F_P_trnsv_t1[i,k] = F_P_trnsv_w1[i,k]* log_par[i,k]
 	
   powDelta_e_par_p = np.zeros(v_e_numb)
   mantDelta_e_par_p = np.zeros(v_e_numb)
@@ -239,33 +187,33 @@ def main():
 #  print( 'File "',savePictureFile,' is written' )  
 
   fig5 = plt.figure(5)
-  plt.plot(v_i_rel[0:v_i_numb], -F_P_par_t[0:v_i_numb,0],'-xr', \
-           v_i_rel[0:v_i_numb], -F_P_par_w[0:v_i_numb,0],'-xb')
+  plt.plot(v_i_rel[0:v_i_numb], -F_P_trnsv_t[0:v_i_numb,0],'-xr', \
+           v_i_rel[0:v_i_numb], -F_P_trnsv_w[0:v_i_numb,0],'-xb')
   plt.xlabel('$V_{i\parallel}/v_{e\parallel}}$',color='m',fontsize=14) 
   plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
   titleHeader = nameDevice
-  titleHeader += ' Longitudinal Friction Force: "Parkhomchuk"'
+  titleHeader += ' Transversal Friction Force: "Parkhomchuk"'
   plt.title(titleHeader,color='m',fontsize=14)
-  plt.text(.35,0.,('$V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s, $T_{eff}^e=%4.2f$ eV' % \
+  plt.text(2.,65.,('$V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s, $T_{eff}^e=%4.2f$ eV' % \
                        (mantDelta_e_par_p[0],powDelta_e_par_p[0],eT_par_eV)), \
-           color='m',fontsize=12)
+           color='m',fontsize=14)
   plt.legend([('With Coulomb Logaruthm'),('Without Coulomb Logaruthm')], \
-             loc='upper right',fontsize=12)
+             loc='lower center',fontsize=14)
   plt.grid(True)
   savePictureFile = nameDevice
   savePictureFile += '_coldBeam_Parkhomchuk_fig5.png'    
 #  fig5.savefig(savePictureFile)    
-#  print( 'File "',savePictureFile,' is written' )  
+#  print( 'File "',savePictureFile,' is written')   
 
 # For checking:
 #  fig6 = plt.figure(6)
-#  plt.plot(v_i_rel[0:v_i_numb], -F_P_par_t[0:v_i_numb,0],'-xr', \
-#           v_i_rel[0:v_i_numb], -F_P_par_w[0:v_i_numb,0],'-xb', \
-#	   v_i_rel[0:v_i_numb], -F_P_par_w1[0:v_i_numb,0],'-xg')
+#  plt.plot(v_i_rel[0:v_i_numb], -F_P_trnsv_t[0:v_i_numb,0],'-xr', \
+#           v_i_rel[0:v_i_numb], -F_P_trnsv_w[0:v_i_numb,0],'-xb', \
+#	   v_i_rel[0:v_i_numb], -F_P_trnsv_w1[0:v_i_numb,0],'-xg')
 #  plt.xlabel('$V_{i\parallel}/v_{e\parallel}}$',color='m',fontsize=14) 
 #  plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
 #  titleHeader = nameDevice
-#  titleHeader += ' Longitudinal Friction Force: "Parkhomchuk"'
+#  titleHeader += ' Transversal Friction Force: "Parkhomchuk"'
 #  plt.title(titleHeader,color='m',fontsize=14)
 #  plt.text(2.,75.,('$V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
 #                       (mantDelta_e_par_p[0],powDelta_e_par_p[0])), \
@@ -276,17 +224,19 @@ def main():
 #  savePictureFile = nameDevice
 #  savePictureFile += '_CoulombLog_Parkhomchuk_fig6.png'    
 #  fig6.savefig(savePictureFile)    
-#  print( 'File "',savePictureFile,' is written')   
+#  print( 'File "',savePictureFile,' is written' )  
 
   plt.show()
-
   sys.exit()
+
+
+
 
 #  Nsplit_arr = [9,7,6,5]
 #  Nsplit_arr = [5,4,3,2]
   Nsplit_arr = [5]
   numbNsplit = np.size(Nsplit_arr)
-  ffLong = np.zeros((v_i_numb,numbNsplit,v_e_numb)) 
+  ffTrnsv = np.zeros((v_i_numb,numbNsplit,v_e_numb)) 
   z_traject = np.zeros((Nstep+3,2,v_i_numb)) 
   vz_traject = np.zeros((Nstep+3,2,v_i_numb)) 
 
@@ -337,15 +287,13 @@ def main():
   savePictureFile = nameDevice
   savePictureFile += 'impactParameter_fig3.png'    
 #  fig3.savefig(savePictureFile)    
-#  print ('File "',savePictureFile,' is written')   
+#  print( 'File "',savePictureFile,' is written' )  
 
 #  plt.show()
 
 #  sys.exit()
 
   indx_i = [0,8,15,17,19,21,22,23,24,25,30,35,40]
-# For MOSOL case:
-  indx_i = [0,3,6,9,12,15,18,21,24,26]
   for j in range(numbNsplit):
      Nsplit = int(Nsplit_arr[j])
      z_split = spliting(Nsplit)
@@ -368,9 +316,7 @@ def main():
 
 # average force on the ion during the interaction time (redundant *Tsim/Tsim for clarity):
            F_time_aved /= Tsim   
-           ffLong[i,j,k] = F_time_aved
-# For MOSOL case:
-           ffLong[i,j,k] = -F_time_aved
+           ffTrnsv[i,j,k] = F_time_aved
 # Trajectories data:
            z_length = np.size(zFirst)
            z_traject[0:z_length,0,i] = zFirst
@@ -382,9 +328,9 @@ def main():
            timeEnd=os.times()
            cpuTime=float(timeEnd[0])-float(timeStart[0])  # CPU time , s
   
-           print \
-	   ('cpuTime(s)=%e for v_i_rel=%e, Nsplit=%d and Delta_e_par_arr=%e, ffLong(eV/m)=%e' % \
-	   (cpuTime,v_i_rel[i],Nsplit,Delta_e_par_arr[k],ffLong[i,j,k]))
+           print( "   cpuTime (s) = ", cpuTime, " for v_i_rel = ", v_i_rel[i], \
+	         ", Nsplit = ",Nsplit," and Delta_e_par_arr = ",Delta_e_par_arr[k], \
+		 "ffTrnsv = ",ffTrnsv[i,j,k]," eV/m")
   
      #  plt.plot(t_arr, F_ave_arr, 'r-') 
      #  plt.plot(t_arr, 0.0*t_arr, 'g--') 
@@ -405,10 +351,10 @@ def main():
 # Opening the output file (for 4 values of Nsplit): 
 #
 ##   saveDataFile = nameDevice
-###  saveDataFile += 'frictionForceLong_Nsplit_5-6-7-9.dat'
-###  saveDataFile += 'frictionForceLong_Nsplit_2-3-4-5.dat'
-##  saveDataFile += 'frictionForceLong_Nsplit_5-6-7-9_noBckgrnd.dat'
-###  saveDataFile += 'frictionForceLong_Nsplit_2-3-4-5_noBckgrnd.dat'
+###  saveDataFile += 'frictionForceTrnsv_Nsplit_5-6-7-9.dat'
+###  saveDataFile += 'frictionForceTrnsv_Nsplit_2-3-4-5.dat'
+##  saveDataFile += 'frictionForceTrnsv_Nsplit_5-6-7-9_noBckgrnd.dat'
+###  saveDataFile += 'frictionForceTrnsv_Nsplit_2-3-4-5_noBckgrnd.dat'
 ##  print ('Open output file "%s"...' % saveDataFile)
 ##  saveDataFile_flag=0
 ##  try:
@@ -429,11 +375,11 @@ def main():
 ##  outfile.write ('\nTypical Larmor Radius = %e m' % (r_L))  
 ##  outfile.write ('\n\n    Nsplit        %d              %d               %d              %d' % \
 ##                 (int(Nsplit_arr[0]),int(Nsplit_arr[1]),int(Nsplit_arr[2]),int(Nsplit_arr[3])))
-##  outfile.write ('\nVion/VeLong               F r i c t i o n   F o r c e   (eV/m)\n')
+##  outfile.write ('\nVion/VeTrnsv               F r i c t i o n   F o r c e   (eV/m)\n')
 
 ##  for i in range(v_i_numb):
 ##     outfile.write ('\n %5.3f       %5.3e     %5.3e     %5.3e     %5.3e'  % \
-##                    (v_i_rel[i],ffLong[i,0],ffLong[i,1],ffLong[i,2],ffLong[i,3]))
+##                    (v_i_rel[i],ffTrnsv[i,0],ffTrnsv[i,1],ffTrnsv[i,2],ffTrnsv[i,3]))
 ##  outfile.close()
 ##  print ('File "%s" is written' % saveDataFile)
 
@@ -442,7 +388,7 @@ def main():
 # Opening the output file (for one valuee each of Nsplit and v_e_numb): 
 #
 #  saveDataFile = nameDevice
-#  saveDataFile += 'frictionForceLong_Nsplit_5_ve_3.dat'
+#  saveDataFile += 'frictionForceTrnsv_Nsplit_5_ve_3.dat'
 #  print ('Open output file "%s"...' % saveDataFile)
 #  saveDataFile_flag=0
 #  try:
@@ -463,11 +409,11 @@ def main():
 #  outfile.write ('\n                  %e      %e       %e' % \
 #                 (Delta_e_par_arr[0],Delta_e_par_arr[1],Delta_e_par_arr[2]))  
 #  
-#  outfile.write ('\n\nVion/VeLong            F r i c t i o n    F o r c e     (eV/m)\n')
+#  outfile.write ('\n\nVion/VeTrnsv            F r i c t i o n    F o r c e     (eV/m)\n')
 #
 #  for i in range(v_i_numb):
 #     outfile.write ('\n    %5.3f         %5.3e         %5.3e         %5.3e'  % \
-#                    (v_i_rel[i],ffLong[i,0,0],ffLong[i,0,1],ffLong[i,0,2]))
+#                    (v_i_rel[i],ffTrnsv[i,0,0],ffTrnsv[i,0,1],ffTrnsv[i,0,2]))
 #  outfile.close()
 #  print ('File "%s" is written' % saveDataFile)
 #
@@ -477,36 +423,36 @@ def main():
 #
 # Opening the output file (for one values of Nsplit and v_e_numb): 
 #
-  saveDataFile = nameDevice
-  saveDataFile += '_coldBeam.dat'
-  print ('Open output file "%s"...' % saveDataFile)
-  saveDataFile_flag=0
-  try:
-     outfile = open(saveDataFile,'w')
-     saveDataFile_flag=1
-  except:
-     print ('Problem to open output file "%s"' % saveDataFile)
+##  saveDataFile = nameDevice
+##  saveDataFile += '_coldBeam.dat'
+##  print ('Open output file "%s"...' % saveDataFile)
+##  saveDataFile_flag=0
+##  try:
+##     outfile = open(saveDataFile,'w')
+##     saveDataFile_flag=1
+##  except:
+##     print ('Problem to open output file "%s"' % saveDataFile)
 #
 # Writing the results to output file: 
 #
-  outfile.write ('\n                       Initial data:\n\n')
-  outfile.write ('Velocity of Electrons: rmsTran = %5.3e m/s (T = %5.3f eV)' % \
-                 (Delta_e_tr,eT_tr_eV))
-  outfile.write ('\nVelocity of Electrons: rmsLong = %5.3e m/s (T = %6.4f eV)' % \
-                 (Delta_e_par,eT_par_eV))
-  outfile.write ('\nTime of Cooling = %5.3e s During %d Steps' % (Tsim,Nstep))
-  outfile.write ('\nBfield=%4.2f T, Zion = %d, Plasma Density = %5.3e 1/m^3' % (Bz,Z,n_e))
-  outfile.write ('\nLarmor Frequency = %e 1/s, Plasma Frequency = %e 1/s' % (w_L,w_p))
-  outfile.write ('\nLarmor Period = %e s, Plasma Period = %e s;' % (T_L,T_p))
-  outfile.write ('\nTypical Larmor Radius = %e m; Nsplit = %d' % (r_L,int(Nsplit_arr[0])))  
+##  outfile.write ('\n                       Initial data:\n\n')
+##  outfile.write ('Velocity of Electrons: rmsTran = %5.3e m/s (T = %5.3f eV)' % \
+##                 (Delta_e_tr,eT_tr_eV))
+##  outfile.write ('\nVelocity of Electrons: rmsLong = %5.3e m/s (T = %5.3f eV)' % \
+##                 (Delta_e_par,eT_par_eV))
+##  outfile.write ('\nTime of Cooling = %5.3e s During %d Steps' % (Tsim,Nstep))
+##  outfile.write ('\nBfield=%4.2f T, Zion = %d, Plasma Density = %5.3e 1/m^3' % (Bz,Z,n_e))
+##  outfile.write ('\nLarmor Frequency = %e 1/s, Plasma Frequency = %e 1/s' % (w_L,w_p))
+##  outfile.write ('\nLarmor Period = %e s, Plasma Period = %e s;' % (T_L,T_p))
+##  outfile.write ('\nTypical Larmor Radius = %e m; Nsplit = %d' % (r_L,int(Nsplit_arr[0])))  
   
-  outfile.write ('\n\nVion/VeLong   Friction Force, eV/m       "Parkhomchuk", eV/m\n')
+##  outfile.write ('\n\nVion/VeTrnsv   Friction Force, eV/m       "Parkhomchuk", eV/m\n')
 
-  for i in range(v_i_numb):
-     outfile.write ('\n    %5.3f         %5.3e                 %5.3e'  % \
-                   (v_i_rel[i],ffLong[i,0,0],F_P_par_t[i,0]))
-  outfile.close()
-  print ('File "%s" is written' % saveDataFile)
+##  for i in range(v_i_numb):
+##     outfile.write ('\n    %5.3f         %5.3e                 %5.3e'  % \
+##                   (v_i_rel[i],ffTrnsv[i,0,0],F_P_trnsv_t[i,0]))
+##  outfile.close()
+##  print ('File "%s" is written' % saveDataFile)
   
 #
 #----------------------------------------------------
@@ -516,13 +462,13 @@ def main():
 # Plotting of results: 
 #
 #  fig20 = plt.figure(20)
-#  plt.plot(v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0],'-b',v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,1],'-m', \
-#           v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,2],'-g',v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,3],'-k', \
-#           v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0],'xr',v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,1],'xr', \
-# 	   v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,1],'xr',v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,3],'xr') 
+#  plt.plot(v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0],'-b',v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,1],'-m', \
+#           v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,2],'-g',v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,3],'-k', \
+#           v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0],'xr',v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,1],'xr', \
+# 	   v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,1],'xr',v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,3],'xr') 
 #  plt.xlabel('$V_{i\parallel}/v_{e\parallel}}$',color='m',fontsize=14) 
 #  plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
-#  titleHeader = ('Longitudinal Friction Force: $V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
+#  titleHeader = ('Transversal Friction Force: $V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
 #                 (mantDelta_e_par,powDelta_e_par))
 #  plt.title(titleHeader,color='m',fontsize=14)
 #  plt.legend([('$N_{split}$ = %d' % Nsplit_arr[0]),('$N_{split}$ = %d' % Nsplit_arr[1]), \
@@ -530,19 +476,19 @@ def main():
 #    	      loc='upper right',fontsize=14)
 #  plt.grid(True)
 #  savePictureFile = nameDevice
-#  savePictureFile += 'frictionForceLong_fig20.png'     
+#  savePictureFile += 'frictionForceTrnsv_fig20.png'     
 #  fig20.savefig(savePictureFile)    
-#  print( 'File "',savePictureFile,' is written')   
+#  print 'File "',savePictureFile,' is written'   
 
 
 #  fig30 = plt.figure(30)
-#  plt.plot(v_i_rel, -ffLong[:,0],'-b',v_i_rel, -ffLong[:,1],'-m', \
-#           v_i_rel, -ffLong[:,2],'-g',v_i_rel, -ffLong[:,3],'-k', \
-#           v_i_rel, -ffLong[:,0],'xr',v_i_rel, -ffLong[:,1],'xr', \
-#	   v_i_rel, -ffLong[:,1],'xr',v_i_rel, -ffLong[:,3],'xr') 
+#  plt.plot(v_i_rel, -ffTrnsv[:,0],'-b',v_i_rel, -ffTrnsv[:,1],'-m', \
+#           v_i_rel, -ffTrnsv[:,2],'-g',v_i_rel, -ffTrnsv[:,3],'-k', \
+#           v_i_rel, -ffTrnsv[:,0],'xr',v_i_rel, -ffTrnsv[:,1],'xr', \
+#	   v_i_rel, -ffTrnsv[:,1],'xr',v_i_rel, -ffTrnsv[:,3],'xr') 
 #  plt.xlabel('$V_{i\parallel}/v_{e\parallel}}$',color='m',fontsize=14) 
 #  plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
-#  titleHeader = ('Longitudinal Friction Force: $V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
+#  titleHeader = ('Transversal Friction Force: $V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
 #                 (mantDelta_e_par,powDelta_e_par))
 #  plt.title(titleHeader,color='m',fontsize=14)
 #  plt.legend([('$N_{split}$ = %d' % Nsplit_arr[0]),('$N_{split}$ = %d' % Nsplit_arr[1]), \
@@ -550,67 +496,67 @@ def main():
 #   	      loc='lower right',fontsize=14)
 #  plt.grid(True)
 #  savePictureFile = nameDevice
-#  savePictureFile += 'frictionForceLong_fig30_noBckgrnd.png'     
+#  savePictureFile += 'frictionForceTrnsv_fig30_noBckgrnd.png'     
 #  fig30.savefig(savePictureFile)    
-#  print( 'File "',savePictureFile,' is written' )  
+#  print ('File "',savePictureFile,' is written')   
 
 #  fig40 = plt.figure(40)
-#  plt.plot(v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0],'-b', \
-#           v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0],'xr') 
+#  plt.plot(v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0],'-b', \
+#           v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0],'xr') 
 #  plt.xlabel('$V_{i\parallel}/v_{e\parallel}}$',color='m',fontsize=14) 
 #  plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
-#  titleHeader = ('Longitudinal Friction Force: $V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
+#  titleHeader = ('Transversal Friction Force: $V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
 #                 (mantDelta_e_par,powDelta_e_par))
 #  plt.title(titleHeader,color='m',fontsize=14)
 #  plt.legend([('$N_{split}$ = %d' % Nsplit_arr[0])],loc='upper right',fontsize=14)
 #  plt.grid(True)
 #  savePictureFile = nameDevice
-#  savePictureFile += 'frictionForceLong_fig40.png'     
+#  savePictureFile += 'frictionForceTrnsv_fig40.png'     
 #  fig40.savefig(savePictureFile)    
-#  print( 'File "',savePictureFile,' is written')   
+#  print( 'File "',savePictureFile,' is written' )  
 
   fig45 = plt.figure(45)
-  plt.plot(v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0,0],'-xr') 
+  plt.plot(v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0,0],'-xr') 
   plt.xlabel('$V_{i\parallel}/v_{e\parallel}}$',color='m',fontsize=14) 
   plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
   titleHeader = nameDevice
-  titleHeader += (' Longitudinal Friction Force: \n$V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
+  titleHeader += (' Transversal Friction Force: \n$V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
                  (mantDelta_e_par,powDelta_e_par))
   plt.title(titleHeader,color='m',fontsize=14)
 #  plt.legend([('$N_{split}$ = %d' % Nsplit_arr[0])],loc='upper right',fontsize=14)
   plt.grid(True)
   savePictureFile = nameDevice
   savePictureFile += '_coldBeam_Simulation_fig45.png'    
-  fig45.savefig(savePictureFile)    
-  print( 'File "',savePictureFile,' is written' )  
+#  fig45.savefig(savePictureFile)    
+#  print( 'File "',savePictureFile,' is written' )  
 
-##  fig46 = plt.figure(46)
-##  plt.plot(v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0,0],'-xr') 
-##  plt.xlabel('$V_{i\parallel}/v_{e\parallel}}$',color='m',fontsize=14) 
-##  plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
-##  titleHeader = nameDevice
-##  titleHeader += (' Longitudinal Friction Force: \n$V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
-##                 (mantDelta_e_par,powDelta_e_par))
-##  plt.title(titleHeader,color='m',fontsize=14)
-##  plt.xlim([0.,2.])
-###  plt.legend([('$N_{split}$ = %d' % Nsplit_arr[0])],loc='upper right',fontsize=14)
-##  plt.grid(True)
-##  savePictureFile = nameDevice
-##  savePictureFile += '_coldBeam_Simulation_fig46.png'    
-##  fig46.savefig(savePictureFile)    
-##  print( 'File "',savePictureFile,' is written' )  
+  fig46 = plt.figure(46)
+  plt.plot(v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0,0],'-xr') 
+  plt.xlabel('$V_{i\parallel}/v_{e\parallel}}$',color='m',fontsize=14) 
+  plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
+  titleHeader = nameDevice
+  titleHeader += (' Transversal Friction Force: \n$V_{e\parallel}=%3.1f\cdot10^{%2d}$ m/s' % \
+                 (mantDelta_e_par,powDelta_e_par))
+  plt.title(titleHeader,color='m',fontsize=14)
+  plt.xlim([0.,2.])
+#  plt.legend([('$N_{split}$ = %d' % Nsplit_arr[0])],loc='upper right',fontsize=14)
+  plt.grid(True)
+  savePictureFile = nameDevice
+  savePictureFile += '_coldBeam_Simulation_fig46.png'    
+#  fig46.savefig(savePictureFile)    
+#  print( 'File "',savePictureFile,' is written' )  
 
 #  fig50 = plt.figure(50)
-#  plt.plot(v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0,0],'-b', \
-#           v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0,1],'-m', \
-#           v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0,2],'-g', \
-#           v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0,0],'xr', \
-#           v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0,1],'xr', \
-#           v_i_rel[0:v_i_numb], -ffLong[0:v_i_numb,0,2],'xr') 
+#  plt.plot(v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0,0],'-b', \
+#           v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0,1],'-m', \
+#           v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0,2],'-g', \
+#           v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0,0],'xr', \
+#           v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0,1],'xr', \
+#           v_i_rel[0:v_i_numb], -ffTrnsv[0:v_i_numb,0,2],'xr') 
 #  plt.xlabel('$V_{i\parallel}/v_{e\parallel}}$',color='m',fontsize=14) 
 #  plt.ylabel('$-F_{\parallel} (eV / m)$',color='m',fontsize=14) 
 #  titleHeader = nameDevice
-#  titleHeader += ('Longitudinal Friction Force: $N_{split}$ = %d' % (int(Nsplit_arr[0])))
+#  titleHeader += ('Transversal Friction Force: $N_{split}$ = %d' % (int(Nsplit_arr[0])))
 #  plt.title(titleHeader,color='m',fontsize=14)
 #  plt.legend([(('$v_{e\parallel}=%3.1f \cdot 10^{%2d}$ m/s' % (mantDelta_e_par[0],powDelta_e_par[0]))), \
 #              (('$v_{e\parallel}=%3.1f \cdot 10^{%2d}$ m/s' % (mantDelta_e_par[1],powDelta_e_par[1]))), \
@@ -618,11 +564,11 @@ def main():
 #    	     loc='upper right',fontsize=14)
 #  plt.grid(True)
 #  savePictureFile = nameDevice
-#  savePictureFile += 'frictionForceLong_fig50.png'    
+#  savePictureFile += 'frictionForceTrnsv_fig50.png'    
 #  fig50.savefig(savePictureFile)    
-#  print( 'File "',savePictureFile,' is written' )  
+#  print( 'File "',savePictureFile,' is written')   
 
-#------------------- Potting of the trajectories ------------
+#------------------- Potting of thrajectories ------------
 #
   arg_x = np.linspace(start=0,stop=z_length,num=z_length,dtype=int)
   
@@ -784,7 +730,7 @@ def spliting(Nsplit):
     z_split[1] =  1. /np.sqrt(3.) #  .5773502  
   
   if Nsplit == 1: 
-    print( "Nsplit = 1? Really?")
+    print ("Nsplit = 1? Really?")
 
 #  for k in range(Nsplit):  
 #     print ('z_split[%d] = %e' % (k,z_split[k]))   

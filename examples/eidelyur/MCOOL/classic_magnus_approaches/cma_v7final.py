@@ -144,7 +144,7 @@ Z_ion = q_e                 # to keep variable from previous script
 cLight=2.99792458e10        # speed of light, cm/sec
 eVtoErg=1.6021766208e-12    # 1 eV = 1.6...e-12 erg
 CtoPart=2.99792458e9        # 1 C = 1 A*sec = 2.9...e9 particles
-
+m_e_eV = m_e*cLight**2/eVtoErg
 # 
 # Electron beam parameters:
 #
@@ -154,8 +154,6 @@ dBeam=3.0                               # beam diameter, cm
 angSpread=3.0                           # angular spread, mrad
 trnsvT=0.5                              # transversal temperature, eV
 longT=2.0e-4                            # longitudinal temperature, eV (was 2.0e-4)
-eTempTran=trnsvT                        # to keep variable from previous script
-eTempLong=longT                         # to keep variable from previous script
 nField=1                                # number ov values  of the magnetic field
 fieldB=np.zeros(nField)                 # magnetic field
 fieldB[0]=3.e3                          # Gs
@@ -170,21 +168,63 @@ omega_p1=np.sqrt(4.*pi*n_e1*q_e**2/m_e) # plasma frequency, 5.0459e+08 1/s
 #
 coolLength=150.0                        # typical length of the coolong section, cm
 
+
+#
+# HESR:
+#
+Ekin=90.8e4                             # HESR kinetic energy, eV
+curBeam=0.5                             # HESR current beam, A
+dBeam=2.0                               # HESR beam diameter, cm
+angSpread=0.0                           # HESR angular spread, mrad
+trnsvT=0.2                              # HESR transversal temperature, eV
+longT=1.0e-2                            # HESR longitudinal temperature, eV (was 2.0e-4)
+fieldB[0]=1.e3                          # HESR, Gs
+coolLength=270.0                        # HESR typical length of the coolong section, cm
+                                 
+#
+# EIC:
+#
+angSpread=0.0                           # EIC angular spread, mrad
+fieldB[0]=5.e4                          # EIC, Gs
+coolLength=300.0                        # EIC typical length of the coolong section, cm
+
 # 
 # Calculated parameters of the electron beam:
 #
-V0=np.sqrt(2.*Ekin*eVtoErg/m_e)           # longitudinal velocity, cm/s
+V0 = cLight*np.sqrt(Ekin/m_e_eV*(Ekin/m_e_eV+2.))/(Ekin/m_e_eV+1.)
+print ('V0 =%e' % V0) 
 tetaV0=0.                                 # angle between V0 and magnetic field, rad
 B_mag=fieldB[0]*np.cos(tetaV0)            # magnetic field acting on an electron, Gs
 rmsTrnsvVe=np.sqrt(2.*trnsvT*eVtoErg/m_e) # RMS transversal velocity, cm/s
 rmsLongVe=np.sqrt(2.*longT*eVtoErg/m_e)   # RMS longitudinal velocity, cm/s
-# dens=curBeam*CtoPart/V0                 # density, 1/cm^3
-# omega=np.sqrt(4.*pi*dens*q_e**2/m_e)    # plasma frequency, 1/s
+
+# HESR:
+dens=curBeam*(CtoPart/q_e)/(pi*(.5*dBeam)**2*V0)                 # density, 1/cm^3
+omega=np.sqrt(4.*pi*dens*q_e**2/m_e)    # plasma frequency, 1/s
+n_e=dens
+omega_p=omega
+print ('HESR: dens = %e,omega_p = %e' % (dens,omega_p)) 
+
+# EIC:
+rmsLongVe  = 1.0e+7         # cm/s 
+longT = .5*m_e*rmsLongVe**2/eVtoErg
+rmsTrnsvVe = 4.2e+7         # cm/s 
+trnsvT = .5*m_e*rmsTrnsvVe**2/eVtoErg
+print ('EIC: rmsLongVe = %e, longT = %e, rmsTrnsvVe = %e, trnsvT = %e' % \
+       (rmsLongVe,longT,rmsTrnsvVe,trnsvT)) 
+dens=2.e9                               # density, 1/cm^3
+omega=np.sqrt(4.*pi*dens*q_e**2/m_e)    # plasma frequency, 1/s
+n_e=dens
+omega_p=omega
+print ('EIC: dens = %e,omega_p = %e' % (dens,omega_p)) 
+
 cyclFreq=q_e*B_mag/(m_e*cLight)           # cyclotron frequency, 1/s
 rmsRoLarm=rmsTrnsvVe*cyclFreq**(-1)       # RMS Larmor radius, cm
 dens=omega_p**2*m_e/(4.*pi*q_e**2)        # density, 1/cm^3
 likeDebyeR=(3./dens)**(1./3.)             # "Debye" sphere with 3 electrons, cm
 
+eTempTran=trnsvT                        # to keep variable from previous script
+eTempLong=longT                         # to keep variable from previous script
 coolPassTime=coolLength/V0                # time pass through cooling section, cm
 
 thetaVi=0.                                # polar angle ion and cooled electron beams, rad
@@ -525,6 +565,9 @@ def errFitAB(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2,errVar,errType):
    log10funcY = np.zeros((nPar1,nPar2))
    sumArgX = np.zeros(nPar2)
    sumArgX2 = np.zeros(nPar2)
+   posErrFit = np.zeros(nPar2)
+   negErrFit = np.zeros(nPar2)
+#   return posErrFit,negErrFit  
 
    stepA = 5.e-4*mean(funcHi2)
    stepB = 1.e-4*mean(funcHi2)
@@ -536,7 +579,6 @@ def errFitAB(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2,errVar,errType):
          sumArgX[i] += log10argX[n,i]
          sumArgX2[i] += log10argX[n,i]**2
 
-   posErrFit = np.zeros(nPar2)
    for i in range(nPar2):
       k = 0
       deltaFuncHi2 = 0.
@@ -578,7 +620,6 @@ def errFitAB(nPar1,nPar2,argX,funcY,fitA,fitB,funcHi2,errVar,errType):
 #         print ('i=%d: fitB  = %e + %e (%e), funcHi2 = %e (for %d steps curFuncHi2 = %e)' % \
 #                (i,fitB[i],posErrFit[i],fitSigma,funcHi2[i],k,curFuncHi2))
 
-   negErrFit = np.zeros(nPar2)
    for i in range(nPar2):
       k = 0
       deltaFuncHi2 = 0.
@@ -796,6 +837,81 @@ if (plotFigureFlag == 0):
    if (saveFilesFlag == 1):
       fig3151.savefig('picturesCMA_v7/impctPrmtr_fig3151cma.png')    
       print ('File "picturesCMA_v7/impctPrmtr_fig3151cma.png" is written')   
+
+#
+# Picture for HESR:
+#
+if (plotFigureFlag == 0):   
+   fig3151=plt.figure (3151)
+   plt.loglog(VionRel,impctPrmtrMax,'-r', VionRel,impctPrmtrMax_1,'--r', \
+      [VionRel[0],VionRel[nVion-1]],[impctPrmtrMin,impctPrmtrMin],'-b',linewidth=2)
+   plt.grid(True)
+   hold=True
+   plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=14)
+   plt.ylabel('Impact Parameter, cm',color='m',fontsize=14)
+   titleHeader= \
+             'HESR Types of Collisions: $V_{e0}=%3.1f\cdot10^{%2d}$cm/s, $B=%3.1f$T'
+   plt.title(titleHeader % (mantV0,powV0,1.e-4*fieldB[0]),color='m',fontsize=16)
+   plt.xlim(xLimit)
+   yLimit=[8.e-4,.6]
+   plt.ylim(yLimit)
+   plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+   plt.text(4.4e-4,8.4e-4,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
+   plt.text(1.e-4,8.4e-4,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(3.7e-6,3.4e-3,'$R_{min}=2\cdot<rho_\perp>$',color='b',fontsize=16)
+   plt.text(2.8e-4,.1,'$R_{max}$',color='k',fontsize=16)
+   plt.text(1.e-4,1.8e-2,'$R_{max}$ $for$ $T_{e||}=0$',color='k',fontsize=16)
+   plt.plot([VionRel[0],VionRel[nVion-1]],[20.*rhoCrit,20.*rhoCrit],color='k')   
+   plt.text(6.8e-5,7.e-3,'Magnetized Collisions',color='r',fontsize=20)
+   plt.text(6.8e-5,1.2e-3,'Weak Collisions',color='r',fontsize=20)
+   plt.text(2.3e-5,1.95e-3,'Adiabatic or Fast Collisions',color='r',fontsize=20)
+   plt.text(2.e-5,.275,'Screened Collisions',color='r',fontsize=20)
+   plt.text(3.58e-6,2.05e-3,'$\cong$20$\cdot$$R_{Crit}$',color='k',fontsize=16)
+   if (saveFilesFlag == 1):
+#      fig3151.savefig('picturesCMA_v7/impctPrmtr_fig3151cma.png')    
+#      print ('File "picturesCMA_v7/impctPrmtr_fig3151cma.png" is written')   
+      fig3151.savefig('HESRimpctPrmtr_fig3151cma.png')    
+      print ('File "HESRimpctPrmtr_fig3151cma.png" is written')   
+
+#
+# Picture for EIC:
+#
+if (plotFigureFlag == 0):   
+   fig3151=plt.figure (3151)
+   plt.loglog(VionRel,impctPrmtrMax,'-r', VionRel,impctPrmtrMax_1,'--r', \
+      [VionRel[0],VionRel[nVion-1]],[impctPrmtrMin,impctPrmtrMin],'-b',linewidth=2)
+   plt.grid(True)
+   hold=True
+   plt.xlabel('Relative Ion Velocity, $V_i/V_{e0}$',color='m',fontsize=14)
+   plt.ylabel('Impact Parameter, cm',color='m',fontsize=14)
+   titleHeader= \
+             'EIC Types of Collisions: $V_{e0}=%3.1f\cdot10^{%2d}$cm/s, $B=%3.1f$T'
+   plt.title(titleHeader % (mantV0,powV0,1.e-4*fieldB[0]),color='m',fontsize=16)
+   plt.xlim(xLimit)
+   yLimit=[5.e-5,.3]
+   plt.ylim(yLimit)
+   plt.plot([relVeTrnsv,relVeTrnsv],yLimit,'--m',linewidth=1)
+   plt.text(9.e-4,4.e-5,'$ \Delta V_{e\perp}/ V_{e0}$',color='m',fontsize=14)
+   plt.plot([relVeLong,relVeLong],yLimit,'--m',linewidth=1)
+   plt.text(1.7e-4,3.e-5,'$ \Delta V_{e||}/ V_{e0}$',color='m',fontsize=14)
+   plt.text(6.3e-6,1.1e-4,'$R_{min}=2\cdot<rho_\perp>$',color='b',fontsize=16)
+   plt.text(1.e-4,2.1e-2,'$R_{max}$',color='k',fontsize=16)
+   plt.text(2.57e-5,5.e-3,'$R_{max}$ $for$ $T_{e||}=0$',color='k',fontsize=16)
+   plt.plot([VionRel[0],VionRel[nVion-1]],[20.*rhoCrit,20.*rhoCrit],color='k')   
+   plt.text(2.3e-5,1.e-3,'Magnetized Collisions',color='r',fontsize=20)
+#   plt.text(6.8e-5,1.2e-3,'Weak Collisions',color='r',fontsize=20)
+   plt.text(1.1e-5,5.7e-5,'Weak or Adiabatic or Fast Collisions',color='r',fontsize=16)
+   plt.text(2.e-5,.15,'Screened Collisions',color='r',fontsize=20)
+   plt.text(2.5e-3,1.7e-4,'$\cong$20$\cdot$$R_{Crit}$',color='k',fontsize=16)
+   if (saveFilesFlag == 1):
+#      fig3151.savefig('picturesCMA_v7/impctPrmtr_fig3151cma.png')    
+#      print ('File "picturesCMA_v7/impctPrmtr_fig3151cma.png" is written')   
+      fig3151.savefig('EICimpctPrmtr_fig3151cma.png')    
+      print ('File "EICimpctPrmtr_fig3151cma.png" is written')   
+
+#   plt.show()
+#   sys.exit()
 
 #
 # Magnetized  collisions:
