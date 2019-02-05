@@ -44,6 +44,7 @@ def main():
    plt.ylabel('$FF_{\parallel}$ and $FF_{\perp}$',color='m',fontsize=14)
    plt.legend(['$FF_{\parallel}$ (from (4))','$FF_{\perp}$ (from (4))'], \
               loc='upper right',fontsize=14)
+   plt.text(-.8,.05,'Angle Rlative Beam Axis = 0',color='m',fontsize=14)
    plt.grid(True)
 
    plt.figure(30)
@@ -55,6 +56,7 @@ def main():
    plt.ylabel('$FF_{\parallel}$ and $FF_{\perp}$',color='m',fontsize=14)
    plt.legend(['$FF_{\parallel}$ (from (4))','$FF_{\perp}$ (from (4))'], \
               loc='upper right',fontsize=14)
+   plt.text(-.9,.05,'Angle Rlative Beam Axis = $\pi/2$',color='m',fontsize=14)
    plt.grid(True)
 
    X_teta = np.zeros((nTeta,nVel))
@@ -71,6 +73,7 @@ def main():
    plt.xlabel('Angle Relative Beam Axis, rad',color='m',fontsize=14)
    titleHeader = 'Longitudinal Friction Force "Parjhomchuk"'
    plt.title(titleHeader,color='m',fontsize=14)
+   plt.text(.25,.8,'Angle Rlative Beam Axis = 0',color='w',fontsize=14)
    fig40.colorbar(mapPlong4)
    plt.grid(True)
 #   fig40.savefig('mapDeltaEnrgFit_fig40.png')    
@@ -83,6 +86,7 @@ def main():
    plt.xlabel('Angle Relative Beam Axis, rad',color='m',fontsize=14)
    titleHeader = 'Transversal Friction Force "Parjhomchuk"'
    plt.title(titleHeader,color='m',fontsize=14)
+   plt.text(.25,.8,'Angle Rlative Beam Axis = $\pi/2$',color='w',fontsize=14)
    fig50.colorbar(mapPlong4)
    plt.grid(True)
 #   fig50.savefig('mapDeltaEnrgFit_fig50.png')    

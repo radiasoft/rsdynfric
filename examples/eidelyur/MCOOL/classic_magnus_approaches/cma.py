@@ -773,7 +773,7 @@ xLimit=[.9*VionRel[0],1.1*VionRel[nVion-1]]
 #
 # Types of collisions:
 #
-if (plotFigureFlag == 0):   
+if (plotFigureFlag == 1):   
    fig3151=plt.figure (3151)
    plt.loglog(VionRel,impctPrmtrMax,'-r', VionRel,impctPrmtrMax_1,'--r', \
       [VionRel[0],VionRel[nVion-1]],[impctPrmtrMin,impctPrmtrMin],'-b',linewidth=2)
@@ -837,8 +837,10 @@ for n in range(eVtrnsvNumb):
      eVtrnsv[n] = psi_16[n]*(eVtrnsvMax-eVtrnsvMin)/2. + (eVtrnsvMax+eVtrnsvMin)/2.
 #     print ('eVtrnsv(%d) = %e ==> %e' % (n,eVtrnsv[n],eVtrnsv[n]/eVrmsTran))
 
+R_min = np.zeros((eVlongNumb,eVtrnsvNumb,nVion))
 R_pass_map = np.zeros((eVlongNumb,nVion))
 R_debye_map = np.zeros((eVlongNumb,eVtrnsvNumb,nVion))
+R_min_map = np.zeros((eVtrnsvNumb,nVion))
 R_max_map = np.zeros((eVlongNumb,eVtrnsvNumb,nVion))
 
 for i in range(nVion):
@@ -903,13 +905,13 @@ if (plotFigureFlag == 1):
          print ('File "',fileName,'" is written')
 
 for j in range(eVtrnsvNumb):
-   powVion=round(np.log10(eVtrnsv[j])) 
-   mantVion=eVtrnsv[j]/(10**powVion) 
+   powVeTran=round(np.log10(eVtrnsv[j])) 
+   mantVeTran=eVtrnsv[j]/(10**powVeTran) 
    for i in range(nVion):
       for n in range(eVlongNumb):
 #         Z[n,i] = np.log10(R_debye_map[n,j,i])                    
          Z[n,i] = R_debye_map[n,j,i]                    
-   if (plotFigureFlag == 0): 
+   if (plotFigureFlag == 1): 
       figCrrnt = plt.figure(4100+j)
       ax = figCrrnt.add_subplot(111)                   # for contours plotting
       mapCrrnt = ax.contourf(X,Y,Z,cmap='jet') 
@@ -920,7 +922,7 @@ for j in range(eVtrnsvNumb):
       plt.xlabel('Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=14)
       plt.ylabel(' Longitudinal Velocity,cm: $V_{e||}/\Delta V_{e||}$ (Log Scale)', \
 	         color='m',fontsize=14)
-      plt.text(-4,.5,('$V_{ion \perp}=%3.1f\cdot10^{%2d}$cm/s' % (mantVion,powVion)), \
+      plt.text(-4,.5,('$V_{ion \perp}=%3.1f\cdot10^{%2d}$cm/s' % (mantVeTran,powVeTran)), \
                color='w',fontsize=14)
       plt.ylim(yLimit)
       figCrrnt.colorbar(mapCrrnt)
@@ -933,13 +935,13 @@ for j in range(eVtrnsvNumb):
          print ('File "',fileName,'" is written')
 
 for j in range(eVtrnsvNumb):
-   powVion=round(np.log10(eVtrnsv[j])) 
-   mantVion=eVtrnsv[j]/(10**powVion) 
+   powVeTran=round(np.log10(eVtrnsv[j])) 
+   mantVeTran=eVtrnsv[j]/(10**powVeTran) 
    for i in range(nVion):
       for n in range(eVlongNumb):
 #         Z[n,i] = np.log10(R_max_map[n,j,i])                    
          Z[n,i] = R_max_map[n,j,i]                    
-   if (plotFigureFlag == 0): 
+   if (plotFigureFlag == 1): 
       figCrrnt = plt.figure(4300+j)
       ax = figCrrnt.add_subplot(111)                  # for contours plotting
       mapCrrnt = ax.contourf(X,Y,Z,cmap='jet') 
@@ -950,14 +952,14 @@ for j in range(eVtrnsvNumb):
       plt.xlabel('Ion Velocity,  $log_{10}(V_{ion}/V_0$)',color='m',fontsize=14)
       plt.ylabel('Longitudinal Velocity, $V_{e||}/\Delta V_{e||}$ (Log Scale)', \
                  color='m',fontsize=14)
-      plt.text(-4,.5,('$V_{ion \perp}=%3.1f\cdot10^{%2d}$cm/s' % (mantVion,powVion)), \
+      plt.text(-4,.5,('$V_{e\perp}=%3.1f\cdot10^{%2d}$cm/s' % (mantVeTran,powVeTran)), \
                color='w',fontsize=14)
       plt.ylim(yLimit)
       figCrrnt.colorbar(mapCrrnt)
       plt.grid(True)
 # Array myYticks is defined firstly for figure 3152 for map of R_pass:      
       ax.set_yticklabels(myYticks)
-      if (saveFilesFlag == 0):
+      if (saveFilesFlag == 1):
          fileName = 'picturesCMA_v7/mapRmax_fig'+str(4300+j)+'cma.png'
          figCrrnt.savefig(fileName) 
          print ('File "',fileName,'" is written')
@@ -1052,17 +1054,18 @@ for i in range(eVlongNumb):
    gaussVelctSlctd[i] = eVlong[i]/eVrmsLong
    gaussDnstSlctd[i] = math.exp(-(gaussVelctSlctd[i])**2)	 
 
-plt.figure(2)
-plt.plot(gaussVelctSlctd,gaussDnstSlctd,'or',gaussVelct,gaussDnst,'-xb')
-plt.xlabel('Relative Velocity, $V_e/\Delta V_e$',color='m',fontsize=14)
-plt.ylabel('Relative Density',color='m',fontsize=14)
-plt.title('Gaussian Density Distribution',color='m',fontsize=14)
-plt.legend(['16 Points for GK Integration','Standard Set of 50 Points'],loc='upper right',fontsize=14)
-plt.grid(True)
-if (saveFilesFlag == 1):
-   fileName = 'picturesCMA_v7/densityDistribution_fig2cma.png'
-   figCrrnt.savefig(fileName) 
-   print ('File "',fileName,'" is written')
+if (plotFigureFlag == 0): 
+   plt.figure(2)
+   plt.plot(gaussVelctSlctd,gaussDnstSlctd,'or',gaussVelct,gaussDnst,'-xb')
+   plt.xlabel('Relative Velocity, $V_e/\Delta V_e$',color='m',fontsize=14)
+   plt.ylabel('Relative Density',color='m',fontsize=14)
+   plt.title('Gaussian Density Distribution',color='m',fontsize=14)
+   plt.legend(['16 Points for GK Integration','Standard Set of 50 Points'],loc='upper right',fontsize=14)
+   plt.grid(True)
+   if (saveFilesFlag == 1):
+      fileName = 'picturesCMA_v7/densityDistribution_fig2cma.png'
+      figCrrnt.savefig(fileName) 
+      print ('File "',fileName,'" is written')
 
 eDenst = np.zeros((eVtrnsvNumb,eVlongNumb))
 
@@ -1079,17 +1082,18 @@ for i in range(eVtrnsvNumb):
       X[i,n] = eVtrnsv[i]/eVrmsTran		     
       Y[i,n] = eVlong[n]/eVrmsLong		     
 
-figCrrnt = plt.figure(3)
-ax = figCrrnt.add_subplot(111)                                       # for contours plotting
-mapCrrnt = ax.contourf(X,Y,np.log10(eDenst),cmap='jet') 
-mapLevels = ax.contour(X,Y,np.log10(eDenst),15,colors='black') 
-plt.clabel(mapLevels,fmt='%4.2f',inline=True)
-titleHeader = '"Flattened" Electron Density ($log_{10}$): $T_{\perp}$=%3.1f eV, $T_{||}$=%3.1f meV' 
-plt.title(titleHeader % (eTempTran,1.e3*eTempLong),color='m',fontsize=12)
-plt.xlabel('Transverse Velocity,  $V_{e\perp}/\Delta V_{e\perp}$',color='m',fontsize=14)
-plt.ylabel('Longitudinal Velocity,  $V_{e||}/\Delta V_{e||}$',color='m',fontsize=14)
-figCrrnt.colorbar(mapCrrnt)
-plt.grid(True)
+if (plotFigureFlag == 0): 
+   figCrrnt = plt.figure(3)
+   ax = figCrrnt.add_subplot(111)                                       # for contours plotting
+   mapCrrnt = ax.contourf(X,Y,np.log10(eDenst),cmap='jet') 
+   mapLevels = ax.contour(X,Y,np.log10(eDenst),15,colors='black') 
+   plt.clabel(mapLevels,fmt='%4.2f',inline=True)
+   titleHeader = '"Flattened" Electron Density ($log_{10}$): $T_{\perp}$=%3.1f eV, $T_{||}$=%3.1f meV' 
+   plt.title(titleHeader % (eTempTran,1.e3*eTempLong),color='m',fontsize=12)
+   plt.xlabel('Transverse Velocity,  $V_{e\perp}/\Delta V_{e\perp}$',color='m',fontsize=14)
+   plt.ylabel('Longitudinal Velocity,  $V_{e||}/\Delta V_{e||}$',color='m',fontsize=14)
+   figCrrnt.colorbar(mapCrrnt)
+   plt.grid(True)
 
 plt.show()
 
@@ -1152,6 +1156,10 @@ if (plotFigureFlag == 0):
    if (saveFilesFlag == 1):
       fig3155.savefig('picturesCMA_v7/coulombLogrthm_fig3155cma.png')    
       print ('File "picturesCMA_v7/coulombLogrthm_fig3155cma.png" is written')   
+
+# plt.show()
+
+# sys.exit()
 
 #
 # matrix for electron with .5*timeStep_c:
