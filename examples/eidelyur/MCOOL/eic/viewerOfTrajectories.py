@@ -1,10 +1,53 @@
+#!/usr/bin/python 
+
+#
+# Start in command line (./nameScript + 3 args): 
+#              ./viewerOfTrajectories.py nameDevice typeTrack int(100*y0)
+# If no enough args, than default fileName is used;
+# If some arg is wrong, than script shut down immediately due to incorrect fileName.
+#
+
 def main(): 
-  
+   
+   errorLog = '\nIncorrect initial data for name of input file. Default name will be used.\n'
+   errorFlag = 0
+
+   scriptName = sys.argv[0]
+   print ('scriptName = %s' % scriptName)
+   
+   try:
+      nameDevice = sys.argv[1]
+      print ('argv[1]: nameDevice = "%s"' % nameDevice)
+      try:
+         typeTrack = sys.argv[2]
+         print ('argv[2]: typeTrack = "%s"' % typeTrack)
+         try:
+            y0 = int(sys.argv[3])
+            print ('argv[3]: y0 = %d' % y0)
+         except:
+            print (errorLog)
+            errorFlag = 1
+      except:
+         print (errorLog)
+         errorFlag = 1
+   except:
+      print (errorLog)
+      errorFlag = 1
+      
+   if (errorFlag == 1):
+#
+# Default data file: 
+#
+      nameDevice = 'EIC'
+      typeTrack = 'first'
+      y0 = 50
+#
+# Input file:
+#      
+   inputFile = nameDevice+'_'+typeTrack+'_yTracks_y0-'+str(y0)+'_coldBeam.dat'
 #
 # Opening the input file: 
 #
-   nameDevice = 'EIC'
-   inputFile=nameDevice+'_first_yTracks_y0-50_coldBeam.dat'
    print ('Open input file "%s"...' % inputFile)
    inpfileFlag=0
    try:
@@ -12,17 +55,20 @@ def main():
       inpfileFlag=1
    except:
       print ('Problem to open input file "%s"' % inputFile)
+      sys.exit()
    if inpfileFlag == 1:
       print ('No problem to open input file "%s"' % inputFile)
 
-   lines=0                                                            # Number of current line from input file   
+   lines=0                     # Number of current line from input file   
    pointOfTrack=0 
    
    y0_relFlag = 0
    rmsLongFlag = 0
    trackLengthFlag = 0
-   nmbrYtracksFlag = 0                                                      # Number of current value of any types of Data
+   nmbrYtracksFlag = 0         # Number of current value of any types of Data
+#
 # Data arrays (with a margin):	     
+#
    vIon_rel = []
    yTracks = []
    while True:
@@ -68,8 +114,6 @@ def main():
 # Data arrays:	     
             vIon_rel = np.zeros(nmbrYtracks)
             yTracks = np.zeros((trackLength,nmbrYtracks))
-#      if (lines == 14): 
-#         print 'vIon_rel: ', vIon_rel
       if (lines > 14):
          words=lineData.split()
          nWords=len(words)
@@ -85,12 +129,18 @@ def main():
    typeLines = ['-r','-b','-m','-k','-g','.r','.b','.m','.k','.g', \
                '-r','-b','-m','-k','-g','.r','.b','.m','.k','.g']
 
-# For checking of the rrading:	       
+#      
+# For checking of the reading:	       
+#      
    fig181 = plt.figure(181)
    plt.xlabel('Time Step',color='m',fontsize=14)
    plt.ylabel('y, $\mu$m',color='m',fontsize=14)
    titleHeader = nameDevice
-   titleHeader += (' First Trajectories: $y_{0,rel}$=%5.3f' % y0_rel)
+   if (typeTrack == 'first'):
+      titleHeader += ' First Trajectories: '
+   if (typeTrack == 'last'):
+      titleHeader += ' Last Trajectories: '
+   titleHeader += ('$y_{0,rel}$=%5.3f' % y0_rel)
    plt.title(titleHeader,color='m',fontsize=14)
    plt.grid(True)
    for i in range(0,nmbrYtracks,3):
