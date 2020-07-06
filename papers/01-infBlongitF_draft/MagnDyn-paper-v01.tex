@@ -1,0 +1,160 @@
+\documentclass[12pt, reqno]{amsart}
+\usepackage{geometry} % see geometry.pdf on how to lay out the page. There's lots.
+\geometry{letter} %{a4paper} % or letter or a5paper or ... etc
+% \geometry{landscape} % rotated page geometry
+
+% See the ``Article customise'' template for come common customisations
+
+\title{Magnetized Dynamic Friction Force for Times Short Compared to Plasma Period}
+\author{Ilya V. Pogorelov and David L. Bruhwiler}
+\date{} % delete this line to display the current date
+
+%%% BEGIN DOCUMENT
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\section{Introduction and Background}
+%\subsection{} 
+
+
+-- EIC (eRHIC) 
+
+-- magnetized electron cooling 
+
+-- dynamical friction 
+
+-- theoretical and semi-empirical models: Derbenev-Skrinsky, Parkhomchuk;  Meshkov's asymptotic formulas 
+
+-- high-energy, short-interaction-time regime 
+
+\section{Parameter Regime, Reduced Model for the Magnetized Dynamics, and Simulation Setup}
+
+\subsection{Reduced 1D Model in the Limit of Strong Magnetic Field } 
+~\\
+%\newine
+-- parameter regime; a test case with parameters from Fedotov et al. 
+
+-- overall approach as set forth by Derbenev: separating the total force on the ion into the bulk-fields, friction, and statistical-fluctuations contributions 
+
+-- removing the bulk forces by subtracting the forces from electrons on un-perturbed trajectories from the forces due to electrons on the ion-perturbed trajectories 
+
+-- strong magnetic field: canonical perturbation theory predicts orbit gyro-centers staying on cylinders of constant radius (impact parameter) 
+
+-- in the limit of infinitely strong magnetic field, an effective 1D, weakly-nonlinear potential for the longitudinal motion of the electrons 
+
+\subsection{Simulation Setup for Computing Ensemble-Average Friction Force Values} 
+~\\
+-- track pairs of electron macroparticles with pairwise-identical initial conditions, one on the ion-perturbed trajectory, the other following the trajectory not  perturbed by the ion 
+
+-- calculate time-averaged difference between the forces on the ion from the electron macroparticles that comprise such pairs 
+
+-- initial conditions uniformly sample the e-beam phase space density 
+
+-- first, perform the computation for the (longitudinally) cold electron gas 
+
+-- force for the warm gas calculated by convolution 
+
+Once the friction force is known for the ion interacting with the cold electrons, the dynamic friction force acting on the ion from a gas of warm electrons can be computed by convolution, 
+\begin{equation}
+F^{(w)}_{\parallel}(V_i) = \int_{-\infty}^{\infty}  F^{(c)}_{\parallel}(V_i -v_e) f(v_e) dv_e ,
+\end{equation}
+with superscripts $w$ and $c$ indicating the force computed for the ion interacting with the warm and cold electron gas, respectively, and the (arbitrary) distribution density of electrons in the longitudinal velocity space denoted by $f(v_e)$. 
+
+
+
+\section{Simulation Results for the Longitudinal Dynamic Friction Force}
+%\subsection{} 
+
+-- gold ions and protons 
+
+-- no divergence seen for either small or large impact parameters 
+
+-- linear in V for small V;  interaction time-independent,  $\sim Z^2 V^{-2} $ tail for large $V$ 
+
+-- dependence on $T_{int}$ 
+
+-- $Z^{4/3}$ dependence of the peak force magnitude on the ion charge  
+
+-- positrons (i.e., electron cooling of antiprotons) 
+
+
+\section{A parametrized-Fit Model for the Longitudinal Dynamic Friction Force}
+%\subsection{} 
+
+-- a two-parameter model agrees with computed results to $10-15\%$ 
+
+-- parameters $A$ and $\sigma$ found via fit and analysis of dimensions and scaling behavior 
+
+-- captures the scaling in $n_e, Z, T_{int}$, and $V$ of the friction force in the entire range of ion velocities from zero to very high 
+
+-- physical system has 3 independent parameters; a suitable 3-parameter model, if found, could provide a better parametrized fit  
+
+There are 3 independent parameters in the physical model considered above: the ion charge number $Z$, the local electron number density $n_e$, and the interaction time in the cooler $T_{int}$ in the beam frame.  By construction of our numerical procedure, the computed expectation value of the dynamic friction force depends linearly on $n_e$.  We studied the dependence of the friction force on the ion velocity and the model parameters by computing $F_{\parallel}(V_{\parallel})$ for the gold ion ($Z = 79$) and the protons ($Z = 1$); for protons, the calculation was done for several values of $T_{int}$.  By dimensional analysis and examining the scaling of the peak force as well as $F_{\parallel}(V_{\parallel})$ in the large and small $V_{\parallel}$ limits, we found the following two-parameter model to ...
+
+
+\begin{equation}
+F_{\parallel}(v) = - \frac{A v}{(\sigma^2 + v^2)^{3/2}} ,
+\end{equation}
+where the two model parameters are given by 
+\begin{equation*}
+A = 2 \pi Z^2 n_e m_e (r_e c^2)^2 
+\end{equation*}
+and
+\begin{equation*}
+\sigma \approx (\pi Z r_e c^2 / T_{int})^{1/3} .
+\end{equation*}
+The dependence of the peak force on the ion charge in this parametric fit model agrees with the empirically found $|F_{\parallel,max}| \sim Z^{4/3}$ scaling. In addition, the parametric model predicts the dependence of the peak friction force on the interaction time, 
+\begin{equation}
+|F_{\parallel,max}| \sim Z^{4/3} T_{int}^{2/3}.
+\end{equation}
+As can be seen in Fig. .... (for the gold ion), the parametric fit model has   v, $Z^2 / V^2$, underestimates peak by .... \%
+
+
+
+\section{Comparisons with Analytic and Semi-Analytic Models}
+%\subsection{} 
+
+-- exact agreement with the Derbenev-Skrinsky model's asymptotic for large $V$ and infinite $B$ (cold electrons) 
+
+-- for cold electrons, our model agrees with Parkhomchuk for low $V$, but predicts significantly lower dynamic friction force values at intermediate (near peak-force) and high ion velocity values 
+
+ -- for warm electrons,  for both protons and gold ions, our calculations result in generally lower friction force than what is predicted by the Parkhomchuk model, but the situation is [conclusions are] not clear-cut at lower ion velocity 
+ 
+\section{Analytic Calculation in the Limit of Strong Field and Very Large and Very Small Ion Velocity}
+
+
+
+\section{Summary and Discussion}
+%\subsection{} 
+
+We're confused as much as ever, but on a higher level and about more complicated things 
+
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
