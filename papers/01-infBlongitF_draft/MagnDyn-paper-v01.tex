@@ -44,6 +44,14 @@
 
 -- in the limit of infinitely strong magnetic field, an effective 1D, weakly-nonlinear potential for the longitudinal motion of the electrons 
 
+---------------------------------------------------------------------------------------------------------- 
+
+Therefore, the longitudinal coordinate $z$ of the electron interacting with the ion located at $z=0$ evolves in an effective nonlinear $1D$ potential, 
+\begin{equation}
+\ddot{z}(t) = - Zr_ec^2 \frac{z}{(z^2 +D^2)^{3/2}} ,
+\end{equation}
+where $r_e = e^2/(4 \pi \epsilon_0 m_e c^2)$ is the classical electron radius and $D$ is the electron's impact parameter (different, of course, for different electrons).
+
 \subsection{Simulation Setup for Computing Ensemble-Average Friction Force Values} 
 ~\\
 -- track pairs of electron macroparticles with pairwise-identical initial conditions, one on the ion-perturbed trajectory, the other following the trajectory not  perturbed by the ion 
@@ -52,9 +60,17 @@
 
 -- initial conditions uniformly sample the e-beam phase space density 
 
+-- taking advantage of the axial symmetry of the test setup, we first add up contributions to the friction force from initial conditions that lie the lines of the same impact parameter $D$, parallel to the $z$ axis, then numerically integrate over the impact parameter  
+
+-- no divergence seen for either small or large impact parameters 
+
+
 -- first, perform the computation for the (longitudinally) cold electron gas 
 
 -- force for the warm gas calculated by convolution 
+
+---------------------------------------------------------------------------------------------------------- 
+
 
 Once the friction force is known for the ion interacting with the cold electrons, the dynamic friction force acting on the ion from a gas of warm electrons can be computed by convolution, 
 \begin{equation}
@@ -69,7 +85,6 @@ with superscripts $w$ and $c$ indicating the force computed for the ion interact
 
 -- gold ions and protons 
 
--- no divergence seen for either small or large impact parameters 
 
 -- linear in V for small V;  interaction time-independent,  $\sim Z^2 V^{-2} $ tail for large $V$ 
 
@@ -78,6 +93,11 @@ with superscripts $w$ and $c$ indicating the force computed for the ion interact
 -- $Z^{4/3}$ dependence of the peak force magnitude on the ion charge  
 
 -- positrons (i.e., electron cooling of antiprotons) 
+
+---------------------------------------------------------------------------------------------------------- 
+
+We studied the dependence of the friction force on the ion velocity and the model parameters by computing $F_{\parallel}(V_{\parallel})$ for the gold ion ($Z = 79$) and the protons ($Z = 1$); for protons, the calculation was done for several values of $T_{int}$.  The simulations were done for the cold electrons, with results for the case of warm electrons calculated via a convolution-based procedure, Eq-n ..... .  Figure ..... presents the results for the gold ion and the interaction time $T_{int} = 4. \; 10^{-10} s$ in the beam frame.  Figure .... shows the results for protons, for the same interaction time $T_{int}$, as well as for the interaction times $0.5T_{int}$ and $0.25T_{int}$. 
+
 
 
 \section{A parametrized-Fit Model for the Longitudinal Dynamic Friction Force}
@@ -91,7 +111,9 @@ with superscripts $w$ and $c$ indicating the force computed for the ion interact
 
 -- physical system has 3 independent parameters; a suitable 3-parameter model, if found, could provide a better parametrized fit  
 
-There are 3 independent parameters in the physical model considered above: the ion charge number $Z$, the local electron number density $n_e$, and the interaction time in the cooler $T_{int}$ in the beam frame.  By construction of our numerical procedure, the computed expectation value of the dynamic friction force depends linearly on $n_e$.  We studied the dependence of the friction force on the ion velocity and the model parameters by computing $F_{\parallel}(V_{\parallel})$ for the gold ion ($Z = 79$) and the protons ($Z = 1$); for protons, the calculation was done for several values of $T_{int}$.  By dimensional analysis and examining the scaling of the peak force as well as $F_{\parallel}(V_{\parallel})$ in the large and small $V_{\parallel}$ limits, we found the following two-parameter model to ...
+---------------------------------------------------------------------------------------------------------- 
+
+There are 3 independent parameters in the physical model considered above: the ion charge number $Z$, the local electron number density $n_e$, and the interaction time in the cooler $T_{int}$ in the beam frame.  By construction of our numerical procedure, the computed expectation value of the dynamic friction force depends linearly on $n_e$.  As described above, we studied the dependence of the friction force on the ion velocity and the model parameters by computing $F_{\parallel}(V_{\parallel})$ for the gold ion ($Z = 79$) and the protons ($Z = 1$); for protons, the calculation was done for several values of $T_{int}$.  By dimensional analysis and examining the scaling of the peak force as well as $F_{\parallel}(V_{\parallel})$ in the large and small $V_{\parallel}$ limits, we found the following two-parameter model to have a correct qualitative dependence on the ion velocity as well as match the computed $F_{\parallel}(V_{\parallel})$ results at the low and high velocity limits:
 
 
 \begin{equation}
@@ -105,11 +127,11 @@ and
 \begin{equation*}
 \sigma \approx (\pi Z r_e c^2 / T_{int})^{1/3} .
 \end{equation*}
-The dependence of the peak force on the ion charge in this parametric fit model agrees with the empirically found $|F_{\parallel,max}| \sim Z^{4/3}$ scaling. In addition, the parametric model predicts the dependence of the peak friction force on the interaction time, 
+The dependence of the peak force on the ion charge in this parametric fit model agrees with the empirically found $|F_{\parallel,max}| \sim Z^{4/3}$ scaling. In addition, the parametric model predicts the dependence of the peak friction force on the interaction time, that is,
 \begin{equation}
 |F_{\parallel,max}| \sim Z^{4/3} T_{int}^{2/3}.
 \end{equation}
-As can be seen in Fig. .... (for the gold ion), the parametric fit model has   v, $Z^2 / V^2$, underestimates peak by .... \%
+The model predicts a $Z V T_{int}$ and a $Z^2 / V^2$ (independent of $T_{int}$) dependence on the ion velocity and the model parameters in the low and high velocity limits respectively, as well.  As can be seen in Fig. .... (for the gold ion), the parametric fit model underestimates peak by approximately $10-15\%$.  Adding a third parameter to the model can result in a better fit to the computed result, as would a `tweaking' of the two parameters with the sole objective of improving the fit.
 
 
 
@@ -121,6 +143,9 @@ As can be seen in Fig. .... (for the gold ion), the parametric fit model has   v
 -- for cold electrons, our model agrees with Parkhomchuk for low $V$, but predicts significantly lower dynamic friction force values at intermediate (near peak-force) and high ion velocity values 
 
  -- for warm electrons,  for both protons and gold ions, our calculations result in generally lower friction force than what is predicted by the Parkhomchuk model, but the situation is [conclusions are] not clear-cut at lower ion velocity 
+ 
+---------------------------------------------------------------------------------------------------------- 
+
  
 \section{Analytic Calculation in the Limit of Strong Field and Very Large and Very Small Ion Velocity}
 
