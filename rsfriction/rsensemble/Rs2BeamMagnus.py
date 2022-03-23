@@ -72,7 +72,8 @@ import numpy
 from rsbeams.rsstats import stats6d
 from rsbeams.rsptcls import RsTwiss2D
 from rsbeams.rsptcls import RsPtclBeam6D
-from rsbeams.rsphysics import rsconst
+import rsmath
+import scipy
 
 class Rs2BeamMagnus:
     """6D electron distribution plus a handful of arbitrary ions."""
@@ -93,7 +94,7 @@ class Rs2BeamMagnus:
         self.num_elec = 1000
         self.design_p_ev = 0.
         self.max_rms_fac = max_rms_fac
-        self.mass_elec_ev = rsconst.m_e_EV
+        self.mass_elec_ev = scipy.constants.m_e * rsmath.const.C_SQ / scipy.constants.e
         self.total_charge_c = charge_ebeam_c
 
         if ( (distrib_type != 'uniform') and
